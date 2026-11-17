@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Plane, Car, Bus, Download } from "lucide-react";
+import { Package, Plane, Car, Bus, Download, Moon } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { bookingStatusLabel } from "@/lib/bookingStatus";
 import { divideCurrencyTotals } from "@/lib/customerMetrics";
@@ -26,9 +26,10 @@ interface Props {
   }>;
 }
 
-type BookingType = "hotel" | "flight" | "car_rental" | "transport";
+type BookingType = "hotel" | "flight" | "car_rental" | "transport" | "umrah";
 
 const typeMeta: Record<BookingType, { label: string; icon: JSX.Element }> = {
+  umrah: { label: "عمرة", icon: <Moon className="h-4 w-4" /> },
   hotel: { label: "حجز فندق", icon: <Package className="h-4 w-4" /> },
   flight: { label: "حجز طيران", icon: <Plane className="h-4 w-4" /> },
   car_rental: { label: "تأجير سيارة", icon: <Car className="h-4 w-4" /> },
@@ -130,11 +131,12 @@ const CustomerBookingHistory = ({ customerId, bookings }: Props) => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid h-auto w-full grid-cols-3 sm:grid-cols-6">
           <TabsTrigger value="all">جميع الحجوزات</TabsTrigger>
           <TabsTrigger value="hotel">الفنادق</TabsTrigger>
           <TabsTrigger value="flight">الطيران</TabsTrigger>
           <TabsTrigger value="car_rental">السيارات</TabsTrigger>
+          <TabsTrigger value="umrah">العمرة</TabsTrigger>
           <TabsTrigger value="transport">النقل</TabsTrigger>
         </TabsList>
 

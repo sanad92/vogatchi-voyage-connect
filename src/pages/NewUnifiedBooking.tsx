@@ -221,6 +221,11 @@ export const NewUnifiedBookingForm = () => {
             <CardHeader><CardTitle>اختر نوع الحجز</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
+                <button type="button" onClick={() => navigate('/pilgrimage')}
+                    className="rounded-lg border-2 border-border p-6 text-center transition-all hover:border-primary hover:shadow-md">
+                  <div className="font-semibold">عمرة</div>
+                  <div className="text-sm text-muted-foreground">اختيار الدفعة والحجز من رصيدها</div>
+                </button>
                 {typeOptions.map((t) => {
                   const Icon = t.icon;
                   return (

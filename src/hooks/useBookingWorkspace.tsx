@@ -89,6 +89,17 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
   });
 
   const booking = bookingQ.data;
+  const umrahDeparture = useQuery<{ program_id: string } | null>({
+    queryKey: ['workspace-umrah-departure', bookingId, booking?.organization_id],
+    enabled: !!bookingId && booking?.booking_type === 'umrah',
+    queryFn: async () => {
+      const { data, error } = await anyClient.from('umrah_inventory_bookings')
+        .select('program_id').eq('organization_id', booking.organization_id)
+        .eq('booking_id', bookingId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
   const customerId = booking?.customer_id;
   const supplierId = booking?.supplier_id;
 
@@ -361,6 +372,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
 
   return {
     booking,
+    umrahDeparture: umrahDeparture.data,
     customer: customerQ.data,
     supplier: supplierQ.data,
     itinerary: itineraryQ.data,

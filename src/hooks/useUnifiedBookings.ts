@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrgId } from './useOrgId';
 import { toast } from "sonner";
 
-export type BookingType = 'hotel' | 'flight' | 'car_rental' | 'transport';
+export type BookingType = 'hotel' | 'flight' | 'car_rental' | 'transport' | 'umrah';
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
 
 export interface UnifiedBooking {
@@ -27,7 +27,7 @@ export interface UnifiedBooking {
   status_id: string | null;
   selling_price: number;
   cost_price: number;
-  profit: number;
+  profit: number | null;
   currency: string;
   start_date: string | null;
   end_date: string | null;

@@ -1,7 +1,7 @@
 import { bookingStatusLabel } from '@/lib/bookingStatus';
 import { customerDisplayName } from '@/lib/customerDisplayName';
 import { Badge } from '@/components/ui/badge';
-import { Hotel, Plane, Car, Truck, User, MapPin, Calendar, UserCheck, Gauge } from 'lucide-react';
+import { Hotel, Plane, Car, Truck, User, MapPin, Calendar, UserCheck, Gauge, Moon } from 'lucide-react';
 import type { Workspace } from './types';
 import {
   PAYMENT_LABELS,
@@ -11,6 +11,7 @@ import {
 } from '@/lib/bookingWorkflow';
 
 const typeInfo: Record<string, { label: string; icon: React.ElementType }> = {
+  umrah: { label: 'حجز عمرة', icon: Moon },
   hotel: { label: 'حجز فندق', icon: Hotel },
   flight: { label: 'حجز طيران', icon: Plane },
   car_rental: { label: 'تأجير سيارات', icon: Car },

@@ -16,11 +16,15 @@ interface Props {
 export const FinancialsTab = ({ workspace }: Props) => {
   const f = workspace.financials;
   const { canProcessPayments, canRefundPayments } = useSupabasePermissions();
+  const umrah = workspace.booking?.booking_type === 'umrah';
+  const cancelled = workspace.booking?.status === 'cancelled';
   const paymentInvoices = (workspace.invoices as Array<Record<string, unknown>>).map((invoice) => ({
     id: String(invoice.id),
     invoice_number: typeof invoice.invoice_number === 'string' ? invoice.invoice_number : null,
     total_amount: Number(invoice.total_amount ?? invoice.final_amount ?? 0),
   }));
+  const fixedInvoiceId = umrah && paymentInvoices.length === 1 ? paymentInvoices[0].id : undefined;
+  const canRecord = !!workspace.booking?.id && (!umrah || (canProcessPayments() && !cancelled && !!fixedInvoiceId));
   const payments = workspace.payments as Array<{
     id: string;
     amount?: number | null;
@@ -30,22 +34,23 @@ export const FinancialsTab = ({ workspace }: Props) => {
   }>;
   return (
     <div className="space-y-4">
-      {workspace.booking?.id && <BookingProfitCockpit bookingId={workspace.booking.id} />}
+      {!umrah && workspace.booking?.id && <BookingProfitCockpit bookingId={workspace.booking.id} />}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle className="text-base">إجراءات التحصيل</CardTitle>
           <div className="flex flex-wrap gap-2">
-            {workspace.booking?.id && workspace.booking.customer_id && ['EGP', 'USD', 'SAR'].includes(f.currency)
+            {!umrah && workspace.booking?.id && workspace.booking.customer_id && ['EGP', 'USD', 'SAR'].includes(f.currency)
               && (canRefundPayments() || canProcessPayments())
               && <RequestRefundDialog key={workspace.booking.id} bookingId={workspace.booking.id} currency={f.currency} />}
-            {workspace.booking?.id && (
+            {canRecord && (
               <RecordPaymentDialog
                 bookingId={workspace.booking.id}
                 customerId={workspace.booking.customer_id ?? workspace.customer?.id}
                 currency={f.currency}
                 outstanding={f.outstanding}
                 invoices={paymentInvoices}
+                fixedInvoiceId={fixedInvoiceId}
                 onSaved={() => workspace.refetch()}
               />
             )}
@@ -64,7 +69,7 @@ export const FinancialsTab = ({ workspace }: Props) => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle className="text-base">الدفعات ({workspace.payments.length})</CardTitle>
-          {workspace.booking?.id && (
+          {!umrah && workspace.booking?.id && (
             <RecordPaymentDialog
               bookingId={workspace.booking.id}
               customerId={workspace.booking.customer_id ?? workspace.customer?.id}

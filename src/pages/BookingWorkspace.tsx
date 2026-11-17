@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ArrowRight, RefreshCw, MessageCircle, FileText, Receipt, Wallet, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,9 @@ const BookingWorkspace = () => {
   const canSettleCancellation = (['bookings_view', 'bookings_cancel', 'financial_view', 'payments_process'] as const)
     .every(permission => getPermissionScope(permission) === 'organization');
   const canViewFinance = getPermissionScope('financial_view') !== 'none';
+  const umrah = workspace.booking?.booking_type === 'umrah';
+  const departurePath = workspace.umrahDeparture
+    ? `/pilgrimage?program=${workspace.umrahDeparture.program_id}` : null;
   const cockpit = useBookingProfitCockpit(canViewFinance ? id : undefined);
   const vouchers = useWorkspaceVouchers(id);
   const canEditBooking = getPermissionScope('bookings_edit') === 'organization';
@@ -92,7 +95,7 @@ const BookingWorkspace = () => {
   }
 
   const summary = cockpit.isError ? undefined : cockpit.data?.summary;
-  const profitHealth = summary ? deriveProfitHealth(summary.gross_profit, summary.selling) : undefined;
+  const profitHealth = summary && !umrah ? deriveProfitHealth(summary.gross_profit, summary.selling) : undefined;
   const currency = cockpit.data?.booking.currency;
   const activeInvoices = cockpit.data?.drilldowns.invoices.filter(inv =>
     !['draft', 'cancelled', 'canceled', 'void'].includes(inv.status?.toLowerCase() ?? '')
@@ -137,22 +140,24 @@ const BookingWorkspace = () => {
         stage={stage}
         paymentVerified={paymentStatus === 'paid'}
         onChange={next => void workspace.setStage(next).catch(() => undefined)}
-        editable={canEditBooking && !cancelled}
+        editable={canEditBooking && !cancelled && !umrah}
       />
-      <SmartNextActionCard workspace={workspace} ctx={ctx} canEditBooking={canEditBooking} />
-      {canViewFinance && <FinancialSummaryStrip cockpit={cockpit} />}
+      {!umrah && <SmartNextActionCard workspace={workspace} ctx={ctx} canEditBooking={canEditBooking} />}
+      {canViewFinance && !umrah && <FinancialSummaryStrip cockpit={cockpit} />}
 
       <div className="flex flex-wrap gap-2">
-        {canSettleCancellation && !workspace.booking.is_demo && (
+        {canSettleCancellation && !umrah && !workspace.booking.is_demo && (
           <Button size="sm" variant="outline" onClick={() => setCancellationOpen(true)}>
             <Ban className="h-4 w-4 ml-1" />
             {cancellation.data?.customer.settled && (cancellation.data.supplier_result || !cancellation.data.suppliers.length) ? 'عرض تسوية الإلغاء' : cancelled ? 'تسوية الإلغاء' : 'إلغاء الحجز'}
           </Button>
         )}
+        {departurePath && <Button asChild size="sm" variant="outline"><Link to={`${departurePath}&tab=inventory`}>دفعة العمرة والتسكين</Link></Button>}
+        {departurePath && canSettleCancellation && !cancelled && <Button asChild size="sm" variant="outline"><Link to={`${departurePath}&tab=operations`}>إلغاء مسافر من الدفعة</Link></Button>}
         <Button size="sm" variant="outline" onClick={() => setTab('whatsapp')}>
           <MessageCircle className="h-4 w-4 ml-1" /> فتح واتساب
         </Button>
-        {!cancelled && <Button size="sm" variant="outline" onClick={() => navigate(`/invoices/new?booking_id=${id}`)}>
+        {!cancelled && !umrah && <Button size="sm" variant="outline" onClick={() => navigate(`/invoices/new?booking_id=${id}`)}>
           <FileText className="h-4 w-4 ml-1" /> إنشاء فاتورة
         </Button>}
         <Button size="sm" variant="outline" onClick={() => setTab('financials')}>
@@ -184,10 +189,13 @@ const BookingWorkspace = () => {
           <OverviewTab workspace={workspace} onOpenTab={setTab} />
         </TabsContent>
         <TabsContent value="itinerary" className="mt-4">
-          <ItineraryTab workspace={workspace} />
+          {umrah
+            ? departurePath && <Button asChild variant="outline"><Link to={`${departurePath}&tab=rooming`}>عرض البرنامج والتسكين</Link></Button>
+            : <ItineraryTab workspace={workspace} />}
         </TabsContent>
         <TabsContent value="amendments" className="mt-4">
-          {id && <BookingAmendmentsTab bookingId={id} bookingCurrency={workspace.booking.currency}
+          {umrah && departurePath && <Button asChild variant="outline"><Link to={`${departurePath}&tab=operations`}>التعديلات والإلغاء من الدفعة</Link></Button>}
+          {!umrah && id && <BookingAmendmentsTab bookingId={id} bookingCurrency={workspace.booking.currency}
             customerId={workspace.booking.customer_id} itinerary={workspace.itinerary} />}
         </TabsContent>
         <TabsContent value="financials" className="mt-4">

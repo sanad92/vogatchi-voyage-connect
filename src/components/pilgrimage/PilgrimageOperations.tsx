@@ -36,6 +36,7 @@ type Passenger = {
   paid_amount: number;
   reserved_refunds?: number;
   b2b_roster_entry_id?: string | null;
+  unified_booking_id?: string | null;
 };
 type History = {
   id: string;
@@ -64,6 +65,9 @@ const ERRORS: Record<string, string> = {
   pilgrimage_refund_payment_required: 'راجع الدفعات الأصلية وسعر التحويل مع المالية.',
   program_capacity_reached: 'البرنامج البديل مكتمل.',
   program_capacity_reserved_by_existing_allocations: 'المقاعد المتاحة محجوزة مؤقتًا لطلبات أخرى.',
+  umrah_unified_cancellation_permission: 'إلغاء حجز العمرة المرتبط بفاتورة يحتاج صلاحية الإلغاء ومعالجة المدفوعات.',
+  umrah_unified_refund_review_required: 'راجع مستحقات الحجز وصلاحية اعتماد الاسترداد قبل الإلغاء.',
+  umrah_unified_refund_fx_review_required: 'راجع سعر صرف الدفعات مع الحسابات قبل تسوية الإلغاء.',
   pilgrimage_operation_denied: 'لا توجد صلاحية لتنفيذ الإجراء على البرنامج.',
   room_capacity_exceeded: 'الغرفة المختارة مكتملة.',
   room_category_conflict: 'رقم الغرفة مسجل لفئة مختلفة.',
@@ -244,12 +248,14 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
                 <Input className="w-28" id={`operation-fee-${person.id}`} type="number" min={0} max={person.total_price} step="0.01"
                   value={fees[person.id] ?? '0'} onChange={(event) => { setFees({ ...fees, [person.id]: event.target.value }); setApproved(false); }} />
               </div>}
-              <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {person.unified_booking_id ? <p className="text-muted-foreground">
+                يخفض الإلغاء سعر حجز الأسرة بمبلغ {money(Math.max(0, person.total_price - due), program.currency)}. أي زيادة في التحصيل تُسوّى على فاتورة الحجز.
+              </p> : <div className="flex flex-wrap gap-x-4 gap-y-1">
                 <span>المبلغ المحصل المتاح {money(paid, program.currency)}</span>
                 <span>متبقي {money(Math.max(0, due - paid), program.currency)}</span>
                 <span>طلب رد {money(Math.max(0, paid - due), program.currency)}</span>
                 {action === 'transfer' && <span>سعر البديل {money(newPrice, program.currency)}</span>}
-              </div>
+              </div>}
             </div>;
           })}
           <div className="space-y-1">

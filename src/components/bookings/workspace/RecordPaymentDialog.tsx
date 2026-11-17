@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
@@ -36,6 +37,7 @@ interface Props {
   outstanding?: number;
   invoices?: Array<{ id: string; invoice_number?: string | null; total_amount?: number | null }>;
   onSaved?: () => void;
+  fixedInvoiceId?: string;
   trigger?: React.ReactNode;
 }
 
@@ -45,6 +47,7 @@ export const RecordPaymentDialog = ({
   currency = 'EGP',
   outstanding = 0,
   invoices = [],
+  fixedInvoiceId,
   onSaved,
   trigger,
 }: Props) => {
@@ -61,6 +64,8 @@ export const RecordPaymentDialog = ({
   const [invoiceId, setInvoiceId] = useState<string>('none');
   const [accountId, setAccountId] = useState<string>('none');
   const [notes, setNotes] = useState('');
+  const [exchangeRate, setExchangeRate] = useState('');
+  const request = useRef<{ payload: string; id: string } | null>(null);
 
   const reset = () => {
     setAmount(outstanding > 0 ? String(outstanding) : '');
@@ -70,6 +75,8 @@ export const RecordPaymentDialog = ({
     setInvoiceId('none');
     setAccountId('none');
     setNotes('');
+    setExchangeRate('');
+    request.current = null;
   };
 
   const save = useMutation({
@@ -78,6 +85,22 @@ export const RecordPaymentDialog = ({
       const value = Number(amount);
       if (!value || value <= 0) throw new Error('أدخل مبلغًا صحيحًا أكبر من صفر');
 
+      if (fixedInvoiceId) {
+        const rate = currency === 'EGP' ? 1 : Number(exchangeRate);
+        if (!Number.isFinite(rate) || rate <= 0) throw new Error('أدخل سعر الصرف قبل تسجيل الدفعة');
+        const payload = {
+          _invoice_id: fixedInvoiceId, _amount: value, _currency: currency, _exchange_rate: rate,
+          _method: method, _treasury_account_id: accountId === 'none' ? null : accountId,
+          _payment_date: paymentDate, _reference: reference || null, _notes: notes || null,
+          _booking_id: bookingId, _customer_id: customerId ?? null,
+        };
+        const fingerprint = JSON.stringify(payload);
+        if (request.current?.payload !== fingerprint) request.current = { payload: fingerprint, id: crypto.randomUUID() };
+        const { data, error } = await callUntypedRpc<string>('record_customer_payment', { ...payload, _client_ref: request.current.id });
+        if (error) throw new Error(error.message);
+        if (!data) throw new Error('تعذر تأكيد تسجيل الدفعة');
+        return;
+      }
       const { error } = await supabase.from('customer_payments').insert({
         organization_id: orgId,
         booking_id: bookingId,
@@ -99,6 +122,10 @@ export const RecordPaymentDialog = ({
     onSuccess: () => {
       toast({ title: 'تم تسجيل الدفعة بنجاح' });
       queryClient.invalidateQueries({ queryKey: ['workspace-payments'] });
+      if (fixedInvoiceId) {
+        void queryClient.invalidateQueries({ queryKey: ['workspace-invoices', bookingId] });
+        void queryClient.invalidateQueries({ queryKey: ['unified-bookings'] });
+      }
       queryClient.invalidateQueries({ queryKey: ['booking-financial-summary'] });
       queryClient.invalidateQueries({ queryKey: ['booking-profit-cockpit', bookingId] });
       onSaved?.();
@@ -177,10 +204,10 @@ export const RecordPaymentDialog = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>مرتبطة بفاتورة</Label>
-              <Select value={invoiceId} onValueChange={setInvoiceId}>
+              <Select value={fixedInvoiceId ?? invoiceId} onValueChange={setInvoiceId} disabled={!!fixedInvoiceId}>
                 <SelectTrigger><SelectValue placeholder="بدون" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">بدون</SelectItem>
+                  {!fixedInvoiceId && <SelectItem value="none">بدون</SelectItem>}
                   {invoices.map((inv) => (
                     <SelectItem key={inv.id} value={inv.id}>
                       {inv.invoice_number || inv.id.slice(0, 8)} — {Number(inv.total_amount ?? 0).toLocaleString()}
@@ -204,6 +231,12 @@ export const RecordPaymentDialog = ({
               </Select>
             </div>
           </div>
+
+          {fixedInvoiceId && currency !== 'EGP' && <div className="space-y-2">
+            <Label htmlFor="pay-exchange-rate">سعر الصرف إلى الجنيه</Label>
+            <Input id="pay-exchange-rate" type="number" min="0.000001" step="0.000001" value={exchangeRate}
+              onChange={(event) => setExchangeRate(event.target.value)} />
+          </div>}
 
           <div className="space-y-2">
             <Label htmlFor="pay-notes">ملاحظات</Label>

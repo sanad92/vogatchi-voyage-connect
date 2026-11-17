@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Moon, Plus, Users, ArrowRight, Pencil, Wallet, FileText, Printer, FileSpreadsheet, Ban, Search } from 'lucide-react';
@@ -118,7 +118,7 @@ const Pilgrimage = () => {
     pilgrimage_passenger_not_changeable: 'التسكين مقفل بعد سفر المعتمر أو اكتمال الرحلة.',
   } as Record<string, string>)[e.message] ?? e.message, variant: 'destructive' });
   const sb = supabase as any;
-  const refresh = () => ['pilgrimage-programs', 'pilgrimage-sale-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability', 'pilgrimage-operation-refunds', 'umrah-rooming-groups', 'umrah-room-stock', 'umrah-inventory-bookings'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+  const refresh = () => ['pilgrimage-programs', 'pilgrimage-sale-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability', 'pilgrimage-operation-refunds', 'umrah-rooming-groups', 'umrah-room-stock', 'umrah-inventory-bookings', 'umrah-unified-links', 'unified-bookings', 'workspace-booking', 'workspace-invoices', 'workspace-payments', 'booking-profit-cockpit'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
 
   const q = (key: string, fn: () => any, enabled = true) => useQuery({
     queryKey: [key, orgId], enabled: !!orgId && enabled,
@@ -155,9 +155,21 @@ const Pilgrimage = () => {
       return new Map(data?.map((row) => [row.pilgrim_id, Number(row.reserved_amount)]));
     },
   });
+  const reservationLinks = useQuery({
+    queryKey: ['umrah-unified-links', orgId, programId],
+    enabled: !!orgId && !!program?.uses_room_inventory,
+    queryFn: async () => {
+      const { data, error } = await sb.from('umrah_inventory_bookings').select('id,booking_id')
+        .eq('organization_id', orgId).eq('program_id', programId).not('booking_id', 'is', null);
+      if (error) throw error;
+      return new Map<string, string>(data.map((row: { id: string; booking_id: string }) => [row.id, row.booking_id]));
+    },
+  });
   const list = programs.filter((p) => p.program_type === type);
   const programPilgrims = useMemo(() => pilgrims.filter((g) => g.program_id === programId)
-    .map((g) => ({ ...g, reserved_refunds: operationRefunds.data?.get(g.id) ?? 0 })), [pilgrims, programId, operationRefunds.data]);
+    .map((g) => ({ ...g, reserved_refunds: operationRefunds.data?.get(g.id) ?? 0,
+      unified_booking_id: reservationLinks.data?.get(g.inventory_booking_id) ?? null })),
+    [pilgrims, programId, operationRefunds.data, reservationLinks.data]);
   const priceFor = (p: any, room: string) => Number(p?.[`price_${room}`] ?? 0);
 
   const salesIssues = pilgrimageSalesIssues(pf);
@@ -350,6 +362,7 @@ const Pilgrimage = () => {
     const active = programPilgrims.filter(isActivePilgrim);
     const retailActiveCount = active.filter(g => !g.b2b_roster_entry_id).length;
     const totals = pilgrimageTotals(programPilgrims);
+    const individualTotals = pilgrimageTotals(programPilgrims.filter((person) => !person.unified_booking_id));
     const filteredPilgrims = programPilgrims.filter((g) =>
       (!linkedPassengerId || g.id === linkedPassengerId) &&
       [g.full_name, g.name_en, g.phone, g.passport_number, g.room_group].some((v: unknown) => String(v ?? '').toLowerCase().includes(search.trim().toLowerCase()))
@@ -439,8 +452,8 @@ const Pilgrimage = () => {
         <div className="grid gap-3 sm:grid-cols-4">
           <Card className="p-4"><p className="text-xs text-muted-foreground">المسجلون / السعة</p><p className="text-xl font-semibold">{totals.registered} / {capacity}</p></Card>
           <Card className="p-4"><p className="text-xs text-muted-foreground">مبيعات الأفراد</p><p className="text-xl font-semibold">{fmt(totals.grossDue, program.currency)}</p></Card>
-          <Card className="p-4"><p className="text-xs text-muted-foreground">المحصل من الأفراد</p><p className="text-xl font-semibold">{fmt(totals.collected, program.currency)}</p></Card>
-          <Card className="p-4"><p className="text-xs text-muted-foreground">المتبقي على الأفراد</p><p className="text-xl font-semibold">{fmt(totals.outstanding, program.currency)}</p></Card>
+          <Card className="p-4"><p className="text-xs text-muted-foreground">المحصل {program.uses_room_inventory ? 'في التحصيل الفردي' : 'من الأفراد'}</p><p className="text-xl font-semibold">{fmt(individualTotals.collected, program.currency)}</p></Card>
+          <Card className="p-4"><p className="text-xs text-muted-foreground">المتبقي {program.uses_room_inventory ? 'في التحصيل الفردي' : 'على الأفراد'}</p><p className="text-xl font-semibold">{fmt(individualTotals.outstanding, program.currency)}</p></Card>
         </div>
         {totals.refundExposure > 0 && (
           <Card className="p-4 text-sm border-amber-500/60">
@@ -518,13 +531,14 @@ const Pilgrimage = () => {
                           )}
                         </TableCell>
                         <TableCell><span>{g.b2b_roster_entry_id ? 'على فاتورة الوكيل' : fmt(due, program.currency)}</span>{!cancelled && issues.length > 0 && <p className="text-xs text-amber-600">{issues.length} نواقص تشغيلية</p>}</TableCell>
-                        <TableCell>{g.b2b_roster_entry_id ? '—' : fmt(g.paid_amount, program.currency)}</TableCell>
+                        <TableCell>{g.unified_booking_id ? 'على حجز الأسرة' : g.b2b_roster_entry_id ? '—' : fmt(g.paid_amount, program.currency)}</TableCell>
                         <TableCell>
-                          {g.b2b_roster_entry_id ? '—' : fmt(outstanding(g), program.currency)}
+                          {g.unified_booking_id || g.b2b_roster_entry_id ? '—' : fmt(outstanding(g), program.currency)}
                           {refundable(g) > 0 && <p className="text-xs text-destructive">مستحق مراجعة رد {fmt(refundable(g), program.currency)}</p>}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          {(operationalUmrah ? operationRefunds.isSuccess : !cancelled) && canManage && outstanding(g) > 0 && <Button size="icon" variant="ghost" title="تحصيل دفعة" onClick={() => { setPayFor(g); setPay({ amount: outstanding(g), method: 'cash', treasury: '', reference: '',
+                          {g.unified_booking_id && <Button asChild size="icon" variant="ghost" title="تحصيل حجز الأسرة"><Link aria-label="تحصيل حجز الأسرة" to={`/bookings/${g.unified_booking_id}?tab=financials`}><Wallet className="h-4 w-4" /></Link></Button>}
+                          {!g.unified_booking_id && (!g.inventory_booking_id || reservationLinks.isSuccess) && (operationalUmrah ? operationRefunds.isSuccess : !cancelled) && canManage && outstanding(g) > 0 && <Button size="icon" variant="ghost" title="تحصيل دفعة" onClick={() => { setPayFor(g); setPay({ amount: outstanding(g), method: 'cash', treasury: '', reference: '',
   date: new Date().toISOString().slice(0, 10),
   exchangeRate: program.currency === 'EGP' ? 1 : 0,
   clientRef: crypto.randomUUID() }); }}><Wallet className="h-4 w-4" /></Button>}
@@ -575,6 +589,10 @@ const Pilgrimage = () => {
           </TabsContent>
 
           <TabsContent value="payments">
+            {program.uses_room_inventory && <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+              تحصيل حجوزات الأسرة من فاتورة الحجز الموحّد.
+              <Button variant="outline" size="sm" onClick={() => goToProgramTab('inventory')}>عرض حجوزات الدفعة</Button>
+            </div>}
             <Card className="overflow-x-auto">
               <Table>
                 <TableHeader><TableRow><TableHead>التاريخ</TableHead><TableHead>الاسم</TableHead><TableHead>المبلغ</TableHead><TableHead>الطريقة</TableHead><TableHead>المرجع</TableHead><TableHead /></TableRow></TableHeader>

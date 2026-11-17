@@ -85,6 +85,7 @@ const Invoices = () => {
 
   const getBookingTypeLabel = (type) => {
     const types = {
+      umrah: "عمرة",
       hotel: "حجز فندق",
       flight: "حجز طيران",
       transport: "حجز نقل",

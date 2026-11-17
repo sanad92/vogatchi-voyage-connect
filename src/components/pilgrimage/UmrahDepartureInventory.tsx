@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import CustomerSearch from '@/components/customers/CustomerSearch';
 import QuickCustomerAdd from '@/components/customers/QuickCustomerAdd';
@@ -25,7 +26,15 @@ type Program = {
   inventory_private_prices: Partial<Record<Room, PrivateRule>>;
 } & Record<`price_${Room}`, number>;
 type RoomStock = { city: City; room_type: Room; contracted: number; empty_rooms: number; male_beds: number; female_beds: number };
-type Booking = { id: string; booking_number: number; room_type: Room; mode: 'shared' | 'private'; passenger_count: number; total_price: number };
+type Booking = {
+  id: string;
+  booking_id: string | null;
+  booking_number: number;
+  room_type: Room;
+  mode: 'shared' | 'private';
+  total_price: number;
+  unified: { booking_number: string; selling_price: number; status: string } | null;
+};
 type Passenger = { id: string; full_name: string; status: string; inventory_booking_id?: string | null };
 type Customer = { id: string; name: string; phone: string };
 type Traveler = { full_name: string; gender: string };
@@ -42,6 +51,8 @@ const messages: Record<string, string> = {
   umrah_inventory_private_price_required: 'اعتمد سعر الغرفة الخاصة لهذه الفئة أولًا.',
   umrah_inventory_price_changed: 'السعر اتغير. راجع السعر الحالي قبل الحفظ.',
   umrah_inventory_denied: 'صلاحية المستخدم لا تسمح بهذا الإجراء.',
+  umrah_unified_invoice_permission: 'إنشاء حجز العمرة وفاتورته يحتاج صلاحية إنشاء الفواتير.',
+  umrah_unified_invoice_not_created: 'تعذر إنشاء فاتورة الحجز. راجع إعدادات الحسابات قبل الحجز.',
   umrah_inventory_invalid_configuration: 'راجع المدينة وعدد الغرف والأسعار المدخلة.',
   umrah_inventory_invalid_customer: 'اختر عميلًا مسجلًا في شركتك.',
   pilgrimage_sales_confirmation_required: 'اعتمد أسعار البرنامج وافتح التسجيل قبل الحجز.',
@@ -88,7 +99,7 @@ export default function UmrahDepartureInventory({
     enabled: program.uses_room_inventory,
     queryFn: async () => {
       const { data, error } = await db.from('umrah_inventory_bookings')
-        .select('id,booking_number,room_type,mode,passenger_count,total_price')
+        .select('id,booking_id,booking_number,room_type,mode,total_price,unified:bookings!umrah_inventory_bookings_booking_id_fkey(booking_number,selling_price,status)')
         .eq('organization_id', orgId).eq('program_id', program.id).order('booking_number', { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -203,8 +214,13 @@ export default function UmrahDepartureInventory({
         const people = members.get(booking.id) ?? [];
         return <details key={booking.id} className="rounded-md border p-3 text-sm">
           <summary className="cursor-pointer font-medium">
-            حجز {booking.booking_number} · {booking.mode === 'private' ? 'غرفة خاصة' : 'تسكين مشترك'} · {ROOM[booking.room_type]} · {money(booking.total_price, program.currency)}
+            حجز {booking.unified?.booking_number ?? booking.booking_number} · {booking.mode === 'private' ? 'غرفة خاصة' : 'تسكين مشترك'} · {ROOM[booking.room_type]} · {money(booking.unified?.selling_price ?? booking.total_price, program.currency)}
+            {booking.unified?.status === 'cancelled' ? ' · ملغي' : ''}
           </summary>
+          {booking.booking_id && <div className="mt-2 flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm"><Link to={`/bookings/${booking.booking_id}`}>عرض الحجز الموحّد</Link></Button>
+            <Button asChild variant="ghost" size="sm"><Link to={`/bookings/${booking.booking_id}?tab=financials`}>الفاتورة والتحصيل</Link></Button>
+          </div>}
           <ul className="mt-2 space-y-1">{people.map((person) => <li key={person.id}>
             {person.full_name}{person.status === 'cancelled' ? ' · ملغي' : ''}
           </li>)}</ul>

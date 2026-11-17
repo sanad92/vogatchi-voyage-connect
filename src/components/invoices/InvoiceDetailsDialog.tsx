@@ -59,6 +59,7 @@ const InvoiceDetailsDialog = ({
 
   const getBookingTypeLabel = (type: string) => {
     const types = {
+      umrah: "عمرة",
       hotel: "حجز فندق",
       flight: "حجز طيران",
       transport: "حجز نقل",
