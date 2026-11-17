@@ -2,9 +2,46 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { toast } from 'sonner';
+import type { LibraryRuleKey } from '@/lib/automationLibrary';
 
 export type TriggerType = 'booking_created' | 'payment_confirmed' | 'before_travel' | 'booking_status_changed' | 'invoice_created' | 'customer_registered';
 export type ActionType = 'send_email' | 'send_whatsapp' | 'create_invoice' | 'send_reminder';
+
+export function useStarterAutomationRules() {
+  const orgId = useOrgId();
+  const queryClient = useQueryClient();
+  const queryKey = ['starter-automation-settings', orgId];
+  const settings = useQuery({
+    queryKey,
+    queryFn: async () => {
+      if (!orgId) return [];
+      const { data, error } = await supabase.from('starter_automation_settings')
+        .select('rule_key').eq('organization_id', orgId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!orgId,
+  });
+
+  const setEnabled = useMutation({
+    mutationFn: async ({ key, enabled }: { key: LibraryRuleKey; enabled: boolean }) => {
+      if (!orgId) throw new Error('لا توجد شركة نشطة');
+      const { error } = await supabase.rpc('set_starter_automation', {
+        _org: orgId,
+        _rule: key,
+        _enabled: enabled,
+      });
+      if (error) throw error;
+    },
+    onSuccess: async (_, { enabled }) => {
+      await queryClient.invalidateQueries({ queryKey });
+      toast.success(enabled ? 'تم تشغيل القاعدة' : 'تم إيقاف القاعدة');
+    },
+    onError: () => toast.error('تعذّر تحديث القاعدة'),
+  });
+
+  return { settings, setEnabled };
+}
 
 export interface AutomationAction {
   id?: string;

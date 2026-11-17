@@ -781,6 +781,20 @@ export type Database = {
           },
         ]
       }
+      starter_automation_settings: {
+        Row: { organization_id: string; rule_key: string; enabled_at: string }
+        Insert: { organization_id: string; rule_key: string; enabled_at: string }
+        Update: { organization_id?: string; rule_key?: string; enabled_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "starter_automation_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_rules: {
         Row: {
           created_at: string | null
@@ -17203,6 +17217,10 @@ export type Database = {
       }
     }
     Functions: {
+      set_starter_automation: {
+        Args: { _org: string; _rule: string; _enabled: boolean }
+        Returns: undefined
+      }
       _bank_baseline_is_locked: { Args: { _account: string }; Returns: boolean }
       _bank_book_balance_at: {
         Args: { _account: string; _as_of: string }
