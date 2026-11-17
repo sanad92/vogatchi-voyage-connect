@@ -10,7 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
 
 const NotificationCenter = () => {
-  const { notifications, unreadCount, markAsRead, isLoading } = useNotifications();
+  const { notifications, unreadCount, markAsRead, isLoading, isError, refresh } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
 
   const getNotificationIcon = (type: string) => {
@@ -72,7 +72,12 @@ const NotificationCenter = () => {
         <div className="space-y-3 max-h-[400px] overflow-y-auto">
           {isLoading ? (
             <div className="text-center py-8">جاري التحميل...</div>
-          ) : notifications?.length === 0 ? (
+          ) : isError ? (
+            <div role="alert" className="space-y-2 py-8 text-center">
+              <p>تعذّر تحميل الإشعارات.</p>
+              <Button size="sm" variant="outline" onClick={() => void refresh()}>إعادة المحاولة</Button>
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               لا توجد إشعارات
             </div>

@@ -216,7 +216,7 @@ const BookingWorkspace = () => {
           <WhatsAppTab workspace={workspace} />
         </TabsContent>
         <TabsContent value="tasks" className="mt-4">
-          <TasksTab workspace={workspace} />
+          <TasksTab workspace={workspace} highlightedTaskId={params.get('task')} />
         </TabsContent>
         <TabsContent value="timeline" className="mt-4 space-y-4">
           <BookingLeadAudit bookingId={id} />

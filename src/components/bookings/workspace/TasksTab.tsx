@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { isBookingTaskCompleted, isBookingTaskOpen, type BookingTask } from '@/h
 
 interface Props {
   workspace: Workspace;
+  highlightedTaskId?: string | null;
 }
 
 type Bucket = 'overdue' | 'today' | 'upcoming' | 'completed';
@@ -29,7 +30,7 @@ const bucketMeta: Record<Bucket, { label: string; icon: any; toneClass: string }
   completed: { label: 'مكتملة', icon: CheckCircle2, toneClass: 'text-emerald-600' },
 };
 
-export const TasksTab = ({ workspace }: Props) => {
+export const TasksTab = ({ workspace, highlightedTaskId }: Props) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<BookingTask['priority']>('normal');
@@ -71,9 +72,11 @@ export const TasksTab = ({ workspace }: Props) => {
       else if (due !== null && due < endOfToday) groups.today.push(t);
       else groups.upcoming.push(t);
     }
+    const focusedCompleted = groups.completed.find(task => task.id === highlightedTaskId);
     groups.completed = groups.completed.slice(0, 10);
+    if (focusedCompleted && !groups.completed.includes(focusedCompleted)) groups.completed.push(focusedCompleted);
     return groups;
-  }, [workspace.tasks]);
+  }, [workspace.tasks, highlightedTaskId]);
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
@@ -112,6 +115,7 @@ export const TasksTab = ({ workspace }: Props) => {
             key={b}
             bucket={b}
             tasks={buckets[b]}
+            highlightedTaskId={highlightedTaskId}
             onComplete={(id) => workspace.completeTask(id)}
           />
         ))}
@@ -148,11 +152,19 @@ const BucketSection = ({
   bucket,
   tasks,
   onComplete,
+  highlightedTaskId,
 }: {
   bucket: Bucket;
   tasks: BookingTask[];
   onComplete: (id: string) => void;
+  highlightedTaskId?: string | null;
 }) => {
+  const selectedTask = useRef<HTMLDivElement>(null);
+  const hasSelectedTask = tasks.some(task => task.id === highlightedTaskId);
+  useEffect(() => {
+    if (hasSelectedTask) selectedTask.current?.scrollIntoView({ block: 'center' });
+  }, [hasSelectedTask, highlightedTaskId]);
+
   const meta = bucketMeta[bucket];
   const Icon = meta.icon;
   if (tasks.length === 0 && bucket !== 'today') return null;
@@ -172,9 +184,10 @@ const BucketSection = ({
           tasks.map((t) => (
             <div
               key={t.id}
+              ref={t.id === highlightedTaskId ? selectedTask : undefined}
               className={`flex items-start justify-between gap-3 rounded-md border p-2 ${
                 bucket === 'completed' ? 'opacity-60' : ''
-              }`}
+              } ${t.id === highlightedTaskId ? 'border-primary bg-primary/5' : ''}`}
             >
               <div className="flex-1">
                 <p className={`text-sm font-medium ${bucket === 'completed' ? 'line-through' : ''}`}>{t.title}</p>

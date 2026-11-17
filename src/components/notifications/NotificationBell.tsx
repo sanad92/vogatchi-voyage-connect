@@ -1,70 +1,33 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bell, CheckCircle, AlertTriangle, Info, X, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { playAlertSound } from '@/lib/soundAlerts';
 
 const NotificationBell = () => {
-  const { user } = useOptimizedAuth();
-  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const {
+    notifications, unreadCount, isLoading, isError, refresh,
+    markAsReadAsync, markAllAsRead, isMarkingAsRead,
+  } = useNotifications(true);
 
-  const { data: notifications = [] } = useQuery({
-    queryKey: ['user-notifications', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-    staleTime: 30_000,
-  });
-
-  const unreadCount = notifications.filter(n => !n.is_read).length;
-
-  // Realtime subscription
-  useEffect(() => {
-    if (!user?.id) return;
-    const channel = supabase
-      .channel('user-notifications')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`,
-      }, () => {
-        playAlertSound('notification');
-        queryClient.invalidateQueries({ queryKey: ['user-notifications'] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user?.id, queryClient]);
-
-  const markRead = useMutation({
-    mutationFn: async (id: string) => {
-      await supabase.from('notifications').update({ is_read: true }).eq('id', id);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['user-notifications'] }),
-  });
-
-  const markAllRead = useMutation({
-    mutationFn: async () => {
-      await supabase.from('notifications').update({ is_read: true }).eq('user_id', user!.id).eq('is_read', false);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['user-notifications'] }),
-  });
+  const openNotification = async (notification: typeof notifications[number]) => {
+    try {
+      if (!notification.is_read) await markAsReadAsync(notification.id);
+    } catch {
+      return;
+    }
+    const url = notification.action_url;
+    if (url && /^\/(?![\s/\\])[^\\\u0000-\u001f]*$/.test(url)) {
+      setOpen(false);
+      navigate(url);
+    }
+  };
 
   const icon = (type: string | null) => {
     switch (type) {
@@ -76,7 +39,7 @@ const NotificationBell = () => {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={value => { setOpen(value); if (value) void refresh(); }}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative" aria-label={unreadCount > 0 ? `الإشعارات (${unreadCount} غير مقروءة)` : 'الإشعارات'}>
           <Bell className="h-5 w-5" />
@@ -87,25 +50,33 @@ const NotificationBell = () => {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0" dir="rtl">
+      <PopoverContent align="end" className="w-[min(20rem,calc(100vw-1.5rem))] p-0" dir="rtl">
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <h4 className="font-semibold text-sm">الإشعارات</h4>
           {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => markAllRead.mutate()}>
+            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={markAllAsRead} disabled={isMarkingAsRead}>
               <Check className="h-3 w-3 ml-1" />
               قراءة الكل
             </Button>
           )}
         </div>
         <ScrollArea className="max-h-80">
-          {notifications.length === 0 ? (
+          {isLoading ? (
+            <p role="status" className="p-5 text-center text-sm text-muted-foreground">جاري التحميل...</p>
+          ) : isError ? (
+            <div role="alert" className="space-y-2 p-5 text-center text-sm">
+              <p>تعذّر تحميل الإشعارات.</p>
+              <Button size="sm" variant="outline" onClick={() => void refresh()}>إعادة المحاولة</Button>
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="py-8 text-center text-sm text-muted-foreground">لا توجد إشعارات</div>
           ) : (
             notifications.map(n => (
               <button
                 key={n.id}
                 className={`w-full text-right flex gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-0 ${!n.is_read ? 'bg-primary/5' : ''}`}
-                onClick={() => { if (!n.is_read) markRead.mutate(n.id); if (n.action_url) window.location.href = n.action_url; }}
+                onClick={() => void openNotification(n)}
+                disabled={isMarkingAsRead}
               >
                 {icon(n.type)}
                 <div className="flex-1 min-w-0">
