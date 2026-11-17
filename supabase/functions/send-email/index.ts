@@ -12,8 +12,32 @@ const corsHeaders = {
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const esc = (v: unknown): string =>
+  String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+const safeUrl = (v: unknown): string => {
+  try { const u = new URL(String(v ?? "")); return u.protocol === "https:" ? esc(u.toString()) : "#"; } catch { return "#"; }
+};
+/** Every queued value is untrusted: escape strings, keep URLs https-only. */
+function sanitizeTemplateData(raw: unknown): Record<string, any> {
+  const src = (raw && typeof raw === "object" ? raw : {}) as Record<string, any>;
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(src)) {
+    if (k.endsWith("_url")) out[k] = safeUrl(v);
+    else if (Array.isArray(v)) out[k] = v.slice(0, 100).map((i: any) => ({ description: esc(i?.description), amount: esc(i?.amount) }));
+    else if (v != null && typeof v === "object") out[k] = "";
+    else out[k] = esc(v).slice(0, 2000);
+  }
+  return out;
+}
+const plainSubject = (v: unknown) => String(v ?? "").replace(/[\r\n]+/g, " ").slice(0, 200);
+
+// Types a signed-in member may trigger. Subscription notices are platform-only (service role).
+const MEMBER_EMAIL_TYPES = new Set(["welcome", "booking_confirmation", "invoice", "booking_notification", "travel_reminder"]);
+const MEMBER_SEND_ROLES = new Set(["owner", "admin", "manager"]);
+
 // Email templates
-function getEmailHtml(type: string, data: Record<string, any>): { subject: string; html: string } {
+function getEmailHtml(type: string, rawData: Record<string, any>): { subject: string; html: string } {
+  const data = sanitizeTemplateData(rawData);
   const brandColor = "#2563eb";
   const wrapper = (title: string, body: string) => `
 <!DOCTYPE html>
@@ -125,8 +149,8 @@ function getEmailHtml(type: string, data: Record<string, any>): { subject: strin
 
     default:
       return {
-        subject: data.subject || "إشعار من Vogatchi CRM",
-        html: wrapper("إشعار", `<p>${data.message || ""}</p>`),
+        subject: plainSubject(rawData?.subject) || "إشعار من Vogatchi CRM",
+        html: wrapper("إشعار", `<p>${String(data.message || "").replace(/\n/g, "<br>")}</p>`),
       };
   }
 }
@@ -192,9 +216,11 @@ serve(async (req) => {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
       if (email.status !== "pending") return forbidden();
-      const { data: mem } = await supabase.from("organization_members").select("id")
+      if (!MEMBER_EMAIL_TYPES.has(String(email.email_type))) return forbidden();
+      const { data: mem } = await supabase.from("organization_members").select("id, role")
         .eq("organization_id", email.organization_id).eq("user_id", callerUserId).eq("is_active", true).maybeSingle();
-      if (!mem) return forbidden();
+      // Manually dispatching a queued email to customers is limited to managers.
+      if (!mem || !MEMBER_SEND_ROLES.has(String(mem.role ?? ""))) return forbidden();
       // Recipient must be a customer, an active member, or the organization itself.
       const rcpt = String(email.recipient_email || "").trim().toLowerCase();
       const safe = rcpt.replace(/[%_\\]/g, "");
@@ -236,7 +262,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: "Vogatchi CRM <noreply@vogatchi.com>",
         to: [email.recipient_email],
-        subject: email.subject || subject,
+        subject: plainSubject(email.subject) || subject,
         html,
       }),
     });

@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import React, { useEffect, useMemo, useState } from 'react';
+import { csvCell } from '@/lib/spreadsheet-safe';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -838,7 +839,7 @@ const BroadcastDetailsDialog: React.FC<{
 
   /** Download a CSV report of all recipients with status, failure reason, and whether the number can join a new campaign. */
   const downloadReport = () => {
-    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const esc = (v: unknown) => csvCell(v);
     const header = ['الاسم', 'الرقم', 'الحالة', 'سبب الفشل', 'رمز الخطأ', 'ينفع في حملة جديدة'];
     const rows = (recipients as any[]).map((r) => {
       const failed = r.status === 'failed';

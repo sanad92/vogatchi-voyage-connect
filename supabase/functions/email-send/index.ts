@@ -36,8 +36,13 @@ Deno.serve(async (req) => {
     if (!accountId) return json({ error: 'اختر البريد المرسل' }, 400);
     const { data: acc } = await admin.from('email_accounts').select('*').eq('id', accountId).eq('is_active', true).maybeSingle();
     if (!acc) return json({ error: 'حساب البريد غير متاح' }, 404);
-    const { data: mem } = await admin.from('organization_members').select('id').eq('organization_id', acc.organization_id).eq('user_id', user.id).eq('is_active', true).maybeSingle();
+    const { data: mem } = await admin.from('organization_members').select('id, role').eq('organization_id', acc.organization_id).eq('user_id', user.id).eq('is_active', true).maybeSingle();
     if (!mem) return json({ error: 'Forbidden' }, 403);
+    // Replies require owning the thread (checked above). Starting a new outbound email
+    // from the company mailbox is limited to owners, admins and managers.
+    if (!thread && !['owner', 'admin', 'manager'].includes(String(mem.role ?? ''))) {
+      return json({ error: 'إرسال بريد جديد من صندوق الشركة متاح للمدير فقط | Only managers can start new company emails' }, 403);
+    }
 
     if (thread && thread.organization_id !== acc.organization_id) return json({ error: 'Forbidden' }, 403);
     // Recipients are bound to the thread contact or to existing customers of this organization.

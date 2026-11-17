@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
 
   try {
     const { organizationId, templateIds, allDrafts, settingsId } = await req.json();
-    if (!organizationId) return json({ error: 'organizationId required' }, 400);
+    if (typeof organizationId !== 'string' || !/^[0-9a-f-]{36}$/i.test(organizationId)) return json({ error: 'organizationId required' }, 400);
 
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
@@ -107,9 +107,12 @@ Deno.serve(async (req) => {
     });
     const { data: { user } } = await authClient.auth.getUser();
     if (!user) return json({ error: 'Unauthorized' }, 401);
-    const { data: member } = await admin.from('organization_members').select('id')
+    // Only active owners/admins/managers may submit templates to Meta with company credentials.
+    const { data: member } = await admin.from('organization_members').select('id, role, is_active')
       .eq('organization_id', organizationId).eq('user_id', user.id).maybeSingle();
-    if (!member) return json({ error: 'Forbidden' }, 403);
+    if (!member || member.is_active !== true || !['owner', 'admin', 'manager'].includes(String(member.role ?? ''))) {
+      return json({ error: 'Forbidden' }, 403);
+    }
 
     let q = admin.from('whatsapp_templates').select('*').eq('organization_id', organizationId);
     if (Array.isArray(templateIds) && templateIds.length) q = q.in('id', templateIds);

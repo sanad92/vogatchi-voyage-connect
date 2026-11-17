@@ -35,13 +35,10 @@ Deno.serve(async (req) => {
     if (body?.internal) {
       try { requireInternalCaller(req); internal = true; } catch { return json({ error: 'Unauthorized' }, 401); }
     }
-    if (!broadcastId) return json({ error: 'broadcastId required' }, 400);
+    if (typeof broadcastId !== 'string' || !/^[0-9a-f-]{36}$/i.test(broadcastId)) return json({ error: 'broadcastId required' }, 400);
 
-    let { data: broadcast } = await admin
-      .from('whatsapp_broadcasts').select('*').eq('id', broadcastId).maybeSingle();
-    if (!broadcast) return json({ error: 'broadcast not found' }, 404);
-
-    // Caller authorization (skipped for the internal scheduler which uses the service key)
+    // Authenticate the caller BEFORE reading anything, so existence is never revealed.
+    let callerId: string | null = null;
     if (!internal) {
       const authHeader = req.headers.get('Authorization') ?? '';
       const authClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
@@ -49,12 +46,19 @@ Deno.serve(async (req) => {
       });
       const { data: { user } } = await authClient.auth.getUser();
       if (!user) return json({ error: 'Unauthorized' }, 401);
-      const { data: member } = await admin.from('organization_members').select('id,role,is_active')
-        .eq('organization_id', broadcast.organization_id).eq('user_id', user.id).maybeSingle();
-      if (!member || member.is_active === false || !['owner', 'admin', 'manager'].includes(String(member.role))) {
+      callerId = user.id;
+    }
+
+    let { data: broadcast } = await admin
+      .from('whatsapp_broadcasts').select('*').eq('id', broadcastId).maybeSingle();
+
+    if (!internal) {
+      const { data: member } = broadcast ? await admin.from('organization_members').select('id,role,is_active')
+        .eq('organization_id', broadcast.organization_id).eq('user_id', callerId!).maybeSingle() : { data: null };
+      if (!broadcast || !member || member.is_active === false || !['owner', 'admin', 'manager'].includes(String(member.role))) {
         return json({ error: 'Forbidden' }, 403);
       }
-    }
+    } else if (!broadcast) return json({ error: 'broadcast not found' }, 404);
 
     // Lock: prevents concurrent runs from double-sending
     const lockedRecently = broadcast.locked_at && Date.now() - new Date(broadcast.locked_at).getTime() < STALE_LOCK_MS;

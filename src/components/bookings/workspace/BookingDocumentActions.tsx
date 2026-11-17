@@ -62,9 +62,6 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
       .from('documents')
       .upload(filePath, blob, { contentType: 'application/pdf', upsert: true });
     if (upErr) throw upErr;
-    const { data: urlData } = await supabase.storage
-      .from('documents')
-      .createSignedUrl(filePath, 7 * 24 * 3600);
 
     const payload = {
       organization_id: orgId,
@@ -75,7 +72,8 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
       document_number: docNumber,
       title: `${docType === 'voucher' ? 'فاوتشر' : 'فاتورة'} ${docNumber}`,
       file_path: filePath,
-      file_url: urlData?.signedUrl ?? null,
+      // Never persist signed links: they are bearer tokens. Links are minted on demand.
+      file_url: null,
       total_amount: totalAmount,
       currency,
       ...extra,
@@ -93,7 +91,15 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
     } else {
       await anyClient.from('generated_documents').insert(payload);
     }
-    return urlData?.signedUrl ?? null;
+    return filePath;
+  };
+
+  /** Opens a stored PDF through a short-lived link minted for the current member. */
+  const openStoredPdf = async (path: string) => {
+    if (!path || /^https?:/i.test(path)) return;
+    const { data, error } = await supabase.storage.from('documents').createSignedUrl(path, 300);
+    if (error || !data?.signedUrl) { toast.error('تعذّر فتح الملف'); return; }
+    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
   };
 
   /** Ensures the voucher business record exists, then opens the premium preview. */
@@ -190,11 +196,9 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
             )}
             {vouchers.length ? 'إعادة إصدار الفاوتشر' : 'إصدار فاوتشر'}
           </Button>
-          {vouchers[0]?.pdf_url && (
-            <Button asChild size="sm" variant="outline">
-              <a href={vouchers[0].pdf_url} target="_blank" rel="noreferrer">
-                <Download className="h-4 w-4 ml-1" /> تحميل آخر فاوتشر
-              </a>
+          {vouchers[0]?.pdf_url && !/^https?:/i.test(vouchers[0].pdf_url) && (
+            <Button size="sm" variant="outline" onClick={() => openStoredPdf(vouchers[0].pdf_url)}>
+              <Download className="h-4 w-4 ml-1" /> تحميل آخر فاوتشر
             </Button>
           )}
         </div>

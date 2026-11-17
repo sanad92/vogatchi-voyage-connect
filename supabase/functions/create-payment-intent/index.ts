@@ -43,14 +43,22 @@ serve(async (req) => {
     const rl = rateLimit(`stripe:${userId}`, 10, 60_000);
     if (!rl.allowed) return rateLimitResponse(rl.retryAfterMs, corsHeaders);
 
-    const { amount, currency = 'egp', bookingId, invoiceId, description } = await req.json();
-
-    if (typeof amount !== 'number' || !isFinite(amount) || amount <= 0) {
-      return new Response(JSON.stringify({ error: 'Invalid amount' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const { amount: requestedAmount, bookingId, invoiceId } = await req.json();
+    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    // The charged amount is always derived from the invoice record, never from the request.
+    if (typeof invoiceId !== 'string' || !UUID.test(invoiceId)) {
+      return new Response(JSON.stringify({ error: 'invoiceId required' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    if (bookingId != null && (typeof bookingId !== 'string' || !UUID.test(bookingId))) {
+      return new Response(JSON.stringify({ error: 'Invalid bookingId' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    let amount = 0;
+    let currency = 'egp';
+    let description = '';
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -62,9 +70,23 @@ serve(async (req) => {
     try {
       if (invoiceId) {
         const { data: inv } = await supabase
-          .from('invoices').select('organization_id').eq('id', invoiceId).maybeSingle();
+          .from('invoices')
+          .select('organization_id, invoice_number, currency, final_amount, total_paid_amount, remaining_amount, status, payment_status')
+          .eq('id', invoiceId).maybeSingle();
         if (!inv) throw new AuthError('Invoice not found', 404);
         await requireOrgMembership(supabase, userId, inv.organization_id);
+        if (['cancelled', 'void', 'draft'].includes(String(inv.status || '').toLowerCase())) {
+          throw new AuthError('Invoice is not payable', 409);
+        }
+        const remaining = Math.max(0, Number(
+          inv.remaining_amount ?? (Number(inv.final_amount || 0) - Number(inv.total_paid_amount || 0)),
+        ) || 0);
+        if (!(remaining > 0)) throw new AuthError('Invoice already paid', 409);
+        // Partial payments are allowed only up to the server-side outstanding balance.
+        amount = typeof requestedAmount === 'number' && isFinite(requestedAmount) && requestedAmount > 0
+          ? Math.min(requestedAmount, remaining) : remaining;
+        currency = String(inv.currency || 'EGP').toLowerCase();
+        description = `دفع فاتورة ${inv.invoice_number || invoiceId}`;
       }
       if (bookingId) {
         const { data: bk } = await supabase
@@ -87,7 +109,7 @@ serve(async (req) => {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // تحويل للpiastres
       currency: currency.toLowerCase(),
-      description: description || `دفع فاتورة ${invoiceId}`,
+      description,
       metadata: {
         bookingId: bookingId || '',
         invoiceId: invoiceId || '',
@@ -125,7 +147,7 @@ serve(async (req) => {
   } catch (error: unknown) {
     console.error('خطأ في إنشاء PaymentIntent:', error);
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
+      JSON.stringify({ error: 'تعذّر إنشاء عملية الدفع' }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,

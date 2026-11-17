@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { csvCell } from '@/lib/spreadsheet-safe';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,7 +58,7 @@ const CommissionReports = () => {
 
   const exportReport = () => {
     if (!filteredCommissions?.length) return;
-    const escapeCsv = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const escapeCsv = (value: unknown) => csvCell(value);
     const employeeById = new Map(employees?.map((employee) => [employee.id, employee]) || []);
     const rows = filteredCommissions.map((commission) => {
       const employee = employeeById.get(commission.employee_id);

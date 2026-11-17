@@ -65,10 +65,16 @@ export const DocumentsTab = ({ workspace }: Props) => {
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from('generated_documents')
-        .select('id, document_type, file_url, created_at')
+        .select('id, document_type, file_path, created_at')
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: false });
-      return data ?? [];
+      const rows = (data ?? []) as any[];
+      // Short-lived links minted per view; nothing long-lived is stored.
+      const paths = rows.map((r) => r.file_path).filter(Boolean);
+      if (!paths.length) return rows;
+      const { data: signed } = await supabase.storage.from('documents').createSignedUrls(paths, 600);
+      const byPath = new Map((signed ?? []).map((s: any) => [s.path, s.signedUrl]));
+      return rows.map((r) => ({ ...r, file_url: r.file_path ? byPath.get(r.file_path) ?? null : null }));
     },
   });
 
