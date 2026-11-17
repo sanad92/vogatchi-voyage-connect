@@ -2,29 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { toast } from 'sonner';
+import type { LibraryRuleKey } from '@/lib/automationLibrary';
 
 export type TriggerType = 'booking_created' | 'payment_confirmed' | 'before_travel' | 'booking_status_changed' | 'invoice_created' | 'customer_registered';
 export type ActionType = 'send_email' | 'send_whatsapp' | 'create_invoice' | 'send_reminder';
-
-export const STARTER_AUTOMATION_RULES = [
-  {
-    key: 'confirmed_booking',
-    name: 'مراجعة الحجز المؤكد',
-    description: 'مهمة لفريق العمليات عند تأكيد الحجز، موعدها بعد ساعتين.',
-  },
-  {
-    key: 'payment_due',
-    name: 'متابعة تحصيل فاتورة مستحقة',
-    description: 'مهمة يوم الاستحقاق إذا كان على الفاتورة مبلغ متبقٍ. تُغلق تلقائياً بعد السداد أو الإلغاء.',
-  },
-  {
-    key: 'pre_travel',
-    name: 'مراجعة تجهيزات ما قبل السفر',
-    description: 'مهمة قبل السفر بثلاثة أيام لمراجعة الوثائق والفوتشرات ومواعيد الرحلة.',
-  },
-] as const;
-
-type StarterRuleKey = typeof STARTER_AUTOMATION_RULES[number]['key'];
 
 export function useStarterAutomationRules() {
   const orgId = useOrgId();
@@ -43,7 +24,7 @@ export function useStarterAutomationRules() {
   });
 
   const setEnabled = useMutation({
-    mutationFn: async ({ key, enabled }: { key: StarterRuleKey; enabled: boolean }) => {
+    mutationFn: async ({ key, enabled }: { key: LibraryRuleKey; enabled: boolean }) => {
       if (!orgId) throw new Error('لا توجد شركة نشطة');
       const { error } = await supabase.rpc('set_starter_automation', {
         _org: orgId,

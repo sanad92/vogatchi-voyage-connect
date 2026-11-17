@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useAutomationRules, useAutomationLogs, useStarterAutomationRules, STARTER_AUTOMATION_RULES, TRIGGER_LABELS, ACTION_LABELS, TRIGGER_ICONS, ACTION_ICONS, type TriggerType, type ActionType } from '@/hooks/useAutomationRules';
+import { useAutomationRules, useAutomationLogs, useStarterAutomationRules, TRIGGER_LABELS, ACTION_LABELS, TRIGGER_ICONS, ACTION_ICONS, type TriggerType, type ActionType } from '@/hooks/useAutomationRules';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,10 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Zap, History, Settings2, Play, AlertCircle, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Plus, Trash2, Zap, History, Settings2, Library, Play, AlertCircle, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import { AutomationLibrary, LibraryRuleCard } from '@/components/automation/AutomationLibrary';
+import { AUTOMATION_LIBRARY } from '@/lib/automationLibrary';
 import { usePermissionCheck } from '@/hooks/usePermissionCheck';
 
 const AutomationRules = () => {
@@ -96,8 +97,9 @@ const AutomationRules = () => {
     }
   };
 
-  const starterCount = settings.data?.length ?? 0;
-  const activeRulesCount = rules.filter(r => r.is_active).length + starterCount;
+  const enabledRuleKeys = new Set(settings.data?.map(setting => setting.rule_key));
+  const enabledLibraryRules = AUTOMATION_LIBRARY.filter(rule => enabledRuleKeys.has(rule.key));
+  const activeRulesCount = rules.filter(r => r.is_active).length + enabledLibraryRules.length;
   const completedCount = (logs as any[]).filter((l: any) => l.status === 'completed').length;
   const failedCount = (logs as any[]).filter((l: any) => l.status === 'failed').length;
   const [logFilter, setLogFilter] = useState<string>('all');
@@ -112,8 +114,8 @@ const AutomationRules = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-3xl font-bold text-primary">{rules.length + STARTER_AUTOMATION_RULES.length}</div>
-            <div className="text-sm text-muted-foreground">إجمالي القواعد</div>
+            <div className="text-3xl font-bold text-primary">{AUTOMATION_LIBRARY.length}</div>
+            <div className="text-sm text-muted-foreground">قواعد جاهزة للتشغيل</div>
           </CardContent>
         </Card>
         <Card>
@@ -139,7 +141,7 @@ const AutomationRules = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">نظام الأتمتة</h1>
-          <p className="text-muted-foreground text-sm mt-1">إدارة القواعد التلقائية للحجوزات والإشعارات</p>
+          <p className="text-muted-foreground text-sm mt-1">اختار من المكتبة القواعد اللي تناسب شركتك وتابع تنفيذها.</p>
         </div>
         {canEdit && (
           <Button onClick={() => setShowCreate(true)} className="gap-2">
@@ -149,11 +151,15 @@ const AutomationRules = () => {
         )}
       </div>
 
-      <Tabs defaultValue="rules" className="space-y-4">
-        <TabsList>
+      <Tabs defaultValue="library" className="space-y-4">
+        <TabsList className="h-auto flex-wrap justify-start">
+          <TabsTrigger value="library" className="gap-2">
+            <Library className="h-4 w-4" />
+            مكتبة القواعد
+          </TabsTrigger>
           <TabsTrigger value="rules" className="gap-2">
             <Settings2 className="h-4 w-4" />
-            القواعد
+            قواعد الشركة
           </TabsTrigger>
           <TabsTrigger value="logs" className="gap-2">
             <History className="h-4 w-4" />
@@ -161,56 +167,37 @@ const AutomationRules = () => {
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="library" className="space-y-4">
+          {settings.isPending ? (
+            <p className="text-sm text-muted-foreground">جاري التحميل...</p>
+          ) : settings.isError ? (
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-destructive">تعذّر تحميل مكتبة القواعد.</p>
+              <Button variant="outline" size="sm" onClick={() => void settings.refetch()}>إعادة المحاولة</Button>
+            </div>
+          ) : (
+            <AutomationLibrary
+              enabled={enabledRuleKeys}
+              canEdit={canEdit}
+              canAccessQuotes={hasPermission('quotes_view')}
+              busy={setEnabled.isPending}
+              onToggle={(key, enabled) => setEnabled.mutate({ key, enabled })}
+            />
+          )}
+        </TabsContent>
+
         <TabsContent value="rules" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">قواعد الأتمتة الأساسية</CardTitle>
-              <p className="text-sm text-muted-foreground">تظهر المهام في قائمة المهام اليومية. إيقاف القاعدة يوقف إنشاء مهام جديدة.</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {settings.isPending ? (
-                <p className="text-sm text-muted-foreground">جاري التحميل...</p>
-              ) : settings.isError ? (
-                <div className="flex items-center gap-3">
-                  <p className="text-sm text-destructive">تعذّر تحميل قواعد الأتمتة الأساسية.</p>
-                  <Button variant="outline" size="sm" onClick={() => void settings.refetch()}>إعادة المحاولة</Button>
-                </div>
-              ) : (
-                <ul className="divide-y">
-                  {STARTER_AUTOMATION_RULES.map(rule => {
-                    const enabled = settings.data.some(setting => setting.rule_key === rule.key);
-                    return (
-                      <li key={rule.key} className="flex items-center justify-between gap-4 py-3">
-                        <div>
-                          <h3 className="text-sm font-medium">{rule.name}</h3>
-                          <p className="mt-1 text-sm text-muted-foreground">{rule.description}</p>
-                        </div>
-                        {canEdit ? (
-                          <Switch
-                            aria-label={rule.name}
-                            checked={enabled}
-                            disabled={setEnabled.isPending}
-                            onCheckedChange={checked => setEnabled.mutate({ key: rule.key, enabled: checked })}
-                          />
-                        ) : <Badge variant="outline">{enabled ? 'نشط' : 'معطل'}</Badge>}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              {hasPermission('quotes_view') && (
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-                  <div>
-                    <h3 className="text-sm font-medium">متابعة عروض الأسعار</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">اضبط مواعيد المتابعة من إعدادات عروض الأسعار.</p>
-                  </div>
-                  <Button asChild variant="outline" size="sm">
-                    <Link to="/quotes">عروض الأسعار</Link>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {enabledLibraryRules.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="font-semibold">القواعد المفعّلة من المكتبة</h2>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {enabledLibraryRules.map(rule => (
+                  <LibraryRuleCard key={rule.key} rule={rule} enabled canEdit={canEdit} busy={setEnabled.isPending}
+                    onToggle={(key, enabled) => setEnabled.mutate({ key, enabled })} />
+                ))}
+              </div>
+            </div>
+          )}
           {isLoading ? (
             <div className="text-center py-12 text-muted-foreground">جاري التحميل...</div>
           ) : rules.length === 0 ? (
@@ -329,7 +316,7 @@ const AutomationRules = () => {
                               <span>{statusLabel(log.status)}</span>
                             </div>
                           </td>
-                          <td className="p-3">{STARTER_AUTOMATION_RULES.find(rule => rule.key === log.trigger_type)?.name ?? (TRIGGER_LABELS[log.trigger_type as TriggerType] || log.trigger_type)}</td>
+                          <td className="p-3">{AUTOMATION_LIBRARY.find(rule => rule.key === log.trigger_type)?.name ?? (TRIGGER_LABELS[log.trigger_type as TriggerType] || log.trigger_type)}</td>
                           <td className="p-3">{log.action_type === 'create_operations_task' ? 'إنشاء مهمة عمليات' : (ACTION_LABELS[log.action_type as ActionType] || log.action_type)}</td>
                           <td className="p-3">{log.booking_type || '-'}</td>
                           <td className="p-3 whitespace-nowrap">

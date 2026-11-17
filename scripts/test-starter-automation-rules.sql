@@ -117,5 +117,65 @@ BEGIN
 END
 $test$;
 
+DO $library$
+DECLARE
+ org uuid := 'f8d07312-0000-4000-8000-000000000001';
+ customer uuid;
+ supplier uuid := gen_random_uuid();
+ waiting_booking uuid := gen_random_uuid();
+ supplier_booking uuid := gen_random_uuid();
+ finished_booking uuid := gen_random_uuid();
+ order_id uuid := gen_random_uuid();
+ rule text;
+ deadline timestamptz := date_trunc('minute', now()) + interval '4 hours';
+ cairo_day date := (now() AT TIME ZONE 'Africa/Cairo')::date;
+BEGIN
+ SELECT id INTO STRICT customer FROM public.customers WHERE organization_id=org AND email='starter-qa-customer-a@example.invalid';
+ INSERT INTO public.suppliers(id,organization_id,name,is_active) VALUES (supplier,org,'Automation QA supplier',true);
+
+ FOREACH rule IN ARRAY ARRAY['pending_booking','supplier_payment_due','free_cancellation_due','post_travel'] LOOP
+   PERFORM public.set_starter_automation(org,rule,true);
+ END LOOP;
+ UPDATE public.starter_automation_settings SET enabled_at=now()-interval '2 days'
+ WHERE organization_id=org AND rule_key='pending_booking';
+
+ INSERT INTO public.bookings(id,organization_id,customer_id,booking_number,booking_type,currency,status,workflow_stage,start_date,created_at)
+ VALUES (waiting_booking,org,customer,'LIBRARY-PENDING','hotel','EGP','pending','lead',cairo_day+4,now()-interval '25 hours');
+
+ INSERT INTO public.bookings(id,organization_id,customer_id,supplier_id,booking_number,booking_type,currency,status,workflow_stage,start_date,cost_price,cancellation_terms)
+ VALUES (supplier_booking,org,customer,supplier,'LIBRARY-SUPPLIER','hotel','EGP','confirmed','confirmed',cairo_day+5,50,
+   jsonb_build_array(jsonb_build_object('selling',100,'cost',50,'currency','EGP','terms',jsonb_build_object(
+     'timezone','Africa/Cairo','customer', '{"kind":"pending","rules":[]}'::jsonb,
+     'supplier',jsonb_build_object('kind','free_until','free_until',
+       to_char(deadline AT TIME ZONE 'Africa/Cairo','YYYY-MM-DD"T"HH24:MI'),'unit','percent','value',10,'rules','[]'::jsonb)
+   ))));
+
+ INSERT INTO public.supplier_payment_orders(id,organization_id,supplier_id,booking_id,reference_number,service_type,amount,currency,approval_status,status,due_date,supplier_due_at)
+ VALUES (order_id,org,supplier,supplier_booking,'LIBRARY-DUE','hotel',50,'EGP','approved','approved',
+   (deadline AT TIME ZONE 'Africa/Cairo')::date,deadline);
+ INSERT INTO public.bookings(id,organization_id,customer_id,booking_number,booking_type,currency,status,workflow_stage,start_date,end_date)
+ VALUES (finished_booking,org,customer,'LIBRARY-POST-TRAVEL','hotel','EGP','completed','completed',cairo_day-2,cairo_day-1);
+
+ PERFORM operations_private.dispatch_starter_booking_tasks();
+ PERFORM operations_private.dispatch_starter_booking_tasks();
+ IF (SELECT count(*) FROM operations_private.starter_automation_tasks
+   WHERE organization_id=org AND (rule_key,entity_id) IN (
+     ('pending_booking',waiting_booking),('free_cancellation_due',supplier_booking),
+     ('supplier_payment_due',order_id),('post_travel',finished_booking)
+   )) <> 4 THEN RAISE EXCEPTION 'Library rules did not create each of the four tasks'; END IF;
+ IF (SELECT count(*) FROM public.automation_logs
+   WHERE organization_id=org AND trigger_type IN ('pending_booking','supplier_payment_due','free_cancellation_due','post_travel')
+ ) <> 4 THEN RAISE EXCEPTION 'Library rule dispatch duplicated log rows'; END IF;
+
+ UPDATE public.bookings SET status='confirmed',workflow_stage='confirmed' WHERE id=waiting_booking;
+ UPDATE public.supplier_payment_orders SET approval_status='rejected' WHERE id=order_id;
+ PERFORM operations_private.dispatch_starter_booking_tasks();
+ IF (SELECT count(*) FROM operations_private.starter_automation_tasks a JOIN public.booking_tasks t ON t.id=a.task_id
+   WHERE a.organization_id=org AND (a.rule_key,a.entity_id) IN (('pending_booking',waiting_booking),('supplier_payment_due',order_id))
+     AND t.status='cancelled'
+ ) <> 2 THEN RAISE EXCEPTION 'Resolved booking or supplier task stayed open'; END IF;
+END
+$library$;
+
 SELECT 'Starter automation settings, tasks and retry behavior passed' AS result;
 ROLLBACK;
