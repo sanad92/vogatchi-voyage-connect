@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -76,6 +77,7 @@ const CarRentalsList = () => {
           </CardHeader>
           
           <CardContent className="space-y-4">
+            <Button asChild size="sm" variant="outline"><Link to={`/bookings/${rental.id}`}>فتح الحجز</Link></Button>
             {/* معلومات السيارة */}
             {(rental.vehicle_make || rental.vehicle_model) && (
               <div className="bg-blue-50 p-3 rounded-lg">

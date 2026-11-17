@@ -56,8 +56,8 @@ function asOptionalAmount(raw: string): number | null {
 }
 
 export function BookingAmendmentsTab({
-  bookingId, bookingCurrency, customerId, itinerary,
-}: { bookingId: string; bookingCurrency?: string | null; customerId?: string; itinerary?: Workspace['itinerary'] }) {
+  bookingId, bookingCurrency, customerId, itinerary, canEdit,
+}: { bookingId: string; bookingCurrency?: string | null; customerId?: string; itinerary?: Workspace['itinerary']; canEdit: boolean }) {
   const orgId = useOrgId();
   const { user } = useOptimizedAuth();
   const changeRequests = useBookingChangeRequests(bookingId);
@@ -151,7 +151,7 @@ export function BookingAmendmentsTab({
   return (
     <div className="space-y-4" dir="rtl">
       <TripServiceAmendments key={bookingId} bookingId={bookingId} currency={(bookingCurrency || 'EGP').toUpperCase()}
-        customerId={customerId} currentUserId={user?.id} canReview={canReview} itinerary={itinerary} />
+        customerId={customerId} currentUserId={user?.id} canReview={canReview} itinerary={itinerary} canEdit={canEdit} />
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">

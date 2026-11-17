@@ -1,3 +1,4 @@
+import { BookingSalesStaffSelect } from '@/components/bookings/staff/BookingSalesStaffSelect';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,9 +16,11 @@ interface Props {
   onConfirm: () => void;
   isLoading: boolean;
   itemCount: number;
+  sellerId: string;
+  onSellerChange: (value: string) => void;
 }
 
-export default function ConvertQuoteDialog({ open, onOpenChange, onConfirm, isLoading, itemCount }: Props) {
+export default function ConvertQuoteDialog({ open, onOpenChange, onConfirm, isLoading, itemCount, sellerId, onSellerChange }: Props) {
   return (
     <AlertDialog open={open} onOpenChange={value => { if (!isLoading) onOpenChange(value); }}>
       <AlertDialogContent>
@@ -29,6 +32,7 @@ export default function ConvertQuoteDialog({ open, onOpenChange, onConfirm, isLo
             هل أنت متأكد من المتابعة؟
           </AlertDialogDescription>
         </AlertDialogHeader>
+        <BookingSalesStaffSelect value={sellerId} enabled={open} disabled={isLoading} onChange={onSellerChange} />
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isLoading}>إلغاء</AlertDialogCancel>
           <AlertDialogAction onClick={event => { event.preventDefault(); if (!isLoading) onConfirm(); }} disabled={isLoading}>

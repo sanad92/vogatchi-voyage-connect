@@ -14,6 +14,8 @@ import type { Workspace } from './types';
 
 interface Props {
   workspace: Workspace;
+  canEdit: boolean;
+  onRequestEdit: () => void;
 }
 
 const KIND_META: Record<ServiceKind, { title: string; icon: React.ReactNode; add: string }> = {
@@ -28,7 +30,7 @@ const KINDS: ServiceKind[] = ['hotel', 'flight', 'transport', 'car'];
 const fmtMoney = (v: number, currency?: string | null) =>
   `${(v || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${currency || 'EGP'}`;
 
-export const ItineraryTab = ({ workspace }: Props) => {
+export const ItineraryTab = ({ workspace, canEdit, onRequestEdit }: Props) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const booking = (workspace as any).booking;
@@ -53,7 +55,8 @@ export const ItineraryTab = ({ workspace }: Props) => {
     <>
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
-          {KINDS.map((kind) => (
+          {!canEdit && <Button size="sm" variant="outline" onClick={onRequestEdit}>طلب فتح التعديل</Button>}
+          {canEdit && KINDS.map((kind) => (
             <Button
               key={kind}
               size="sm"
@@ -166,7 +169,7 @@ export const ItineraryTab = ({ workspace }: Props) => {
         )}
       </div>
 
-      {bookingId && openKind && (
+      {bookingId && openKind && canEdit && (
         <AddServiceBookingDialog
           open={!!openKind}
           onOpenChange={(o) => !o && setOpenKind(null)}

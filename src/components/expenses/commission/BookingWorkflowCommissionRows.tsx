@@ -20,20 +20,20 @@ type Commission = {
 
 const statusLabels = { pending: 'مستحقة', paid: 'مدفوعة', cancelled: 'ملغاة' };
 
-export default function PilgrimageCommissionRows() {
+export default function BookingWorkflowCommissionRows() {
   const orgId = useOrgId();
   const { user } = useOptimizedAuth();
   const rows = useQuery({
-    queryKey: ['employee-commissions', orgId, user?.id, 'pilgrimage'],
+    queryKey: ['employee-commissions', orgId, user?.id, 'booking-workflow'],
     enabled: !!orgId && !!user,
     queryFn: async () => {
-      const { data, error } = await callUntypedRpc<Commission[]>('list_pilgrimage_booking_commissions', { _org: orgId });
+      const { data, error } = await callUntypedRpc<Commission[]>('list_booking_workflow_commissions', { _org: orgId });
       if (error) throw error;
       return data ?? [];
     },
   });
 
-  if (rows.isPending) return <p className="text-sm text-muted-foreground">جارٍ تحميل عمولات الحج والعمرة…</p>;
+  if (rows.isPending) return <p className="text-sm text-muted-foreground">جارٍ تحميل عمولات الحجوزات…</p>;
   if (rows.isError) return <Button variant="outline" onClick={() => rows.refetch()}>تعذر تحميل العمولات. إعادة المحاولة</Button>;
   if (!rows.data.length) return <p className="text-sm text-muted-foreground">هنا تظهر العمولات بعد اعتماد تكلفة الحجز.</p>;
   return <Table>

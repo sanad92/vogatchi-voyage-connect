@@ -72,7 +72,7 @@ const jsx=(type,props,key)=>({type,props,key});
 const nodes=x=>Array.isArray(x)?x.flatMap(nodes):x&&typeof x==='object'?[x,...nodes(x.props?.children)]:[];
 let allowed=true,pending=false,fail=false,hold=null,mutations=0,cleared=0;
 const navigations=[],effects=[];
-const form={booking_type:'hotel',customer_name:'QA Guest',customer_email:'qa@example.invalid',supplier_id:'supplier-a',
+const form={booking_type:'hotel',employee_id:'sales-a',customer_name:'QA Guest',customer_email:'qa@example.invalid',supplier_id:'supplier-a',
  selling_price:1500,cost_price:900,hotel_name:'Room',currency:'EGP',start_date:'2026-10-10',end_date:'2026-10-12'};
 const wizard={formData:form,currentStep:3,errors:{},updateField:()=>{},updateFields:()=>{},goBack:()=>{},goNext:()=>{},clearDraft:()=>cleared++};
 const termsModule=await load('../src/lib/bookingCancellationTerms.ts');
@@ -83,15 +83,16 @@ assert.equal(termsModule.termsError(form.cancellation_terms),undefined);
 assert.ok(termsModule.termsError({...form.cancellation_terms,planned_payment:'2027-01-19'}));
 const pageImports={
  '@/lib/bookingCancellationTerms':termsModule,
+ '@/components/bookings/staff/BookingSalesStaffSelect':{BookingSalesStaffSelect:'BookingSalesStaffSelect'},
  '@/components/bookings/BookingCancellationTermsFields':{BookingCancellationTermsFields:'BookingCancellationTermsFields',BookingCancellationTermsSummary:'BookingCancellationTermsSummary'},
  react:{useState:v=>[v,()=>{}],useRef:v=>({current:v}),useEffect:fn=>effects.push(fn())},
  'react/jsx-runtime':{jsx,jsxs:jsx},
- 'react-router-dom':{useNavigate:()=>x=>navigations.push(x)},
+ 'react-router-dom':{useNavigate:()=>x=>navigations.push(x),useSearchParams:()=>[{get:()=>null}]},
  '@/hooks/useOrgId':{useOrgId:()=>org},
  '@/hooks/useOptimizedAuth':{useOptimizedAuth:()=>({user:{id:user}})},
  '@/hooks/useSupabasePermissions':{useSupabasePermissions:()=>({hasAllPermissions:()=>allowed})},
  '@/hooks/useUnifiedBookings':{useUnifiedBookings:()=>({finishCreation:()=>{},createBooking:{isPending:pending,mutateAsync:async input=>{
-  mutations++;assert.equal(input.customer_email,'qa@example.invalid');assert.equal(input.hotelDetails.hotel_name,'Room');assert.equal(input.cancellation_terms.payment_due,'2027-01-18T18:00');
+  mutations++;assert.equal(input.employee_id,'sales-a');assert.equal(input.customer_email,'qa@example.invalid');assert.equal(input.hotelDetails.hotel_name,'Room');assert.equal(input.cancellation_terms.payment_due,'2027-01-18T18:00');
   if(hold)await hold;if(fail)throw Error('detail failure');return {id:'booking-a',invoice_id:'invoice-a'};
  }}})},
  '@/hooks/useWizardForm':{useWizardForm:()=>wizard},

@@ -16,11 +16,11 @@ export const useQuoteConversion = () => {
   const { user } = useOptimizedAuth();
   const queryClient = useQueryClient();
   const convertToBooking = useMutation({
-    mutationFn: async ({ quoteId }: { quoteId: string }): Promise<QuoteConversionResult> => {
+    mutationFn: async ({ quoteId, sellerId }: { quoteId: string; sellerId: string | null }): Promise<QuoteConversionResult> => {
       if (!orgId || !user?.id || !quoteId) throw new Error('تعذر تحديد الشركة أو عرض السعر');
-      // Only identifiers cross the API boundary; prices/items come from the locked source.
+      // Prices and items come from the locked source; the caller may set the booking salesperson.
       const { data, error } = await callUntypedRpc<QuoteConversionResult>('convert_quote_atomic', {
-        _org: orgId, _quote: quoteId,
+        _org: orgId, _quote: quoteId, _seller: sellerId,
       });
       if (error) throw new Error(error.message);
       if (!data || typeof data.booking_id !== 'string' || !data.booking_id ||

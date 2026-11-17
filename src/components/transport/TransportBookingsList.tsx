@@ -196,9 +196,9 @@ const TransportBookingsList = () => {
 
               <div className="flex gap-2 pt-2">
                 <Button size="sm" variant="outline" className="flex-1"
-                  onClick={() => navigate(`/customers/${booking.customer_id}`)}>
+                  onClick={() => navigate(`/bookings/${booking.id}`)}>
                   <FileText className="h-4 w-4 ml-1" />
-                  تفاصيل
+                  فتح الحجز
                 </Button>
                 <Button size="sm" variant="outline"
                   onClick={() => !booking.invoice_sent && markInvoiceSent(booking.id)}>

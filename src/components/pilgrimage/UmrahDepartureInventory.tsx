@@ -1,3 +1,4 @@
+import { BookingSalesStaffSelect } from '@/components/bookings/staff/BookingSalesStaffSelect';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -88,15 +89,6 @@ export default function UmrahDepartureInventory({
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
 
   const scope = { _organization_id: orgId, _program_id: program.id };
-  const salesStaff = useQuery({
-    queryKey: ['pilgrimage-sales-staff', orgId],
-    enabled: openBooking && canBook,
-    queryFn: async () => {
-      const { data, error } = await callUntypedRpc<{ id: string; full_name: string }[]>('list_pilgrimage_sales_staff', { _org: orgId });
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
   const stock = useQuery({
     queryKey: ['umrah-room-stock', orgId, program.id],
     enabled: program.uses_room_inventory,
@@ -153,7 +145,7 @@ export default function UmrahDepartureInventory({
     : priceRule?.method === 'supplement' ? sharedPrice * occupied + priceRule.per_empty_bed * (roomSize - occupied) : 0;
   const totalPrice = Math.round(total * 100) / 100;
   const availableSeats = Math.max(0, program.capacity - passengers.filter((person) => person.status !== 'cancelled').length);
-  const validBooking = registrationOpen && canBook && (!salesEmployeeId || salesStaff.isSuccess) && customer && totalPrice > 0 && occupied <= availableSeats
+  const validBooking = registrationOpen && canBook && customer && totalPrice > 0 && occupied <= availableSeats
     && (mode !== 'private' || occupied <= roomSize)
     && travelers.every((person) => person.full_name.trim().length >= 3 && ['male', 'female'].includes(person.gender));
 
@@ -286,19 +278,10 @@ export default function UmrahDepartureInventory({
           onCustomerSelect={(value) => { setRequestId(crypto.randomUUID()); setCustomer(value); }} />}
         <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); book.mutate(); }}>
           <fieldset disabled={book.isPending} className="space-y-3">
-            <div>
-              <Label htmlFor="booking-sales-employee">موظف المبيعات</Label>
-              <select id="booking-sales-employee" className={nativeSelect} value={salesEmployeeId}
-                disabled={!salesStaff.isSuccess} onChange={(event) => {
-                  setRequestId(crypto.randomUUID());
-                  setSalesEmployeeId(event.target.value);
-                }}>
-                <option value="">بيع باسم الشركة</option>
-                {salesStaff.data?.map(employee => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}
-              </select>
-              {salesStaff.isError && <Button type="button" variant="ghost" onClick={() => salesStaff.refetch()}>تعذر تحميل الموظفين. إعادة المحاولة</Button>}
-              <p className="text-xs text-muted-foreground">موظف العمليات بيتسجل تلقائيًا من حسابك.</p>
-            </div>
+            <BookingSalesStaffSelect value={salesEmployeeId} enabled={openBooking && canBook} onChange={value => {
+              setRequestId(crypto.randomUUID());
+              setSalesEmployeeId(value);
+            }} />
             <div className="grid grid-cols-2 gap-2">
               <div><Label htmlFor="booking-mode">نوع التسكين</Label>
                 <select id="booking-mode" className={nativeSelect} value={mode} onChange={(event) => { setRequestId(crypto.randomUUID()); setMode(event.target.value as Booking['mode']); }}>

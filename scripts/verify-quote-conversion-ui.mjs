@@ -20,25 +20,26 @@ const hook=await load('../src/hooks/useQuoteConversion.ts',{
  sonner:{toast:{success:x=>toasts.push(x),error:x=>toasts.push(x)}},
 });
 const conversion=()=>hook.useQuoteConversion().convertToBooking;
-assert.equal((await conversion().mutationFn({quoteId:'quote-a',items:[{selling_price:1}]})).booking_id,'booking-a');
-assert.deepEqual(JSON.parse(JSON.stringify(calls.at(-1))),{name:'convert_quote_atomic',args:{_org:'org-a',_quote:'quote-a'}},'only persisted source identifiers may be submitted');
+assert.equal((await conversion().mutationFn({quoteId:'quote-a',sellerId:'sales-a',items:[{selling_price:1}]})).booking_id,'booking-a');
+assert.deepEqual(JSON.parse(JSON.stringify(calls.at(-1))),{name:'convert_quote_atomic',args:{_org:'org-a',_quote:'quote-a',_seller:'sales-a'}},'only persisted source and salesperson identifiers may be submitted');
 apiError={message:'permission denied'};
-await assert.rejects(conversion().mutationFn({quoteId:'quote-a'}),/permission denied/);
+await assert.rejects(conversion().mutationFn({quoteId:'quote-a',sellerId:null}),/permission denied/);
 apiError=null;apiData={booking_id:'booking-a'};
-await assert.rejects(conversion().mutationFn({quoteId:'quote-a'}),/تأكيد التحويل/);
+await assert.rejects(conversion().mutationFn({quoteId:'quote-a',sellerId:null}),/تأكيد التحويل/);
 apiData={booking_id:'booking-a',invoice_id:'invoice-a',already_converted:true};
 await conversion().onSuccess(apiData);
 assert.ok(invalidations.some(x=>x[0]==='quote-bookings'));
 assert.ok(invalidations.some(x=>x[0]==='supplier-invoices'));
 assert.match(toasts.at(-1),/نفس الحجز/);
 org=null;const before=calls.length;
-await assert.rejects(conversion().mutationFn({quoteId:'quote-a'}));assert.equal(calls.length,before);
+await assert.rejects(conversion().mutationFn({quoteId:'quote-a',sellerId:null}));assert.equal(calls.length,before);
 org='org-a';
 
 const jsx=(type,props)=>({type,props});
 const uiNames=['AlertDialog','AlertDialogAction','AlertDialogCancel','AlertDialogContent','AlertDialogDescription','AlertDialogFooter','AlertDialogHeader','AlertDialogTitle'];
 const dialogModule=await load('../src/components/quotes/ConvertQuoteDialog.tsx',{
  'react/jsx-runtime':{jsx,jsxs:jsx},
+ '@/components/bookings/staff/BookingSalesStaffSelect':{BookingSalesStaffSelect:'BookingSalesStaffSelect'},
  '@/components/ui/alert-dialog':Object.fromEntries(uiNames.map(x=>[x,x])),
 });
 const nodes=x=>Array.isArray(x)?x.flatMap(nodes):x&&typeof x==='object'?[x,...nodes(x.props?.children)]:[];
@@ -54,7 +55,7 @@ assert.equal(confirms,1);assert.equal(closes,0,'pending conversion cannot be clo
 let allowed=true,failed=false,pendingMutation=false,queryFailed=false;
 const navigations=[],states=[];
 const pageImports={
- react:{useState:()=>[true,x=>states.push(x)]},'react/jsx-runtime':{jsx,jsxs:jsx},
+ react:{useState:initial=>[typeof initial==='boolean' ? true : initial,x=>states.push(x)]},'react/jsx-runtime':{jsx,jsxs:jsx},
  'react-router-dom':{useParams:()=>({id:'quote-a'}),useNavigate:()=>x=>navigations.push(x)},
  '@tanstack/react-query':{useQuery:()=>({isLoading:false,isError:queryFailed,refetch:()=>{},data:{quote:{id:'quote-a',status:'accepted',quote_number:'Q1',customers:null,employees:null},items:[{id:'item-a',item_type:'hotel',description:'Room'}]}})},
  '@/integrations/supabase/client':{supabase:{}},

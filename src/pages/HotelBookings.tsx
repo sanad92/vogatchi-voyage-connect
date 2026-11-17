@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 
 import { useState } from "react";
 import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
@@ -7,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Hotel, Plus } from "lucide-react";
-import HotelBookingForm from "@/components/hotel-bookings/HotelBookingForm";
 import HotelBookingsList from "@/components/hotel-bookings/HotelBookingsList";
 import { HotelBooking } from "@/types/hotelBooking";
 import HotelInvoiceGenerator from "@/components/hotel-bookings/HotelInvoiceGenerator";
@@ -32,6 +32,7 @@ const HotelBookings = () => {
     showVoucher, setShowVoucher
   } = useHotelBookingsPage();
   const orgId = useOrgId();
+  const navigate = useNavigate();
 
   // قراءة الحجوزات من الـ view الموحد بحيث تشمل الحجوزات الجديدة والقديمة
   const { data: bookings = [], isLoading, refetch, error } = useQuery({
@@ -74,19 +75,12 @@ const HotelBookings = () => {
 
 
   const handleNewBooking = () => {
-    setEditingBooking(null);
-    setActiveTab("form");
+    navigate("/bookings/new?type=hotel");
   };
 
   const handleEditBooking = (booking: HotelBooking) => {
     setEditingBooking(booking);
     setActiveTab("details");
-  };
-
-  const handleFormSuccess = () => {
-    setActiveTab("list");
-    setEditingBooking(null);
-    refetch();
   };
 
   if (error) {
@@ -135,7 +129,7 @@ const HotelBookings = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="list">قائمة الحجوزات</TabsTrigger>
-          <TabsTrigger value="form">حجز جديد</TabsTrigger>
+          <Button variant="ghost" size="sm" onClick={handleNewBooking}>حجز جديد</Button>
           <TabsTrigger value="details" disabled={!editingBooking}>
             تفاصيل الحجز
           </TabsTrigger>
@@ -148,29 +142,6 @@ const HotelBookings = () => {
             onRefresh={refetch}
             onCreateNew={handleNewBooking}
           />
-        </TabsContent>
-
-        <TabsContent value="form">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Hotel className="h-5 w-5" />
-                {editingBooking
-                  ? `تعديل حجز الفندق رقم ${editingBooking.internal_booking_number}`
-                  : "حجز فندق جديد"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <HotelBookingForm
-                booking={editingBooking}
-                onSuccess={handleFormSuccess}
-                onCancel={() => {
-                  setActiveTab("list");
-                  setEditingBooking(null);
-                }}
-              />
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="details">
@@ -188,7 +159,7 @@ const HotelBookings = () => {
                 <HotelBookingActions
                   booking={editingBooking}
                   onBack={() => setActiveTab("list")}
-                  onEdit={() => setActiveTab("form")}
+                  onEdit={() => navigate(`/bookings/${editingBooking.id}?tab=amendments`)}
                   onInvoice={() => setShowCreateInvoice(true)}
                   onPrint={() => setShowPrintInvoice(true)}
                   onVoucher={() => setShowVoucher(true)}

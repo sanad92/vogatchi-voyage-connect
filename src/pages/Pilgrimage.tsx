@@ -1,4 +1,4 @@
-import { usePilgrimageBookingStaff, pilgrimageStaffQueryKey } from '@/components/pilgrimage/PilgrimageBookingStaff';
+import { useBookingStaff, bookingStaffQueryKey } from '@/components/bookings/staff/BookingStaffPanel';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -128,7 +128,7 @@ const Pilgrimage = () => {
     pilgrimage_passenger_not_changeable: 'التسكين مقفل بعد سفر المعتمر أو اكتمال الرحلة.',
   } as Record<string, string>)[e.message] ?? e.message, variant: 'destructive' });
   const sb = supabase as any;
-  const refresh = () => [pilgrimageStaffQueryKey, 'pilgrimage-programs', 'pilgrimage-sale-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability', 'pilgrimage-operation-refunds', 'umrah-rooming-groups', 'umrah-room-stock', 'umrah-inventory-bookings', 'umrah-unified-links', 'unified-bookings', 'workspace-booking', 'workspace-invoices', 'workspace-payments', 'booking-profit-cockpit'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+  const refresh = () => [bookingStaffQueryKey, 'pilgrimage-programs', 'pilgrimage-sale-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability', 'pilgrimage-operation-refunds', 'umrah-rooming-groups', 'umrah-room-stock', 'umrah-inventory-bookings', 'umrah-unified-links', 'unified-bookings', 'workspace-booking', 'workspace-invoices', 'workspace-payments', 'booking-profit-cockpit'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
 
   const q = (key: string, fn: () => any, enabled = true) => useQuery({
     queryKey: [key, orgId], enabled: !!orgId && enabled,
@@ -180,7 +180,7 @@ const Pilgrimage = () => {
     .map((g) => ({ ...g, reserved_refunds: operationRefunds.data?.get(g.id) ?? 0,
       unified_booking_id: reservationLinks.data?.get(g.inventory_booking_id) ?? null })),
     [pilgrims, programId, operationRefunds.data, reservationLinks.data]);
-  const approvedEdit = usePilgrimageBookingStaff(
+  const approvedEdit = useBookingStaff(
     editingBookingId && programPilgrims.some(person => person.unified_booking_id === editingBookingId) ? editingBookingId : null,
   );
   const canEditPassenger = (person: { inventory_booking_id?: string; unified_booking_id?: string; status: string }) =>

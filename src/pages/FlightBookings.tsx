@@ -1,10 +1,11 @@
+import { useNavigate } from 'react-router-dom';
 
 import React, { useState } from "react";
 import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plane } from "lucide-react";
-import FlightBookingFormEnhanced from "@/components/flight-bookings/FlightBookingFormEnhanced";
 import FlightBookingsList from "@/components/flight-bookings/FlightBookingsList";
 import { FlightBooking } from "@/types/flightBooking";
 import FlightBookingActions from "@/components/flight-bookings/details/FlightBookingActions";
@@ -14,6 +15,7 @@ import FlightVoucherDialog from "@/components/flight-bookings/dialogs/FlightVouc
 import { useFlightBookingsPage } from "@/components/flight-bookings/hooks/useFlightBookingsPage";
 
 const FlightBookings = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("list");
   const [selectedBooking, setSelectedBooking] = useState<FlightBooking | null>(null);
 
@@ -25,18 +27,12 @@ const FlightBookings = () => {
   } = useFlightBookingsPage();
 
   const handleCreateNew = () => {
-    setSelectedBooking(null);
-    setActiveTab("form");
+    navigate("/bookings/new?type=flight");
   };
 
   const handleEditBooking = (booking: FlightBooking) => {
     setSelectedBooking(booking);
     setActiveTab("details");
-  };
-
-  const handleFormSuccess = () => {
-    setActiveTab("list");
-    setSelectedBooking(null);
   };
 
   return (
@@ -56,7 +52,7 @@ const FlightBookings = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="list">قائمة الحجوزات</TabsTrigger>
-          <TabsTrigger value="form">حجز جديد محسن</TabsTrigger>
+          <Button variant="ghost" size="sm" onClick={handleCreateNew}>حجز جديد</Button>
           <TabsTrigger value="details" disabled={!selectedBooking}>
             تفاصيل الحجز
           </TabsTrigger>
@@ -66,12 +62,6 @@ const FlightBookings = () => {
           <FlightBookingsList 
             onCreateNew={handleCreateNew}
             onEditBooking={handleEditBooking}
-          />
-        </TabsContent>
-
-        <TabsContent value="form">
-          <FlightBookingFormEnhanced 
-            onSuccess={handleFormSuccess}
           />
         </TabsContent>
 
@@ -169,7 +159,7 @@ const FlightBookings = () => {
                 <FlightBookingActions
                   booking={selectedBooking}
                   onBack={() => setActiveTab("list")}
-                  onEdit={() => setActiveTab("form")}
+                  onEdit={() => navigate(`/bookings/${selectedBooking.id}?tab=amendments`)}
                   onInvoice={() => setShowCreateInvoice(true)}
                   onPrint={() => setShowPrintInvoice(true)}
                   onVoucher={() => setShowVoucher(true)}

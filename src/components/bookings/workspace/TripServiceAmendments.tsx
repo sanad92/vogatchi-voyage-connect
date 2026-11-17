@@ -36,6 +36,7 @@ type Detail = {
 };
 type Props = {
   bookingId: string; currency: string; customerId?: string; currentUserId?: string; canReview: boolean;
+  canEdit: boolean;
   itinerary?: Partial<Record<ServiceKind, Detail>>;
 };
 
@@ -65,7 +66,7 @@ const moneyValue = (raw: string) => {
   return Number(raw);
 };
 
-export function TripServiceAmendments({ bookingId, currency, customerId, currentUserId, canReview, itinerary }: Props) {
+export function TripServiceAmendments({ bookingId, currency, customerId, currentUserId, canReview, itinerary, canEdit }: Props) {
   const { hasPermission, getPermissionScope } = useSupabasePermissions();
   const canRead = hasPermission('financial_view') && getPermissionScope('financial_view') === 'organization'
     && getPermissionScope('bookings_view') === 'organization';
@@ -143,6 +144,7 @@ export function TripServiceAmendments({ bookingId, currency, customerId, current
   const selectRule = (next: AmendmentRule) => { setRule(next); setFee(''); setFare(''); };
 
   const submit = async () => {
+    if (terms.operation === 'change' && !canEdit) return toast.error('اطلب فتح تعديل الحجز أولاً');
     if (!target || terms.policy.length < 3) return toast.error('اختر الخدمة واكتب شروط المورد');
     if (!currencies.includes(currency)) return toast.error('عملة الحجز غير مدعومة في هذا المسار');
     if (![terms.cancel_value, terms.customer_fee, terms.fare_delta, terms.supplier_fee, terms.supplier_fare_delta, terms.supplier_wallet].every(Number.isFinite)) {
@@ -229,7 +231,8 @@ export function TripServiceAmendments({ bookingId, currency, customerId, current
           </>}
           {terms.supplier_wallet > 0 && <Badge variant="outline">محفظة المورد {fmt(terms.supplier_wallet, supplierCurrency)}</Badge>}
         </div>}
-        <Button type="submit" disabled={!target || create.isPending}>إرسال للمراجعة</Button>
+        {terms.operation === 'change' && !canEdit && <p className="text-sm text-muted-foreground">افتح تعديل الحجز بموافقة المدير قبل إرسال تغيير الخدمة.</p>}
+        <Button type="submit" disabled={!target || create.isPending || (terms.operation === 'change' && !canEdit)}>إرسال للمراجعة</Button>
       </form>}
 
       {list.isError ? <p role="alert" className="text-sm text-destructive">تعذر تحميل سجل التعديلات. <button className="underline" onClick={() => void list.refetch()}>إعادة المحاولة</button></p> :

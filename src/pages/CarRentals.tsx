@@ -1,21 +1,15 @@
 
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Car, BarChart3, Calendar } from 'lucide-react';
-import EnhancedCarRentalForm from '@/components/transport/EnhancedCarRentalForm';
 import CarRentalsList from '@/components/transport/CarRentalsList';
 import { useCarRentals } from '@/hooks/useCarRentals';
 
 const CarRentals = () => {
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
   const { carRentals } = useCarRentals();
-
-  const handleFormSuccess = () => {
-    setShowForm(false);
-  };
 
   // حساب الإحصائيات
   const totalRentals = carRentals?.length || 0;
@@ -42,7 +36,7 @@ const CarRentals = () => {
           </h1>
           <p className="text-sm text-muted-foreground">إدارة عقود إيجار السيارات والمركبات</p>
         </div>
-        <Button size="sm" onClick={() => setShowForm(true)} disabled={showForm}>
+        <Button size="sm" onClick={() => navigate("/bookings/new?type=car_rental")}>
           <Plus className="h-4 w-4 ml-2" />
           عقد إيجار جديد
         </Button>
@@ -103,34 +97,7 @@ const CarRentals = () => {
         </Card>
       </div>
 
-      <Tabs defaultValue={showForm ? "form" : "list"} value={showForm ? "form" : "list"}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger 
-            value="list" 
-            onClick={() => setShowForm(false)}
-            className="flex items-center gap-2"
-          >
-            <Car className="h-4 w-4" />
-            قائمة العقود
-          </TabsTrigger>
-          <TabsTrigger 
-            value="form"
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            نموذج محسن
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="list" className="space-y-6">
-          <CarRentalsList />
-        </TabsContent>
-
-        <TabsContent value="form" className="space-y-6">
-          <EnhancedCarRentalForm onSuccess={handleFormSuccess} />
-        </TabsContent>
-      </Tabs>
+      <CarRentalsList />
     </div>
   );
 };

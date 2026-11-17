@@ -1,4 +1,4 @@
-import PilgrimageBookingStaff from '@/components/pilgrimage/PilgrimageBookingStaff';
+import BookingStaffPanel, { useBookingStaff } from '@/components/bookings/staff/BookingStaffPanel';
 import { isPilgrimageBookingType } from '@/lib/pilgrimage/operations';
 import { useMemo, useState } from 'react';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
@@ -57,6 +57,7 @@ const BookingWorkspace = () => {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const workspace = useBookingWorkspace(id);
+  const staff = useBookingStaff(id);
   const [cancellationOpen, setCancellationOpen] = useState(false);
   const { getPermissionScope } = useSupabasePermissions();
   const canSettleCancellation = (['bookings_view', 'bookings_cancel', 'financial_view', 'payments_process'] as const)
@@ -175,7 +176,7 @@ const BookingWorkspace = () => {
           <TabsList className="flex h-auto max-w-full flex-wrap justify-start gap-1">
             {TAB_KEYS.filter(key => !TOOLS.includes(key) || key === activeTab).map(key => (
               <TabsTrigger key={key} value={key} className="text-xs md:text-sm">
-                {key === 'amendments' && pilgrimageBooking ? 'فريق الحجز والتعديل' : TAB_LABELS[key]}
+                {key === 'amendments' ? 'فريق الحجز والتعديل' : TAB_LABELS[key]}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -193,16 +194,17 @@ const BookingWorkspace = () => {
         <TabsContent value="itinerary" className="mt-4">
           {pilgrimageBooking
             ? departurePath && <Button asChild variant="outline"><Link to={`${departurePath}&tab=rooming`}>عرض البرنامج والتسكين</Link></Button>
-            : <ItineraryTab workspace={workspace} />}
+            : <ItineraryTab workspace={workspace} canEdit={staff.data?.can_edit === true} onRequestEdit={() => setTab('amendments')} />}
         </TabsContent>
-        <TabsContent value="amendments" className="mt-4">
-          {pilgrimageBooking && departurePath && id && <>
-            <PilgrimageBookingStaff bookingId={id}
-              departurePath={`${departurePath}&editing_booking=${id}`} currency={workspace.booking.currency ?? 'EGP'} />
-            <Button asChild variant="outline"><Link to={`${departurePath}&tab=operations`}>الإلغاء والتسكين من الدفعة</Link></Button>
-          </>}
+        <TabsContent value="amendments" className="mt-4 space-y-4">
+          {id && <BookingStaffPanel key={id} bookingId={id} notes={workspace.booking.notes}
+            departurePath={departurePath ? `${departurePath}&editing_booking=${id}` : undefined}
+            currency={workspace.booking.currency ?? 'EGP'} />}
+          {pilgrimageBooking && departurePath && <Button className="my-3" asChild variant="outline">
+            <Link to={`${departurePath}&tab=operations`}>الإلغاء والتسكين من الدفعة</Link>
+          </Button>}
           {!pilgrimageBooking && id && <BookingAmendmentsTab bookingId={id} bookingCurrency={workspace.booking.currency}
-            customerId={workspace.booking.customer_id} itinerary={workspace.itinerary} />}
+            customerId={workspace.booking.customer_id} itinerary={workspace.itinerary} canEdit={staff.data?.can_edit === true} />}
         </TabsContent>
         <TabsContent value="financials" className="mt-4">
           <FinancialsTab workspace={workspace} />

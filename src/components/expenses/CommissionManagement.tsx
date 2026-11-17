@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
-import PilgrimageCommissionRows from './commission/PilgrimageCommissionRows';
+import BookingWorkflowCommissionRows from './commission/BookingWorkflowCommissionRows';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DollarSign, Users, Calendar, Calculator, CheckCircle, AlertCircle } from 'lucide-react';
@@ -18,7 +18,7 @@ import { useExpenses } from '@/hooks/useExpenses';
 const CommissionManagement = () => {
   const { orgRole } = useOrganization();
   const { hasPermission } = useSupabasePermissions();
-  const canManagePilgrimage = ['owner', 'admin', 'manager'].includes(orgRole ?? '') && hasPermission('employees_commission');
+  const canManageWorkflowCommissions = ['owner', 'admin', 'manager'].includes(orgRole ?? '') && hasPermission('employees_commission');
   const [activeTab, setActiveTab] = useState('period-calculation');
   
   const {
@@ -50,7 +50,7 @@ const CommissionManagement = () => {
             <CheckCircle className="h-4 w-4" />
             <AlertTitle>نظام العمولات المحسّن</AlertTitle>
             <AlertDescription>
-              تُحسب العمولات من ربح الحجوزات حسب نسبة الموظف. تظهر عمولات الحج والعمرة بعد اعتماد تكلفة الحجز.
+              تُحسب العمولات من ربح الحجوزات حسب نسبة الموظف. تظهر عمولات الحجوزات بعد اعتماد تكلفة الحجز.
             </AlertDescription>
           </Alert>
 
@@ -113,7 +113,7 @@ const CommissionManagement = () => {
                 <DollarSign className="h-4 w-4" />
                 التقارير
               </TabsTrigger>
-              {canManagePilgrimage && <TabsTrigger value="pilgrimage">عمولات الحج والعمرة</TabsTrigger>}
+              {canManageWorkflowCommissions && <TabsTrigger value="booking-workflow">عمولات الحجوزات</TabsTrigger>}
               <TabsTrigger value="settings" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 إعدادات الموظفين
@@ -132,7 +132,7 @@ const CommissionManagement = () => {
               <CommissionReports />
             </TabsContent>
 
-            {canManagePilgrimage && <TabsContent value="pilgrimage"><PilgrimageCommissionRows /></TabsContent>}
+            {canManageWorkflowCommissions && <TabsContent value="booking-workflow"><BookingWorkflowCommissionRows /></TabsContent>}
             <TabsContent value="settings" className="space-y-4">
               <EmployeeCommissionSettings />
             </TabsContent>

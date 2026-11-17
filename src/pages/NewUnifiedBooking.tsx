@@ -1,7 +1,8 @@
+import { BookingSalesStaffSelect } from '@/components/bookings/staff/BookingSalesStaffSelect';
 import { BookingCancellationTermsFields, BookingCancellationTermsSummary } from '@/components/bookings/BookingCancellationTermsFields';
 import { emptyTerms, termsError } from '@/lib/bookingCancellationTerms';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useUnifiedBookings, BookingType } from '@/hooks/useUnifiedBookings';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
@@ -72,6 +73,8 @@ const wizardSteps: WizardStepConfig[] = [
 
 export const NewUnifiedBookingForm = () => {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const initialType = typeOptions.find(option => option.value === params.get('type'))?.value ?? '';
   const orgId = useOrgId();
   const { user } = useOptimizedAuth();
   const { createBooking, finishCreation } = useUnifiedBookings();
@@ -90,7 +93,7 @@ export const NewUnifiedBookingForm = () => {
     steps: wizardSteps,
     draftKey: orgId && user?.id ? `draft_booking_${orgId}_${user.id}` : undefined,
     initialData: {
-      booking_type: '', customer_id: '', customer_name: '', supplier_id: '', supplier_name: '',
+      booking_type: initialType, employee_id: '', customer_id: '', customer_name: '', supplier_id: '', supplier_name: '',
       selling_price: 0, cost_price: 0, currency: 'EGP',
       start_date: '', end_date: '', notes: '',
     },
@@ -141,6 +144,7 @@ export const NewUnifiedBookingForm = () => {
         customer_name: wizard.formData.customer_name || undefined,
         customer_phone: wizard.formData.customer_id ? undefined : wizard.formData.customer_phone || undefined,
         customer_email: wizard.formData.customer_id ? undefined : wizard.formData.customer_email || undefined,
+        employee_id: wizard.formData.employee_id || undefined,
         supplier_id: wizard.formData.supplier_id || undefined,
         supplier_name: wizard.formData.supplier_name || undefined,
         selling_price: Number(wizard.formData.selling_price),
@@ -336,6 +340,8 @@ export const NewUnifiedBookingForm = () => {
                 </div>
               </div>
 
+              <BookingSalesStaffSelect value={wizard.formData.employee_id ?? ''} enabled={canCreate}
+                disabled={createBooking.isPending} onChange={value => wizard.updateField('employee_id', value)} />
               <WizardNavButtons onBack={() => wizard.goBack()} onNext={() => wizard.goNext()} />
             </CardContent>
           </Card>

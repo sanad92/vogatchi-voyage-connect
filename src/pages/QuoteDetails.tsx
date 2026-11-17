@@ -38,6 +38,7 @@ export default function QuoteDetails() {
   const { convertToBooking } = useQuoteConversion();
   const { hasAllPermissions, hasPermission } = useSupabasePermissions();
   const [convertOpen, setConvertOpen] = useState(false);
+  const [sellerId, setSellerId] = useState('');
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['quote', id, orgId],
@@ -70,7 +71,7 @@ export default function QuoteDetails() {
   const handleConvert = async () => {
     if (!canConvert || convertToBooking.isPending) return;
     try {
-      const result = await convertToBooking.mutateAsync({ quoteId: quote.id });
+      const result = await convertToBooking.mutateAsync({ quoteId: quote.id, sellerId: sellerId || null });
       setConvertOpen(false);
       navigate(`/bookings/${result.booking_id}`);
     } catch {
@@ -139,7 +140,7 @@ export default function QuoteDetails() {
             </>
           )}
           {eligibleStatus && items.length > 0 && (
-            <Button size="sm" disabled={!canConvert || convertToBooking.isPending} onClick={() => setConvertOpen(true)}>
+            <Button size="sm" disabled={!canConvert || convertToBooking.isPending} onClick={() => { setSellerId(quote.assigned_employee_id ?? ''); setConvertOpen(true); }}>
               <ArrowLeftRight className="h-4 w-4 ml-1" />
               تحويل لحجز + فاتورة
             </Button>
@@ -260,6 +261,8 @@ export default function QuoteDetails() {
         onConfirm={handleConvert}
         isLoading={convertToBooking.isPending}
         itemCount={items.length}
+        sellerId={sellerId}
+        onSellerChange={setSellerId}
       />
     </div>
   );

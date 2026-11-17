@@ -1,27 +1,14 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Car, BarChart3 } from 'lucide-react';
 import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
-import TransportBookingForm from '@/components/transport/TransportBookingForm';
-import EnhancedTransportBookingForm from '@/components/transport/EnhancedTransportBookingForm';
 import TransportBookingsList from '@/components/transport/TransportBookingsList';
 import { useTransportBookings } from '@/hooks/useTransportBookings';
 
 const TransportBookings = () => {
-  const [activeTab, setActiveTab] = useState("list");
   const { transportBookings } = useTransportBookings();
   const navigate = useNavigate();
-
-  const handleFormSuccess = () => {
-    setActiveTab("list");
-  };
-
-  const handleCreateNew = () => {
-    setActiveTab("enhanced-form");
-  };
 
   const totalBookings = transportBookings?.length || 0;
   const totalRevenue = transportBookings?.reduce((sum, booking) => sum + booking.total_cost, 0) || 0;
@@ -43,7 +30,7 @@ const TransportBookings = () => {
           </h1>
           <p className="text-sm text-muted-foreground">إدارة حجوزات النقل والانتقالات</p>
         </div>
-        <Button size="sm" onClick={handleCreateNew}>
+        <Button size="sm" onClick={() => navigate("/bookings/new?type=transport")}>
           <Plus className="h-4 w-4 ml-2" />
           حجز جديد
         </Button>
@@ -97,41 +84,7 @@ const TransportBookings = () => {
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="list" className="flex items-center gap-2">
-            <Car className="h-4 w-4" />
-            قائمة الحجوزات
-          </TabsTrigger>
-          <TabsTrigger value="enhanced-form" className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            حجز محسن
-          </TabsTrigger>
-          <TabsTrigger value="basic-form" className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            حجز أساسي
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="list" className="space-y-6">
-          <TransportBookingsList />
-        </TabsContent>
-
-        <TabsContent value="enhanced-form" className="space-y-6">
-          <EnhancedTransportBookingForm onSuccess={handleFormSuccess} />
-        </TabsContent>
-
-        <TabsContent value="basic-form" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>إضافة حجز نقل أساسي</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TransportBookingForm onSuccess={handleFormSuccess} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <TransportBookingsList />
     </div>
   );
 };
