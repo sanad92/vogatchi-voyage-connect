@@ -1,70 +1,104 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrgId } from './useOrgId';
+import { useOptimizedAuth } from './useOptimizedAuth';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
+
+export type CurrencyAmount = { currency: string; amount: number };
 
 export interface OpsCommandCenter {
+  date: string;
+  timezone: string;
   arrivals_today: number;
   departures_today: number;
   checkins_next_7: number;
-  pending_customer_payments: number;
-  pending_supplier_pos: number;
   overdue_tasks: number;
   today_tasks: number;
-  failed_events: number;
-  whatsapp_failures_24h: number;
-  refund_approvals: number;
-  revenue_today: number;
-  profit_today: number;
+  edit_requests: number;
+  failed_events: number | null;
+  whatsapp_failures_24h: number | null;
+  finance: {
+    receivables: CurrencyAmount[];
+    receipts: CurrencyAmount[];
+    pending_supplier_pos: number;
+    refund_approvals: number;
+  } | null;
 }
+
+export type QueueFilter = 'today' | 'overdue' | 'assigned_to_me' | 'edit_requests'
+  | 'waiting_customer' | 'waiting_supplier' | 'waiting_payment' | 'completed_today';
+export type TaskWaiting = 'customer' | 'supplier' | 'payment';
+export const opsQueuePageSize = 30;
+
+export type OpsQueueItem = {
+  id: string;
+  title: string;
+  status: string;
+  waiting_on: TaskWaiting | null;
+  due_at: string | null;
+  completed_at: string | null;
+  priority: string | null;
+  booking_id: string | null;
+  booking_number: string | null;
+  customer_name: string | null;
+  customer_id: string | null;
+  kind: 'task' | 'edit_request';
+  can_act: boolean;
+  total_count: number;
+};
 
 export function useOpsCommandCenter(date?: string) {
   const orgId = useOrgId();
-  const d = date ?? new Date().toISOString().slice(0, 10);
+  const { user } = useOptimizedAuth();
   return useQuery({
-    queryKey: ['ops-command-center', orgId, d],
-    queryFn: async (): Promise<OpsCommandCenter> => {
-      const { data, error } = await (supabase as any).rpc('get_ops_command_center', { p_date: d });
+    queryKey: ['ops-command-center', orgId, user?.id, date],
+    enabled: !!orgId && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await callUntypedRpc<OpsCommandCenter>('get_ops_command_center_for_org', {
+        _org: orgId, _day: date ?? null,
+      });
       if (error) throw error;
-      return data as OpsCommandCenter;
+      if (!data) throw new Error('تعذر تحميل بيانات العمليات');
+      return data;
     },
     refetchInterval: 60_000,
   });
 }
 
-export type QueueFilter =
-  | 'today'
-  | 'overdue'
-  | 'assigned_to_me'
-  | 'waiting_customer'
-  | 'waiting_supplier'
-  | 'waiting_payment'
-  | 'completed_today';
-
-export function useOpsQueue(filter: QueueFilter) {
+export function useOpsQueue(filter: QueueFilter, page: number) {
   const orgId = useOrgId();
+  const { user } = useOptimizedAuth();
   return useQuery({
-    queryKey: ['ops-queue', orgId, filter],
-    enabled: !!orgId,
+    queryKey: ['ops-queue', orgId, user?.id, filter, page],
+    enabled: !!orgId && !!user?.id,
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
-      const todayEnd = today + 'T23:59:59Z';
-      const now = new Date().toISOString();
-      let q: any = (supabase as any).from('booking_tasks').select(`
-        *, booking:bookings(id, booking_number, customer_name, workflow_stage, customer_id)
-      `).order('due_at', { ascending: true }).limit(200);
-      if (filter === 'today') q = q.neq('status', 'completed').gte('due_at', today).lte('due_at', todayEnd);
-      else if (filter === 'overdue') q = q.neq('status', 'completed').lt('due_at', now);
-      else if (filter === 'assigned_to_me') {
-        const { data: u } = await supabase.auth.getUser();
-        q = q.neq('status', 'completed').eq('assignee_id', u.user?.id ?? '00000000-0000-0000-0000-000000000000');
-      } else if (filter === 'waiting_customer') q = q.eq('status', 'pending').ilike('title', '%عميل%');
-      else if (filter === 'waiting_supplier') q = q.eq('status', 'pending').ilike('title', '%مورد%');
-      else if (filter === 'waiting_payment') q = q.eq('status', 'pending').ilike('title', '%دفع%');
-      else if (filter === 'completed_today') q = q.eq('status', 'completed').gte('updated_at', today);
-      const { data, error } = await q;
+      const { data, error } = await callUntypedRpc<OpsQueueItem[]>('list_operations_queue', {
+        _org: orgId, _filter: filter, _page_size: opsQueuePageSize, _skip: (page - 1) * opsQueuePageSize,
+      });
       if (error) throw error;
       return data ?? [];
     },
     refetchInterval: 45_000,
+  });
+}
+
+export function useUpdateOpsTask() {
+  const orgId = useOrgId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, action, waiting }: { id: string; action: 'complete' | 'waiting'; waiting?: TaskWaiting | null }) => {
+      const { data, error } = await callUntypedRpc<string>('update_operations_task', {
+        _org: orgId, _task: id, _action: action, _waiting: waiting ?? null,
+      });
+      if (error) throw error;
+      if (data !== id) throw new Error('تعذر تأكيد حفظ المهمة');
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['ops-queue', orgId] }),
+        qc.invalidateQueries({ queryKey: ['ops-command-center', orgId] }),
+        qc.invalidateQueries({ queryKey: ['workspace-tasks'] }),
+        qc.invalidateQueries({ queryKey: ['workspace-timeline'] }),
+      ]);
+    },
   });
 }

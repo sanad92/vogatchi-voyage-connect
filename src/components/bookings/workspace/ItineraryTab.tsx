@@ -15,6 +15,7 @@ import type { Workspace } from './types';
 interface Props {
   workspace: Workspace;
   canEdit: boolean;
+  financialsIssued: boolean;
   onRequestEdit: () => void;
 }
 
@@ -30,7 +31,7 @@ const KINDS: ServiceKind[] = ['hotel', 'flight', 'transport', 'car'];
 const fmtMoney = (v: number, currency?: string | null) =>
   `${(v || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${currency || 'EGP'}`;
 
-export const ItineraryTab = ({ workspace, canEdit, onRequestEdit }: Props) => {
+export const ItineraryTab = ({ workspace, canEdit, financialsIssued, onRequestEdit }: Props) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const booking = (workspace as any).booking;
@@ -55,8 +56,9 @@ export const ItineraryTab = ({ workspace, canEdit, onRequestEdit }: Props) => {
     <>
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
-          {!canEdit && <Button size="sm" variant="outline" onClick={onRequestEdit}>طلب فتح التعديل</Button>}
-          {canEdit && KINDS.map((kind) => (
+          {financialsIssued ? <Button size="sm" variant="outline" onClick={onRequestEdit}>التعديلات والتسويات</Button>
+            : !canEdit && <Button size="sm" variant="outline" onClick={onRequestEdit}>طلب فتح التعديل</Button>}
+          {canEdit && !financialsIssued && KINDS.map((kind) => (
             <Button
               key={kind}
               size="sm"
@@ -90,8 +92,7 @@ export const ItineraryTab = ({ workspace, canEdit, onRequestEdit }: Props) => {
               </div>
             ) : services.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                لا توجد خدمات مضافة بعد. استخدم الأزرار بالأعلى لإضافة حجز فندق أو طيران أو انتقالات
-                بالنموذج المعتمد، وسيحصل كل حجز على رقم مستقل وبيانات المورد الخاصة به.
+                لا توجد خدمات مضافة إلى ملف الحجز.
               </p>
             ) : (
               services.map((s) => (
@@ -169,7 +170,7 @@ export const ItineraryTab = ({ workspace, canEdit, onRequestEdit }: Props) => {
         )}
       </div>
 
-      {bookingId && openKind && canEdit && (
+      {bookingId && openKind && canEdit && !financialsIssued && (
         <AddServiceBookingDialog
           open={!!openKind}
           onOpenChange={(o) => !o && setOpenKind(null)}

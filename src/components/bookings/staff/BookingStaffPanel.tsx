@@ -25,6 +25,8 @@ type BookingStaff = {
   sales_name: string | null;
   can_request: boolean;
   can_approve: boolean;
+  can_self_approve: boolean;
+  financials_issued: boolean;
   can_edit: boolean;
   can_approve_cost: boolean;
   cost: number | null;
@@ -148,7 +150,9 @@ export default function BookingStaffPanel({ bookingId, departurePath, currency, 
         {request.status === 'approved' && request.expires_at && !expired
           && <p className="text-muted-foreground">متاح حتى {new Date(request.expires_at).toLocaleString()}</p>}
         {data.can_approve && request.status === 'pending' && <div className="flex flex-wrap gap-2">
-          <Button size="sm" disabled={edit.isPending} onClick={() => edit.mutate({ action: 'approve', id: request.id })}>فتح التعديل لمدة ٣٠ دقيقة</Button>
+          {(!request.mine || data.can_self_approve) ? <Button size="sm" disabled={edit.isPending}
+            onClick={() => edit.mutate({ action: 'approve', id: request.id })}>فتح التعديل لمدة ٣٠ دقيقة</Button>
+            : <span className="text-muted-foreground">طلبك يحتاج موافقة مدير آخر.</span>}
           <Button size="sm" variant="outline" disabled={edit.isPending} onClick={() => edit.mutate({ action: 'reject', id: request.id })}>رفض الطلب</Button>
         </div>}
         {(data.can_approve || request.mine) && request.status === 'approved' && !expired && <Button

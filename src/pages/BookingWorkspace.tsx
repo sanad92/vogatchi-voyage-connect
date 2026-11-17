@@ -194,7 +194,7 @@ const BookingWorkspace = () => {
         <TabsContent value="itinerary" className="mt-4">
           {pilgrimageBooking
             ? departurePath && <Button asChild variant="outline"><Link to={`${departurePath}&tab=rooming`}>عرض البرنامج والتسكين</Link></Button>
-            : <ItineraryTab workspace={workspace} canEdit={staff.data?.can_edit === true} onRequestEdit={() => setTab('amendments')} />}
+            : <ItineraryTab workspace={workspace} canEdit={staff.data?.can_edit === true} financialsIssued={staff.data?.financials_issued !== false} onRequestEdit={() => setTab('amendments')} />}
         </TabsContent>
         <TabsContent value="amendments" className="mt-4 space-y-4">
           {id && <BookingStaffPanel key={id} bookingId={id} notes={workspace.booking.notes}
