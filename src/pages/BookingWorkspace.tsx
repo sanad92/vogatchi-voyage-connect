@@ -1,3 +1,4 @@
+import PilgrimageBookingStaff from '@/components/pilgrimage/PilgrimageBookingStaff';
 import { isPilgrimageBookingType } from '@/lib/pilgrimage/operations';
 import { useMemo, useState } from 'react';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
@@ -174,7 +175,7 @@ const BookingWorkspace = () => {
           <TabsList className="flex h-auto max-w-full flex-wrap justify-start gap-1">
             {TAB_KEYS.filter(key => !TOOLS.includes(key) || key === activeTab).map(key => (
               <TabsTrigger key={key} value={key} className="text-xs md:text-sm">
-                {TAB_LABELS[key]}
+                {key === 'amendments' && pilgrimageBooking ? 'فريق الحجز والتعديل' : TAB_LABELS[key]}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -195,7 +196,11 @@ const BookingWorkspace = () => {
             : <ItineraryTab workspace={workspace} />}
         </TabsContent>
         <TabsContent value="amendments" className="mt-4">
-          {pilgrimageBooking && departurePath && <Button asChild variant="outline"><Link to={`${departurePath}&tab=operations`}>التعديلات والإلغاء من الدفعة</Link></Button>}
+          {pilgrimageBooking && departurePath && id && <>
+            <PilgrimageBookingStaff bookingId={id}
+              departurePath={`${departurePath}&editing_booking=${id}`} currency={workspace.booking.currency ?? 'EGP'} />
+            <Button asChild variant="outline"><Link to={`${departurePath}&tab=operations`}>الإلغاء والتسكين من الدفعة</Link></Button>
+          </>}
           {!pilgrimageBooking && id && <BookingAmendmentsTab bookingId={id} bookingCurrency={workspace.booking.currency}
             customerId={workspace.booking.customer_id} itinerary={workspace.itinerary} />}
         </TabsContent>

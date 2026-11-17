@@ -1,3 +1,4 @@
+import PilgrimageCommissionPolicy from './PilgrimageCommissionPolicy';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -96,6 +97,7 @@ const EmployeeCommissionSettings = () => {
 
   return (
     <div className="space-y-6">
+      <PilgrimageCommissionPolicy />
       {/* رأس الصفحة */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold flex items-center gap-2">

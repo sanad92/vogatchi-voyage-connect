@@ -54,6 +54,8 @@ const messages: Record<string, string> = {
   umrah_unified_invoice_permission: 'إنشاء الحجز وفاتورته يحتاج صلاحية إنشاء الفواتير.',
   umrah_unified_invoice_not_created: 'تعذر إنشاء فاتورة الحجز. راجع إعدادات الحسابات قبل الحجز.',
   umrah_inventory_invalid_configuration: 'راجع المدينة وعدد الغرف والأسعار المدخلة.',
+  pilgrimage_invalid_sales_employee: 'اختار موظف مبيعات نشط من شركتك.',
+  pilgrimage_booking_staff_mismatch: 'الحجز محفوظ بالفعل بموظف مبيعات مختلف.',
   umrah_inventory_invalid_customer: 'اختر عميلًا مسجلًا في شركتك.',
   pilgrimage_sales_confirmation_required: 'اعتمد أسعار البرنامج وافتح التسجيل قبل الحجز.',
 };
@@ -80,11 +82,21 @@ export default function UmrahDepartureInventory({
   const [room, setRoom] = useState<Room>('quad');
   const [mode, setMode] = useState<Booking['mode']>('shared');
   const [customer, setCustomer] = useState<Customer | null>(null);
+  const [salesEmployeeId, setSalesEmployeeId] = useState('');
   const [addingCustomer, setAddingCustomer] = useState(false);
   const [travelers, setTravelers] = useState<Traveler[]>([newTraveler()]);
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
 
   const scope = { _organization_id: orgId, _program_id: program.id };
+  const salesStaff = useQuery({
+    queryKey: ['pilgrimage-sales-staff', orgId],
+    enabled: openBooking && canBook,
+    queryFn: async () => {
+      const { data, error } = await callUntypedRpc<{ id: string; full_name: string }[]>('list_pilgrimage_sales_staff', { _org: orgId });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
   const stock = useQuery({
     queryKey: ['umrah-room-stock', orgId, program.id],
     enabled: program.uses_room_inventory,
@@ -141,16 +153,16 @@ export default function UmrahDepartureInventory({
     : priceRule?.method === 'supplement' ? sharedPrice * occupied + priceRule.per_empty_bed * (roomSize - occupied) : 0;
   const totalPrice = Math.round(total * 100) / 100;
   const availableSeats = Math.max(0, program.capacity - passengers.filter((person) => person.status !== 'cancelled').length);
-  const validBooking = registrationOpen && canBook && customer && totalPrice > 0 && occupied <= availableSeats
+  const validBooking = registrationOpen && canBook && (!salesEmployeeId || salesStaff.isSuccess) && customer && totalPrice > 0 && occupied <= availableSeats
     && (mode !== 'private' || occupied <= roomSize)
     && travelers.every((person) => person.full_name.trim().length >= 3 && ['male', 'female'].includes(person.gender));
 
   const book = useMutation({
     mutationFn: async () => {
       if (!validBooking || !customer) return;
-      const { error } = await callUntypedRpc('create_umrah_inventory_booking', {
+      const { error } = await callUntypedRpc('create_pilgrimage_inventory_booking', {
         ...scope, _id: requestId, _customer_id: customer.id, _mode: mode,
-        _room_type: room, _passengers: travelers, _expected_total: totalPrice,
+        _room_type: room, _passengers: travelers, _expected_total: totalPrice, _sales_employee_id: salesEmployeeId || null,
       });
       if (error) throw error;
     },
@@ -158,6 +170,7 @@ export default function UmrahDepartureInventory({
       setRequestId(crypto.randomUUID());
       setTravelers([newTraveler()]);
       setCustomer(null);
+      setSalesEmployeeId('');
       onOpenBooking(false);
       onChange();
       toast({ title: 'اتسجّل الحجز واتحدّث رصيد الدفعة' });
@@ -273,6 +286,19 @@ export default function UmrahDepartureInventory({
           onCustomerSelect={(value) => { setRequestId(crypto.randomUUID()); setCustomer(value); }} />}
         <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); book.mutate(); }}>
           <fieldset disabled={book.isPending} className="space-y-3">
+            <div>
+              <Label htmlFor="booking-sales-employee">موظف المبيعات</Label>
+              <select id="booking-sales-employee" className={nativeSelect} value={salesEmployeeId}
+                disabled={!salesStaff.isSuccess} onChange={(event) => {
+                  setRequestId(crypto.randomUUID());
+                  setSalesEmployeeId(event.target.value);
+                }}>
+                <option value="">بيع باسم الشركة</option>
+                {salesStaff.data?.map(employee => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}
+              </select>
+              {salesStaff.isError && <Button type="button" variant="ghost" onClick={() => salesStaff.refetch()}>تعذر تحميل الموظفين. إعادة المحاولة</Button>}
+              <p className="text-xs text-muted-foreground">موظف العمليات بيتسجل تلقائيًا من حسابك.</p>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label htmlFor="booking-mode">نوع التسكين</Label>
                 <select id="booking-mode" className={nativeSelect} value={mode} onChange={(event) => { setRequestId(crypto.randomUUID()); setMode(event.target.value as Booking['mode']); }}>

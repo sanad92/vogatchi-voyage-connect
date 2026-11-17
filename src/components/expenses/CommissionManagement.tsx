@@ -1,5 +1,8 @@
 
 import { useState } from 'react';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import PilgrimageCommissionRows from './commission/PilgrimageCommissionRows';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DollarSign, Users, Calendar, Calculator, CheckCircle, AlertCircle } from 'lucide-react';
@@ -13,6 +16,9 @@ import { usePeriodCommissions } from '@/hooks/usePeriodCommissions';
 import { useExpenses } from '@/hooks/useExpenses';
 
 const CommissionManagement = () => {
+  const { orgRole } = useOrganization();
+  const { hasPermission } = useSupabasePermissions();
+  const canManagePilgrimage = ['owner', 'admin', 'manager'].includes(orgRole ?? '') && hasPermission('employees_commission');
   const [activeTab, setActiveTab] = useState('period-calculation');
   
   const {
@@ -44,8 +50,7 @@ const CommissionManagement = () => {
             <CheckCircle className="h-4 w-4" />
             <AlertTitle>نظام العمولات المحسّن</AlertTitle>
             <AlertDescription>
-              نظام حساب العمولات بناءً على الربح (10% من فرق السعر) ومجمعة حسب الفترة الزمنية.
-              تم ربط جميع الحجوزات الموجودة بالموظفين المسؤولين عنها.
+              تُحسب العمولات من ربح الحجوزات حسب نسبة الموظف. تظهر عمولات الحج والعمرة بعد اعتماد تكلفة الحجز.
             </AlertDescription>
           </Alert>
 
@@ -95,7 +100,7 @@ const CommissionManagement = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="flex h-auto w-full flex-wrap justify-start">
               <TabsTrigger value="period-calculation" className="flex items-center gap-2">
                 <Calculator className="h-4 w-4" />
                 حساب العمولات
@@ -108,6 +113,7 @@ const CommissionManagement = () => {
                 <DollarSign className="h-4 w-4" />
                 التقارير
               </TabsTrigger>
+              {canManagePilgrimage && <TabsTrigger value="pilgrimage">عمولات الحج والعمرة</TabsTrigger>}
               <TabsTrigger value="settings" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 إعدادات الموظفين
@@ -126,6 +132,7 @@ const CommissionManagement = () => {
               <CommissionReports />
             </TabsContent>
 
+            {canManagePilgrimage && <TabsContent value="pilgrimage"><PilgrimageCommissionRows /></TabsContent>}
             <TabsContent value="settings" className="space-y-4">
               <EmployeeCommissionSettings />
             </TabsContent>

@@ -1,3 +1,4 @@
+import { usePilgrimageBookingStaff, pilgrimageStaffQueryKey } from '@/components/pilgrimage/PilgrimageBookingStaff';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -83,9 +84,11 @@ const Pilgrimage = () => {
   }, { replace: true });
   const programId = params.get('program');
   const linkedPassengerId = params.get('passenger');
+  const editingBookingId = params.get('editing_booking');
   const setProgramId = (id: string | null) => setParams(current => {
     const next = new URLSearchParams(current);
     next.delete('passenger');
+    next.delete('editing_booking');
     next.delete('tab');
     if (id) next.set('program', id);
     else next.delete('program');
@@ -117,6 +120,7 @@ const Pilgrimage = () => {
 
   const fail = (e: { message: string }) => toast({ title: 'تعذر الحفظ', description: ({
     pilgrimage_sales_confirmation_required: salesConfirmationRequired,
+    pilgrimage_booking_edit_locked: 'التعديل مقفول. افتح الحجز الموحّد واطلب من المدير فتح التعديل لحسابك.',
     room_capacity_exceeded: 'الغرفة مكتملة. اختر غرفة أخرى.',
     room_category_conflict: 'فئة هذه الغرفة تختلف عن فئة المعتمر.',
     room_family_group_required: 'التسكين المشترك يتطلب تسجيل مجموعة عائلية واحدة.',
@@ -124,7 +128,7 @@ const Pilgrimage = () => {
     pilgrimage_passenger_not_changeable: 'التسكين مقفل بعد سفر المعتمر أو اكتمال الرحلة.',
   } as Record<string, string>)[e.message] ?? e.message, variant: 'destructive' });
   const sb = supabase as any;
-  const refresh = () => ['pilgrimage-programs', 'pilgrimage-sale-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability', 'pilgrimage-operation-refunds', 'umrah-rooming-groups', 'umrah-room-stock', 'umrah-inventory-bookings', 'umrah-unified-links', 'unified-bookings', 'workspace-booking', 'workspace-invoices', 'workspace-payments', 'booking-profit-cockpit'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+  const refresh = () => [pilgrimageStaffQueryKey, 'pilgrimage-programs', 'pilgrimage-sale-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability', 'pilgrimage-operation-refunds', 'umrah-rooming-groups', 'umrah-room-stock', 'umrah-inventory-bookings', 'umrah-unified-links', 'unified-bookings', 'workspace-booking', 'workspace-invoices', 'workspace-payments', 'booking-profit-cockpit'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
 
   const q = (key: string, fn: () => any, enabled = true) => useQuery({
     queryKey: [key, orgId], enabled: !!orgId && enabled,
@@ -176,6 +180,12 @@ const Pilgrimage = () => {
     .map((g) => ({ ...g, reserved_refunds: operationRefunds.data?.get(g.id) ?? 0,
       unified_booking_id: reservationLinks.data?.get(g.inventory_booking_id) ?? null })),
     [pilgrims, programId, operationRefunds.data, reservationLinks.data]);
+  const approvedEdit = usePilgrimageBookingStaff(
+    editingBookingId && programPilgrims.some(person => person.unified_booking_id === editingBookingId) ? editingBookingId : null,
+  );
+  const canEditPassenger = (person: { inventory_booking_id?: string; unified_booking_id?: string; status: string }) =>
+    !person.inventory_booking_id || (person.status !== 'cancelled' && !!person.unified_booking_id
+      && person.unified_booking_id === editingBookingId && approvedEdit.data?.can_edit === true);
   const priceFor = (p: any, room: string) => Number(p?.[`price_${room}`] ?? 0);
 
   const salesIssues = pilgrimageSalesIssues(pf);
@@ -256,8 +266,9 @@ const Pilgrimage = () => {
           if (Number(previous.paid_amount) > 0) throw new Error('لا يمكن تغيير سعر فئة الغرفة بعد التحصيل. استخدم إجراء تعديل مالي معتمد.');
           row.total_price = priceFor(program, gf.room_type);
         }
-        const { error } = await sb.from('pilgrims').update(row).eq('id', editingPilgrim).eq('organization_id', orgId).eq('program_id', programId);
+        const { data, error } = await sb.from('pilgrims').update(row).eq('id', editingPilgrim).eq('organization_id', orgId).eq('program_id', programId).select('id').maybeSingle();
         if (error) throw error;
+        if (!data) throw new Error('تعذر تحديث المسافر داخل البرنامج');
         return;
       }
       const block = canRegisterPilgrim(program, programPilgrims);
@@ -417,7 +428,15 @@ const Pilgrimage = () => {
     const roomingHeaders = [...(usesGroupedRooming ? ['مجموعة التسكين', 'رقم غرفة الفندق'] : ['الغرفة']), 'الاسم', 'النوع', 'الفئة', 'العائلة', 'المحرم'];
     const busRows = groupBy('bus_number').flatMap(([bus, occ]) => occ.map((g) => [bus, g.supervisor || '', g.full_name, g.phone || '']));
 
-    const openEditPilgrim = (g: any) => { setEditingPilgrim(g.id); setGf({ ...EMPTY_PILGRIM, ...Object.fromEntries(PILGRIM_FIELDS.map((k) => [k, g[k] ?? ''])), gender: g.gender }); setPilgrimOpen(true); };
+    const openEditPilgrim = (g: any) => {
+      if (!canEditPassenger(g)) {
+        fail({ message: 'pilgrimage_booking_edit_locked' });
+        return;
+      }
+      setEditingPilgrim(g.id);
+      setGf({ ...EMPTY_PILGRIM, ...Object.fromEntries(PILGRIM_FIELDS.map((key) => [key, g[key] ?? ''])), gender: g.gender });
+      setPilgrimOpen(true);
+    };
 
     return (
       <div className="space-y-6">
@@ -524,14 +543,14 @@ const Pilgrimage = () => {
                           return label && <p key={city} className="text-xs text-muted-foreground">{city === 'makkah' ? 'مكة' : 'المدينة'} · {label}</p>;
                         })}</TableCell>
                         <TableCell>
-                          <Select value={g.visa_status} disabled={cancelled} onValueChange={(v) => patchPilgrim.mutate({ id: g.id, patch: { visa_status: v } })}>
+                          <Select value={g.visa_status} disabled={cancelled || !canEditPassenger(g)} onValueChange={(v) => patchPilgrim.mutate({ id: g.id, patch: { visa_status: v } })}>
                             <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
                             <SelectContent>{Object.entries(VISA).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                           </Select>
                         </TableCell>
                         <TableCell>
                           {cancelled ? <Badge variant="destructive">ملغي</Badge> : (
-                            <Select value={g.status} onValueChange={(v) => patchPilgrim.mutate({ id: g.id, patch: { status: v } })}>
+                            <Select value={g.status} disabled={!canEditPassenger(g)} onValueChange={(v) => patchPilgrim.mutate({ id: g.id, patch: { status: v } })}>
                               <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
                               <SelectContent>{Object.entries(PILGRIM_STATUS).filter(([k]) => k !== 'cancelled').map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                             </Select>
@@ -550,7 +569,10 @@ const Pilgrimage = () => {
   exchangeRate: program.currency === 'EGP' ? 1 : 0,
   clientRef: crypto.randomUUID() }); }}><Wallet className="h-4 w-4" /></Button>}
                           {!g.b2b_roster_entry_id && <Button size="icon" variant="ghost" title="طباعة العقد" onClick={() => printDocument(currentOrganization, `عقد برنامج ${program.name}`, contractHtml(g, program))}><FileText className="h-4 w-4" /></Button>}
-                          {(!g.b2b_roster_entry_id || !cancelled) && <Button size="icon" variant="ghost" title="تعديل" onClick={() => openEditPilgrim(g)}><Pencil className="h-4 w-4" /></Button>}
+                          {(!g.b2b_roster_entry_id || !cancelled) && canEditPassenger(g) && <Button size="icon" variant="ghost" title="تعديل" onClick={() => openEditPilgrim(g)}><Pencil className="h-4 w-4" /></Button>}
+                          {!cancelled && g.unified_booking_id && !canEditPassenger(g) && <Button asChild size="sm" variant="ghost">
+                            <Link to={`/bookings/${g.unified_booking_id}?tab=amendments`}>طلب فتح التعديل</Link>
+                          </Button>}
                           {!g.b2b_roster_entry_id && !cancelled && canManage && <Button size="icon" variant="ghost" title="إلغاء" onClick={() => {
                             if (usesGroupedRooming) setParams((current) => { const next = new URLSearchParams(current); next.set('tab', 'operations'); return next; });
                             else { setCancelFor(g); setFee(0); }
