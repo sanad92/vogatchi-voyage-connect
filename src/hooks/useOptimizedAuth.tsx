@@ -8,6 +8,13 @@ import { errorManager } from '@/utils/errorManager';
 import { toast } from 'sonner';
 import { getSafeInternalRedirect } from '@/lib/safeRedirect';
 import { getAuthErrorMessage } from '@/lib/authErrorMessage';
+import {
+  browserSessionTimeRemaining,
+  closeBrowserSessionActivity,
+  getBrowserSessionActivityKey,
+  startBrowserSessionActivity,
+  watchBrowserSessionActivity,
+} from '@/lib/browserSessionActivity';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -26,6 +33,8 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   const fetchingRef = useRef(false);
   const lastFetchedUserIdRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const currentSessionRef = useRef<Session | null>(null);
+  const signingOutRef = useRef(false);
 
   const isValidSession = useCallback((s: Session | null): boolean => {
     if (!s?.access_token || !s?.user?.id) return false;
@@ -54,6 +63,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
         .from('profiles')
         .select('*')
         .eq('id', userId)
+        .abortSignal(controller.signal)
         .maybeSingle();
 
       // Check if this request was aborted or component unmounted
@@ -79,46 +89,100 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
     }
     lastFetchedUserIdRef.current = null;
     fetchingRef.current = false;
+    currentSessionRef.current = null;
     setSession(null);
     setUser(null);
     setProfile(null);
     setUserRole(null);
   }, []);
 
+  const endSession = useCallback(async (reason: 'manual' | 'idle' | 'invalid', expectedKey?: string) => {
+    if (signingOutRef.current) return;
+    const current = currentSessionRef.current;
+    const activityKey = current ? getBrowserSessionActivityKey(current.access_token) : null;
+    if (expectedKey && expectedKey !== activityKey) return;
+
+    signingOutRef.current = true;
+    if (activityKey) closeBrowserSessionActivity(activityKey);
+    setLoading(true);
+    clearState();
+
+    try {
+      // Keep the stored token available until Supabase can revoke this session.
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) throw error;
+    } catch (error) {
+      await cleanupAuthState();
+      errorManager.error('Auth', 'تعذّر إنهاء الجلسة على الخادم', error, false);
+    } finally {
+      signingOutRef.current = false;
+      if (mountedRef.current) {
+        setLoading(false);
+        if (reason === 'manual') {
+          toast.success('تم تسجيل الخروج بنجاح');
+        } else if (reason === 'idle') {
+          toast.info('انتهت الجلسة بسبب عدم الاستخدام. سجّل الدخول للمتابعة.');
+        }
+      }
+    }
+  }, [clearState]);
+
+  const applySession = useCallback((current: Session): boolean => {
+    if (signingOutRef.current) return false;
+    const activityKey = getBrowserSessionActivityKey(current.access_token);
+    currentSessionRef.current = current;
+
+    if (activityKey) {
+      startBrowserSessionActivity(activityKey);
+      if (browserSessionTimeRemaining(activityKey) === 0) {
+        // Auth callbacks hold an SDK lock. Request sign-out after they return.
+        setLoading(true);
+        setTimeout(() => {
+          if (mountedRef.current) void endSession('idle', activityKey);
+        }, 0);
+        return false;
+      }
+    }
+
+    setSession(current);
+    setUser(current.user);
+    setTimeout(() => {
+      if (mountedRef.current && currentSessionRef.current?.user.id === current.user.id) {
+        void fetchUserData(current.user.id);
+      }
+    }, 0);
+    return true;
+  }, [endSession, fetchUserData]);
+
+  const activityKey = session ? getBrowserSessionActivityKey(session.access_token) : null;
+  useEffect(() => {
+    if (!activityKey) return;
+    return watchBrowserSessionActivity(activityKey, () => void endSession('idle', activityKey));
+  }, [activityKey, endSession]);
+
   useEffect(() => {
     mountedRef.current = true;
+    let active = true;
     let initialised = false;
 
     // 1. Set up listener FIRST (per Supabase docs)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        if (!mountedRef.current) return;
+        if (!active) return;
 
         if (event === 'SIGNED_OUT') {
+          const accessToken = currentSessionRef.current?.access_token;
+          const signedOutKey = accessToken ? getBrowserSessionActivityKey(accessToken) : null;
+          if (signedOutKey) closeBrowserSessionActivity(signedOutKey);
           clearState();
-          cleanupAuthState();
-          setLoading(false);
+          if (!signingOutRef.current) setLoading(false);
           return;
         }
 
-        // إذا فشل تجديد التوكن (jwt تالف) ننظف فوراً
-        if (event === 'TOKEN_REFRESHED' && !currentSession) {
-          console.warn('🧹 فشل تجديد التوكن - تنظيف الجلسة');
-          cleanupAuthState();
-          clearState();
-          setLoading(false);
-          return;
-        }
+        if (signingOutRef.current) return;
 
         if (isValidSession(currentSession) && currentSession) {
-          setSession(currentSession);
-          setUser(currentSession.user);
-          // Defer data fetch to avoid Supabase deadlock in callback
-          setTimeout(() => {
-            if (mountedRef.current) {
-              fetchUserData(currentSession.user.id);
-            }
-          }, 0);
+          if (!applySession(currentSession)) return;
         } else if (!currentSession) {
           clearState();
         }
@@ -132,53 +196,44 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
 
     // 2. Then get current session
     supabase.auth.getSession().then(({ data: { session: currentSession }, error }) => {
-      if (!mountedRef.current) return;
+      if (!active) return;
       initialised = true;
+      if (signingOutRef.current) return;
 
       // إذا كان السيشن تالف (bad_jwt / missing sub claim) ننظفه فوراً
       const errMsg = error?.message?.toLowerCase() || '';
       const isBadJwt = errMsg.includes('jwt') || errMsg.includes('sub claim') || errMsg.includes('invalid claim');
       if (error && isBadJwt) {
         console.warn('🧹 تنظيف جلسة تالفة:', error.message);
-        cleanupAuthState();
-        supabase.auth.signOut().catch(() => {});
-        clearState();
-        setLoading(false);
+        void endSession('invalid');
         return;
       }
 
       if (isValidSession(currentSession) && currentSession) {
-        setSession(currentSession);
-        setUser(currentSession.user);
-        fetchUserData(currentSession.user.id);
-      } else if (currentSession && !isValidSession(currentSession)) {
-        // session موجود لكن منتهي -> نظف
-        cleanupAuthState();
-        supabase.auth.signOut().catch(() => {});
-        clearState();
+        if (!applySession(currentSession)) return;
+      } else if (currentSession) {
+        void endSession('invalid');
+        return;
       }
       setLoading(false);
     }).catch((err) => {
       console.error('getSession error:', err);
-      cleanupAuthState();
-      clearState();
-      if (mountedRef.current) setLoading(false);
+      if (active) void endSession('invalid');
     });
 
     return () => {
+      active = false;
       mountedRef.current = false;
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
       subscription.unsubscribe();
     };
-  }, [isValidSession, fetchUserData, clearState]);
+  }, [isValidSession, applySession, clearState, endSession]);
 
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      cleanupAuthState();
-
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password,
@@ -226,19 +281,8 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   };
 
   const signOut = async () => {
-    try {
-      setLoading(true);
-      cleanupAuthState();
-      await supabase.auth.signOut();
-      clearState();
-      toast.success('تم تسجيل الخروج بنجاح');
-      navigate('/login');
-    } catch {
-      clearState();
-      navigate('/login');
-    } finally {
-      setLoading(false);
-    }
+    await endSession('manual');
+    navigate('/login', { replace: true });
   };
 
   const setOrgRole = useCallback((role: string | null) => {
@@ -254,8 +298,9 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
   }, [userRole]);
 
   const isLoggedIn = useCallback((): boolean => {
-    return !!(user?.id && isValidSession(session));
-  }, [user, session, isValidSession]);
+    return !!(user?.id && isValidSession(session)
+      && (!activityKey || browserSessionTimeRemaining(activityKey) > 0));
+  }, [user, session, activityKey, isValidSession]);
 
   const value: AuthContextType = {
     user,
