@@ -4,15 +4,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Package, Plus, Pencil } from 'lucide-react';
+import { Loader2, Package, Plus, Pencil, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import PlatformSubscriptionDiscountCodes from '@/components/platform-admin/PlatformSubscriptionDiscountCodes';
+import { CUSTOM_SUBSCRIPTION_PLAN_NAME, SUBSCRIPTION_FEATURE_LABELS } from '@/lib/planFeatures';
 
 interface Plan {
   id: string;
@@ -34,11 +35,27 @@ const empty: Partial<Plan> = {
   duration_days: 30, is_active: true, features: [],
 };
 
-const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'فشل الحفظ';
+const customPlan: Partial<Plan> = {
+  ...empty, name: CUSTOM_SUBSCRIPTION_PLAN_NAME, name_ar: 'مخصصة', price_monthly: undefined, price_yearly: undefined, is_active: false,
+};
+const featureLabels = Object.entries(SUBSCRIPTION_FEATURE_LABELS);
+const knownFeatures = new Set(featureLabels.map(([key]) => key));
+
+const getErrorMessage = (error: unknown) =>
+  typeof error === 'object' && error && 'message' in error ? String(error.message) : 'فشل الحفظ';
 
 const PlatformAdminPlans = () => {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Partial<Plan> | null>(null);
+  const selectedFeatures = Array.isArray(editing?.features) ? editing.features.filter(feature => typeof feature === 'string') : [];
+  const allFeatures = selectedFeatures.includes('all_features');
+  const setFeature = (key: string, checked: boolean) => {
+    setEditing(plan => {
+      if (!plan) return plan;
+      const features = Array.isArray(plan.features) ? plan.features.filter(feature => typeof feature === 'string') : [];
+      return { ...plan, features: checked ? [...new Set([...features, key])] : features.filter(feature => feature !== key) };
+    });
+  };
 
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ['subscription-plans-admin'],
@@ -51,14 +68,24 @@ const PlatformAdminPlans = () => {
       return (data ?? []) as Plan[];
     },
   });
+  const originalFeatures = plans.find(plan => plan.id === editing?.id)?.features;
+  const featureOptions = [
+    ...featureLabels,
+    ...[...new Set([...selectedFeatures, ...(Array.isArray(originalFeatures) ? originalFeatures : [])])]
+      .filter(key => typeof key === 'string' && key !== 'all_features' && !knownFeatures.has(key))
+      .map(key => [key, key]),
+  ];
 
   const save = useMutation({
     mutationFn: async (p: Partial<Plan>) => {
+      const name = p.name?.trim();
+      const nameAr = p.name_ar?.trim();
+      if (!name || !nameAr) throw new Error('أدخل اسم الخطة بالعربية والإنجليزية.');
       if ((p.is_active ?? true) && ((p.price_monthly ?? 0) <= 0 || (p.price_yearly ?? 0) <= 0)) {
         throw new Error('لا يمكن تفعيل خطة مجانية. أدخل سعرًا شهريًا وسنويًا أكبر من صفر.');
       }
       const payload = {
-        name: p.name!, name_ar: p.name_ar!,
+        name, name_ar: nameAr,
         price_monthly: p.price_monthly ?? 0,
         price_yearly: p.price_yearly ?? 0,
         max_users: p.max_users ?? 5,
@@ -66,10 +93,10 @@ const PlatformAdminPlans = () => {
         max_storage_mb: p.max_storage_mb ?? 500,
         duration_days: p.duration_days ?? 30,
         is_active: p.is_active ?? true,
-        features: p.features ?? [],
+        features: Array.isArray(p.features) ? [...new Set(p.features.filter(feature => typeof feature === 'string'))] : [],
       };
       if (p.id) {
-        const { error } = await supabase.from('subscription_plans').update(payload).eq('id', p.id);
+        const { error } = await supabase.from('subscription_plans').update(payload).eq('id', p.id).select('id').single();
         if (error) throw error;
       } else {
         const { error } = await supabase.from('subscription_plans').insert(payload);
@@ -80,13 +107,15 @@ const PlatformAdminPlans = () => {
       toast.success('تم حفظ الخطة');
       setEditing(null);
       qc.invalidateQueries({ queryKey: ['subscription-plans-admin'] });
+      qc.invalidateQueries({ queryKey: ['platform-subs-plans'] });
+      qc.invalidateQueries({ queryKey: ['pricing-plans'] });
     },
     onError: (error: unknown) => toast.error(getErrorMessage(error)),
   });
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Package className="h-6 w-6 text-amber-600" /> خطط الاشتراك
@@ -95,9 +124,14 @@ const PlatformAdminPlans = () => {
             إدارة الخطط المتاحة للمؤسسات: الأسعار والحدود والميزات
           </p>
         </div>
-        <Button onClick={() => setEditing(empty)} className="bg-gradient-to-r from-amber-500 to-orange-600">
-          <Plus className="h-4 w-4 mr-2" /> إضافة خطة
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setEditing(customPlan)}>
+            <SlidersHorizontal aria-hidden="true" /> إضافة خطة مخصصة
+          </Button>
+          <Button onClick={() => setEditing(empty)} className="bg-gradient-to-r from-amber-500 to-orange-600">
+            <Plus aria-hidden="true" /> إضافة خطة
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -141,7 +175,7 @@ const PlatformAdminPlans = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-end">
-                      <Button size="sm" variant="ghost" onClick={() => setEditing(p)}>
+                      <Button size="sm" variant="ghost" aria-label={`تعديل خطة ${p.name_ar || p.name}`} onClick={() => setEditing(p)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -155,10 +189,11 @@ const PlatformAdminPlans = () => {
 
       <PlatformSubscriptionDiscountCodes />
 
-      <Dialog open={!!editing} onOpenChange={o => !o && setEditing(null)}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={!!editing} onOpenChange={o => !o && !save.isPending && setEditing(null)}>
+        <DialogContent dir="rtl" className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editing?.id ? 'تعديل خطة' : 'إضافة خطة جديدة'}</DialogTitle>
+            <DialogDescription>حدد الأسعار وحدود الاستخدام والموديولات المتاحة في الخطة.</DialogDescription>
           </DialogHeader>
           {editing && (
             <div className="grid grid-cols-2 gap-3">
@@ -172,11 +207,11 @@ const PlatformAdminPlans = () => {
               </div>
               <div className="space-y-1.5">
                 <Label>السعر الشهري (ج.م)</Label>
-                <Input type="number" value={editing.price_monthly ?? 0} onChange={e => setEditing({ ...editing, price_monthly: +e.target.value })} />
+                <Input type="number" min={0} step="0.01" value={editing.price_monthly ?? ''} onChange={e => setEditing({ ...editing, price_monthly: e.target.value === '' ? undefined : +e.target.value })} />
               </div>
               <div className="space-y-1.5">
                 <Label>السعر السنوي (ج.م)</Label>
-                <Input type="number" value={editing.price_yearly ?? 0} onChange={e => setEditing({ ...editing, price_yearly: +e.target.value })} />
+                <Input type="number" min={0} step="0.01" value={editing.price_yearly ?? ''} onChange={e => setEditing({ ...editing, price_yearly: e.target.value === '' ? undefined : +e.target.value })} />
               </div>
               <div className="space-y-1.5">
                 <Label>الحد الأقصى للمستخدمين</Label>
@@ -194,30 +229,30 @@ const PlatformAdminPlans = () => {
                 <Label>المدة (أيام)</Label>
                 <Input type="number" value={editing.duration_days ?? 30} onChange={e => setEditing({ ...editing, duration_days: +e.target.value })} />
               </div>
-              <div className="col-span-2 space-y-1.5">
-                <Label>مفاتيح الموديولات</Label>
-                <Textarea
-                  dir="ltr"
-                  rows={4}
-                  value={Array.isArray(editing.features) ? editing.features.join(', ') : ''}
-                  onChange={e => setEditing({
-                    ...editing,
-                    features: e.target.value.split(',').map(value => value.trim()).filter(Boolean),
-                  })}
-                  placeholder="basic_crm, quotes, finance, whatsapp"
-                />
-                <p className="text-xs text-muted-foreground">
-                  استخدم all_features لخطة الأعمال، أو افصل المفاتيح بفاصلة. إيقاف الخطة يخفيها من صفحة الأسعار.
-                </p>
-              </div>
-              <div className="col-span-2 flex items-center gap-2 pt-2">
-                <Switch checked={editing.is_active ?? true} onCheckedChange={v => setEditing({ ...editing, is_active: v })} />
-                <Label>الخطة نشطة</Label>
+              <fieldset className="col-span-2 space-y-3 rounded-lg border p-3">
+                <legend className="px-1 text-sm font-medium">موديولات الخطة</legend>
+                <Label className="flex cursor-pointer items-center gap-2 rounded-md bg-muted/60 p-2">
+                  <Checkbox checked={allFeatures} onCheckedChange={checked => setFeature('all_features', checked === true)} />
+                  كل الموديولات
+                </Label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {featureOptions.map(([key, label]) => (
+                    <Label key={key} className="flex min-h-9 items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/40">
+                      <Checkbox checked={allFeatures || selectedFeatures.includes(key)} disabled={allFeatures}
+                        onCheckedChange={checked => setFeature(key, checked === true)} />
+                      <span data-no-translate={key === label ? true : undefined}>{label}</span>
+                    </Label>
+                  ))}
+                </div>
+              </fieldset>
+              <div className="col-span-2 flex flex-wrap items-center gap-2 pt-2">
+                <Switch id="plan-active" checked={editing.is_active ?? true} onCheckedChange={v => setEditing({ ...editing, is_active: v })} />
+                <Label htmlFor="plan-active">عرض الخطة في صفحة الأسعار</Label>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>إلغاء</Button>
+            <Button variant="outline" disabled={save.isPending} onClick={() => setEditing(null)}>إلغاء</Button>
             <Button onClick={() => editing && save.mutate(editing)} disabled={save.isPending} className="bg-gradient-to-r from-amber-500 to-orange-600">
               {save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               حفظ
