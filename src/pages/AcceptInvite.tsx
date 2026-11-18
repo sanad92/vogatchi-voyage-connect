@@ -1,121 +1,189 @@
-
-import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Check, Loader2, UserPlus, X } from 'lucide-react';
 import { useAcceptInvitation, type AcceptInvitationResult } from '@/hooks/useInvitations';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, X, Loader2, UserPlus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
-const AcceptInvite = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+const invitationTokenPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+
+async function checkInvitation(token: string, email?: string) {
+  const { data, error } = await supabase.rpc('get_staff_invitation_status', {
+    _token: token,
+    ...(email ? { _email: email } : {}),
+  });
+  if (error) throw error;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('تعذّر التحقق من الدعوة.');
+  }
+  return data;
+}
+
+const inactiveMessages: Record<string, string> = {
+  cancelled: 'تم إلغاء هذه الدعوة. اطلب دعوة جديدة من مسؤول المؤسسة.',
+  expired: 'انتهت صلاحية هذه الدعوة. اطلب دعوة جديدة من مسؤول المؤسسة.',
+  accepted: 'تم قبول هذه الدعوة من قبل.',
+};
+
+function InvitationFlow({ token }: { token: string }) {
   const { user, loading } = useOptimizedAuth();
-  const token = searchParams.get('token');
-  const { mutateAsync: acceptInvitation, isPending } = useAcceptInvitation();
+  const { mutateAsync: acceptInvitation } = useAcceptInvitation();
   const [result, setResult] = useState<AcceptInvitationResult | null>(null);
-  const redirectPath = token ? `/accept-invite?token=${encodeURIComponent(token)}` : '/accept-invite';
+  const attemptedUser = useRef<string>();
+  const [email, setEmail] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const redirectPath = `/accept-invite?token=${encodeURIComponent(token)}`;
+  const loginPath = `/login?redirect=${encodeURIComponent(redirectPath)}`;
+  const signupPath = `/signup?redirect=${encodeURIComponent(redirectPath)}`;
+  const validToken = invitationTokenPattern.test(token);
+  const invitation = useQuery({
+    queryKey: ['staff-invitation-status', token],
+    queryFn: () => checkInvitation(token),
+    enabled: validToken,
+    retry: false,
+  });
+  const status = invitation.data?.status;
 
   useEffect(() => {
-    if (!token) return;
-    if (!user || result || isPending) return;
-    
-    acceptInvitation(token).then((data) => {
-      setResult(data);
-    }).catch((error: unknown) => {
+    if (!user || status !== 'pending' || attemptedUser.current === user.id) return;
+    attemptedUser.current = user.id;
+    acceptInvitation(token).then(setResult).catch((error: unknown) => {
       setResult({ success: false, error: error instanceof Error ? error.message : 'تعذر قبول الدعوة' });
     });
-  }, [token, user, result, isPending, acceptInvitation]);
+  }, [acceptInvitation, status, token, user]);
 
-  if (!token) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center bg-background" dir="rtl">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <X className="w-12 h-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-foreground mb-2">رابط غير صالح</h2>
-            <p className="text-muted-foreground">رابط الدعوة غير صحيح أو مفقود</p>
-            <Button onClick={() => navigate('/login')} className="mt-4">تسجيل الدخول</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  async function sendConfirmation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (sending || sent) return;
+    setEmailError('');
+    setSending(true);
+    try {
+      const address = email.trim().toLowerCase();
+      const currentInvitation = await checkInvitation(token, address);
+      if (currentInvitation.status !== 'pending') {
+        void invitation.refetch();
+        return;
+      }
+      if (currentInvitation.email_matches !== true) {
+        setEmailError('استخدم نفس بريد العمل الذي وصلته الدعوة.');
+        return;
+      }
+      const { error } = await supabase.auth.signInWithOtp({
+        email: address,
+        options: { emailRedirectTo: `${window.location.origin}${redirectPath}` },
+      });
+      if (error) {
+        setEmailError(error.status === 429
+          ? 'تم طلب روابط كثيرة. انتظر قليلًا ثم أعد المحاولة.'
+          : 'تعذّر إرسال رابط التأكيد. حاول مرة أخرى.');
+        return;
+      }
+      setSent(true);
+    } catch {
+      setEmailError('تعذّر إرسال رابط التأكيد. حاول مرة أخرى.');
+    } finally {
+      setSending(false);
+    }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center bg-background" dir="rtl">
-        <Loader2 className="w-10 h-10 text-primary animate-spin" />
-      </div>
-    );
+  async function switchAccount() {
+    setEmailError('');
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (error) {
+      setEmailError('تعذّر تسجيل الخروج. حاول مرة أخرى.');
+      return;
+    }
+    attemptedUser.current = undefined;
+    setResult(null);
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center bg-background" dir="rtl">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-center gap-2">
-              <UserPlus className="w-6 h-6" />
-              دعوة للانضمام
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">يجب تسجيل الدخول أولاً لقبول الدعوة</p>
-            <div className="flex flex-col sm:flex-row justify-center gap-2">
-              <Button onClick={() => navigate(`/login?redirect=${encodeURIComponent(redirectPath)}`)}>
-                تسجيل الدخول
-              </Button>
-              <Button variant="outline" onClick={() => navigate(`/signup?redirect=${encodeURIComponent(redirectPath)}`)}>
-                إنشاء حساب جديد
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  function openDashboard() {
+    if (user && result?.organization_id) {
+      try {
+        localStorage.setItem(`current_org_${user.id}`, result.organization_id);
+      } catch {
+        // The organization picker remains available when storage is unavailable.
+      }
+    }
+    window.location.assign('/dashboard');
   }
 
-  if (isPending || !result) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center bg-background" dir="rtl">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-foreground">جاري قبول الدعوة...</h2>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const inactiveMessage = typeof status === 'string' ? inactiveMessages[status] : undefined;
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-background" dir="rtl">
+    <div className="min-h-dvh flex items-center justify-center bg-background p-4" dir="rtl">
       <Card className="w-full max-w-md">
-        <CardContent className="pt-6 text-center">
-          {result.success ? (
+        <CardHeader>
+          <CardTitle className="flex items-center justify-center gap-2">
+            <UserPlus className="size-6" aria-hidden="true" />
+            دعوة للانضمام
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-center">
+          {result?.success ? (
             <>
-              <Check className="w-12 h-12 text-green-600 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-foreground mb-2">تم قبول الدعوة</h2>
-              <p className="text-muted-foreground mb-4">{result.message}</p>
-              <Button onClick={() => { window.location.href = '/dashboard'; }}>
-                الذهاب للوحة التحكم
-              </Button>
+              <Check className="mx-auto size-12 text-green-600" aria-hidden="true" />
+              <h2 className="text-xl font-bold">تم قبول الدعوة</h2>
+              <p className="text-muted-foreground">{result.message}</p>
+              <Button onClick={openDashboard}>الذهاب للوحة التحكم</Button>
             </>
+          ) : !validToken ? (
+            <>
+              <X className="mx-auto size-12 text-destructive" aria-hidden="true" />
+              <h2 className="text-xl font-bold">رابط غير صالح</h2>
+              <p className="text-muted-foreground">رابط الدعوة غير صحيح أو مفقود</p>
+            </>
+          ) : invitation.isPending || loading ? (
+            <Loader2 className="mx-auto size-10 animate-spin text-primary" aria-label="جارٍ التحميل..." />
+          ) : invitation.isError ? (
+            <>
+              <p role="alert" className="text-muted-foreground">تعذّر التحقق من الدعوة.</p>
+              <Button variant="outline" onClick={() => void invitation.refetch()}>حاول مرة أخرى</Button>
+            </>
+          ) : status !== 'pending' ? (
+            <p className="text-muted-foreground">{inactiveMessage ?? 'رابط الدعوة غير صحيح أو مفقود'}</p>
+          ) : user ? (
+            result ? (
+              <>
+                <p role="alert" className="text-destructive">{result.error}</p>
+                <Button variant="outline" onClick={() => void switchAccount()}>استخدم حسابًا آخر</Button>
+              </>
+            ) : (
+              <p role="status" className="text-muted-foreground">جاري قبول الدعوة...</p>
+            )
+          ) : sent ? (
+            <p role="status" className="text-muted-foreground">افتح رابط التأكيد الذي أرسلناه إلى بريدك لإكمال قبول الدعوة.</p>
           ) : (
             <>
-              <X className="w-12 h-12 text-destructive mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-foreground mb-2">فشل قبول الدعوة</h2>
-              <p className="text-muted-foreground mb-4">{result.error}</p>
-              <Button variant="outline" onClick={() => navigate('/dashboard')}>
-                العودة
-              </Button>
+              <p className="text-muted-foreground">أكّد بريد العمل الذي وصلته الدعوة لإكمال الانضمام.</p>
+              <form className="space-y-3 text-start" onSubmit={sendConfirmation}>
+                <Label htmlFor="invited-email">بريد العمل</Label>
+                <Input id="invited-email" type="email" dir="ltr" autoComplete="email" value={email}
+                  onChange={event => setEmail(event.target.value)} required disabled={sending} />
+                <Button type="submit" className="w-full" disabled={sending}>إرسال رابط تأكيد البريد</Button>
+              </form>
+              <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm">
+                <Link className="text-primary underline" to={loginPath}>تسجيل الدخول بكلمة المرور</Link>
+                <Link className="text-primary underline" to={signupPath}>إنشاء حساب بكلمة مرور</Link>
+              </div>
             </>
           )}
+          {emailError && <p role="alert" className="text-sm text-destructive">{emailError}</p>}
         </CardContent>
       </Card>
     </div>
   );
-};
+}
 
-export default AcceptInvite;
+export default function AcceptInvite() {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token') ?? '';
+  return <InvitationFlow key={token} token={token} />;
+}
