@@ -259,8 +259,16 @@ const PricingPage = () => {
             <SafarERPLogo size="sm" className="[&_img]:max-w-[115px] sm:[&_img]:max-w-none" />
           </Link>
           <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm" className="font-bold text-foreground"><Link to="/login">تسجيل الدخول</Link></Button>
-            <Button asChild size="sm" className="rounded-lg font-bold"><Link to="/signup">ابدأ التجربة</Link></Button>
+            {user ? (
+              <Button asChild variant="ghost" size="sm" className="font-bold text-foreground">
+                <Link to="/subscription">إدارة الاشتراك</Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost" size="sm" className="font-bold text-foreground"><Link to="/login">تسجيل الدخول</Link></Button>
+                <Button asChild size="sm" className="rounded-lg font-bold"><Link to="/signup">ابدأ التجربة</Link></Button>
+              </>
+            )}
           </div>
         </div>
       </header>
