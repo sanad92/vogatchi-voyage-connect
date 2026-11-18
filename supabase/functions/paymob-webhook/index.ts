@@ -105,6 +105,11 @@ Deno.serve(async (request) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    // Refund/void children are linked to their original provider payment and
+    // must never be processed as a new subscription charge.
+    if (transaction.has_parent_transaction === true && (transaction.is_refund === true || transaction.is_void === true)) {
+      return Response.json({ received: true }, { headers: corsHeaders });
+    }
     const providerTransactionId = String(transaction.id);
     const paymobOrderId = String(transaction.order.id);
     const merchantOrderId = String(transaction.order.merchant_order_id || "");

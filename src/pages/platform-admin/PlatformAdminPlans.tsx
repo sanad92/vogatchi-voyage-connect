@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Package, Plus, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import PlatformSubscriptionDiscountCodes from '@/components/platform-admin/PlatformSubscriptionDiscountCodes';
 
 interface Plan {
   id: string;
@@ -151,6 +152,8 @@ const PlatformAdminPlans = () => {
           )}
         </CardContent>
       </Card>
+
+      <PlatformSubscriptionDiscountCodes />
 
       <Dialog open={!!editing} onOpenChange={o => !o && setEditing(null)}>
         <DialogContent className="max-w-lg">

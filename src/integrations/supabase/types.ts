@@ -13089,6 +13089,39 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_discount_codes: {
+        Row: {
+          code: string
+          created_at: string
+          duration_months: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          organization_id: string | null
+          percent: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          duration_months: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          percent: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          duration_months?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          percent?: number
+        }
+        Relationships: []
+      }
       subscription_plans: {
         Row: {
           created_at: string
@@ -19100,6 +19133,34 @@ export type Database = {
           _plan_id: string
         }
         Returns: Json
+      }
+      prepare_subscription_checkout_with_discount: {
+        Args: {
+          _billing_cycle: string
+          _discount_code?: string
+          _organization_id: string
+          _plan_id: string
+        }
+        Returns: Json
+      }
+      quote_subscription_discount: {
+        Args: {
+          _billing_cycle: string
+          _discount_code?: string
+          _organization_id: string
+          _plan_id: string
+        }
+        Returns: Json
+      }
+      get_platform_paymob_permissions: { Args: never; Returns: Json }
+      list_platform_paymob_staff: { Args: never; Returns: Json }
+      list_platform_paymob_transactions: {
+        Args: { p_search?: string; p_status?: string; p_offset?: number }
+        Returns: Json
+      }
+      set_platform_paymob_staff_permissions: {
+        Args: { p_email: string; p_can_void: boolean; p_can_refund: boolean }
+        Returns: undefined
       }
       preview_existing_bookings_settlement: {
         Args: { _org: string }

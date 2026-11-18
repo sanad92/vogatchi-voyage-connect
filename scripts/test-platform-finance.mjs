@@ -150,6 +150,62 @@ try {
   await sql('reset role');
   assert.equal((await query('select * from platform_finance_private.access_log')).length,3);
   console.log('PASS ledger permissions, access revocation, balance validation, immutable entries, duplicate prevention, Paymob import, and atomic bank transfer approval');
+
+  await sql(`
+    create role service_role;
+    create table public.organizations(id uuid primary key, name text);
+    insert into public.organizations values ('${org}', 'Test Agency');
+    alter table public.payment_transactions add column raw_payload jsonb, add column created_at timestamptz default now();
+    alter table public.payment_checkout_sessions add column expires_at timestamptz default now()+interval '1 hour',
+      add column created_at timestamptz default now();
+    update public.payment_transactions set paymob_transaction_id='12131', paymob_order_id='12132', payment_method='card' where id='${tx}';
+    update public.payment_checkout_sessions set provider_transaction_id='12131', paymob_order_id='12132' where id='${session}';
+    insert into public.payment_checkout_sessions(id,status,paymob_order_id,amount_cents,currency,organization_id)
+      values (gen_random_uuid(),'pending','12133',50000,'EGP','${org}');
+  `);
+  await sql(readFileSync('supabase/migrations/20261118203000_platform_paymob_operations.sql', 'utf8'));
+  const permissions = 'select public.get_platform_paymob_permissions() as permissions';
+  const payments = 'select public.list_platform_paymob_transactions($1,$2,$3) as payments';
+  await runAs(member);
+  await assert.rejects(query(payments, ['', '', 0]), {code:'42501'});
+  await runAs(accountant);
+  assert.deepEqual((await query(permissions))[0].permissions, {void:false, refund:false});
+  assert.equal((await query(payments, ['Test Agency', '', 0]))[0].payments.length, 2);
+  assert.equal((await query(payments, ['12133', 'pending', 0]))[0].payments[0].paymob_transaction_id, null);
+  await assert.rejects(query("select public.set_platform_paymob_staff_permissions('accountant@example.test',true,true)"), {code:'42501'});
+  await runAs(owner);
+  await query("select public.set_platform_paymob_staff_permissions('accountant@example.test',false,true)");
+  const reserve = 'select public.reserve_platform_paymob_action($1,$2,$3,$4,$5,$6) as action';
+  await runAs(accountant);
+  assert.deepEqual((await query(permissions))[0].permissions, {void:false, refund:true});
+  await assert.rejects(query(reserve, [request,tx,accountant,'refund',1000,'Test refund']), {code:'42501'});
+  await runAs('', 'service_role');
+  await assert.rejects(query(reserve, [request,tx,accountant,'void',null,'Test void']), {code:'42501'});
+  let result = (await query(reserve, [request,tx,accountant,'refund',1000,'Test refund']))[0].action;
+  assert.equal(result.send, true);
+  assert.equal(result.transaction_id, '12131');
+  assert.equal(result.amount_cents, 1000);
+  await query("select public.finish_platform_paymob_action($1,'unknown')", [request]);
+  assert.deepEqual((await query(reserve,[request,tx,accountant,'refund',1000,'Test refund']))[0].action, {send:false,status:'unknown'});
+  await assert.rejects(query(reserve, [invalid,tx,accountant,'refund',1000,'Duplicate attempt']), {code:'23505'});
+  await query("select public.finish_platform_paymob_action($1,'succeeded','7234')", [request]);
+  await assert.rejects(query(reserve, [invalid,tx,accountant,'refund',29500,'Amount over remaining']), {code:'22023'});
+  await assert.rejects(query(reserve, [invalid,tx,owner,'void',null,'Partially refunded']), {code:'22023'});
+  await runAs(accountant);
+  result = (await query(payments, ['12131', '', 0]))[0].payments[0];
+  assert.equal(result.actions[0].requested_by,'accountant@example.test');
+  assert.equal(result.actions[0].status,'succeeded');
+  assert.equal(result.actions[0].provider_action_id,'7234');
+  assert.equal('raw_payload' in result,false);
+  await sql('reset role');
+  await query(`insert into public.payment_transactions(status, raw_payload)
+    values ('success', '{"obj":{"is_refund":true,"has_parent_transaction":true}}')`);
+  assert.equal((await query("select status from public.payment_transactions where raw_payload is not null"))[0].status,'refunded');
+  await runAs(owner);
+  await query("select public.set_platform_finance_staff('accountant@example.test',null)");
+  await runAs('', 'service_role');
+  await assert.rejects(query(reserve, [invalid,tx,accountant,'refund',1000,'Revoked permission']), {code:'42501'});
+  console.log('PASS payment tracking, independent refund and void permissions, atomic reservation, ambiguous retry, refund limits and audit history');
 } catch (error) {
   console.error(error.message, error.code ?? '', error.where ?? '');
   process.exitCode = 1;

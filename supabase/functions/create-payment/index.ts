@@ -3,6 +3,8 @@ import { rateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "X-Safar-Checkout-Discounts": "1",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -74,6 +76,7 @@ async function getPaymentKey(
   amountCents: number,
   integrationId: number,
   billingData: BillingData,
+  expirationSeconds: number,
 ): Promise<string> {
   const response = await fetch(`${PAYMOB_BASE}/acceptance/payment_keys`, {
     method: "POST",
@@ -81,7 +84,7 @@ async function getPaymentKey(
     body: JSON.stringify({
       auth_token: authToken,
       amount_cents: amountCents,
-      expiration: 3600,
+      expiration: expirationSeconds,
       order_id: orderId,
       billing_data: {
         first_name: sanitizeString(billingData.first_name) || "N/A",
@@ -112,6 +115,7 @@ async function getPaymentKey(
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (request.method === "GET") return Response.json({ discounts: true }, { headers: corsHeaders });
   if (request.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
@@ -189,8 +193,8 @@ Deno.serve(async (request) => {
     }
 
     const price = Number(body.billing_cycle === "yearly" ? plan.price_yearly : plan.price_monthly);
-    const amountCents = Math.round(price * 100);
-    if (!Number.isSafeInteger(amountCents) || amountCents < 100) {
+    const planAmountCents = Math.round(price * 100);
+    if (!Number.isSafeInteger(planAmountCents) || planAmountCents < 100) {
       throw new Error("Invalid server-side subscription price");
     }
 
@@ -230,6 +234,7 @@ Deno.serve(async (request) => {
         .eq("organization_id", body.organization_id)
         .eq("plan_id", plan.id)
         .eq("billing_cycle", body.billing_cycle)
+        .eq("created_by", user.id)
         .eq("status", "pending")
         .gte("expires_at", new Date().toISOString())
         .maybeSingle()
@@ -240,8 +245,9 @@ Deno.serve(async (request) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (preparedCheckout && Number(preparedCheckout.amount_cents)!==amountCents) {
-      throw new Error("Prepared checkout amount no longer matches plan price");
+    const amountCents = preparedCheckout ? Number(preparedCheckout.amount_cents) : planAmountCents;
+    if (!Number.isSafeInteger(amountCents) || amountCents < 100) {
+      throw new Error("Invalid prepared checkout amount");
     }
 
     const attempt = crypto.randomUUID().slice(0, 8);
@@ -250,12 +256,19 @@ Deno.serve(async (request) => {
     const itemName = `Vogantra ${plan.name_ar || plan.name} - ${body.billing_cycle === "yearly" ? "yearly" : "monthly"}`;
 
     const authToken = await getAuthToken(apiKey);
-    const orderId = await createOrder(authToken, amountCents, merchantOrderId, itemName);
-    const checkoutResult = preparedCheckout
+    const orderId = preparedCheckout?.paymob_order_id
+      ? Number(preparedCheckout.paymob_order_id)
+      : await createOrder(authToken, amountCents, merchantOrderId, itemName);
+    if (!Number.isSafeInteger(orderId) || orderId <= 0) throw new Error("Invalid Paymob order");
+    const checkoutResult = preparedCheckout?.paymob_order_id
+      ? { data: preparedCheckout, error: null }
+      : preparedCheckout
       ? await admin
         .from("payment_checkout_sessions")
         .update({ paymob_order_id: String(orderId), updated_at: new Date().toISOString() })
         .eq("id", preparedCheckout.id)
+        .is("paymob_order_id", null)
+        .eq("status", "pending")
         .select("id")
         .single()
       : await admin
@@ -278,7 +291,11 @@ Deno.serve(async (request) => {
       throw new Error("Checkout session could not be saved");
     }
 
-    const paymentKey = await getPaymentKey(authToken, orderId, amountCents, integrationId, billingData);
+    const expirationSeconds = preparedCheckout
+      ? Math.min(3600, Math.floor((Date.parse(preparedCheckout.expires_at) - Date.now()) / 1000))
+      : 3600;
+    if (expirationSeconds < 1) throw new Error("Checkout expired");
+    const paymentKey = await getPaymentKey(authToken, orderId, amountCents, integrationId, billingData, expirationSeconds);
     const iframeUrl = `https://accept.paymob.com/api/acceptance/iframes/${encodeURIComponent(iframeId)}?payment_token=${encodeURIComponent(paymentKey)}`;
 
     return new Response(JSON.stringify({
