@@ -1,6 +1,7 @@
 import * as React from 'npm:react@18.3.1'
 import { renderToStaticMarkup } from 'npm:react-dom@18.3.1/server'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { EmailAPIError, sendLovableEmail } from 'npm:@lovable.dev/email-js@0.8.0'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { OrganizationInviteEmail } from '../_shared/email-templates/organization-invite.tsx'
 
@@ -74,55 +75,44 @@ Deno.serve(async (req) => {
     inviterName, organizationName, roleLabel: ROLE_LABELS[invite.role] ?? 'موظف', acceptUrl,
   }))
   const text = htmlToText(html)
-  const messageId = crypto.randomUUID()
+  const apiKey = Deno.env.get('LOVABLE_API_KEY')
+  if (!apiKey) return json({ error: 'تعذر إرسال بريد الدعوة' }, 500)
 
-  // One unsubscribe token per address (required for transactional sends).
-  const recipient = invite.email.toLowerCase()
-  let unsubscribeToken: string | undefined
-  const { data: existingToken } = await admin
-    .from('email_unsubscribe_tokens').select('token').eq('email', recipient).maybeSingle()
-  if (existingToken?.token) {
-    unsubscribeToken = existingToken.token
-  } else {
-    const fresh = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) => b.toString(16).padStart(2, '0')).join('')
-    const { error: tokenError } = await admin.from('email_unsubscribe_tokens').insert({ token: fresh, email: recipient })
-    if (tokenError) {
-      const { data: retry } = await admin.from('email_unsubscribe_tokens').select('token').eq('email', recipient).maybeSingle()
-      unsubscribeToken = retry?.token
-    } else unsubscribeToken = fresh
-  }
-  if (!unsubscribeToken) return json({ error: 'تعذر تجهيز بريد الدعوة' }, 500)
-
-  const { error: logError } = await admin.from('email_send_log').insert({
-    message_id: messageId, template_name: 'organization_invitation', recipient_email: invite.email, status: 'pending',
-  })
-  if (logError) console.error('invitation log failed', { code: logError.code, message: logError.message })
-
-  const { error: enqueueError } = await admin.rpc('enqueue_email', {
-    queue_name: 'auth_emails',
-    payload: {
-      message_id: messageId,
-      to: invite.email,
-      from: FROM,
-      sender_domain: SENDER_DOMAIN,
-      subject: `دعوة للانضمام إلى ${organizationName}`,
-      html,
-      text,
-      purpose: 'transactional',
-      label: 'organization_invitation',
-      idempotency_key: `organization-invitation:${invite.id}:${invite.token}`,
-      unsubscribe_token: unsubscribeToken,
-      queued_at: new Date().toISOString(),
-    },
-  })
-  if (enqueueError) {
-    console.error('invitation enqueue failed', { code: enqueueError.code, message: enqueueError.message })
-    await admin.from('email_send_log').insert({
-      message_id: messageId, template_name: 'organization_invitation', recipient_email: invite.email,
-      status: 'failed', error_message: 'Failed to enqueue invitation email',
+  // Rendered with renderToStaticMarkup (not the stream renderer) to keep Arabic text intact.
+  const logRow = (status: string, error_message?: string) =>
+    admin.from('email_send_log').insert({
+      message_id: null, template_name: 'organization_invitation', recipient_email: invite.email, status,
+      ...(error_message ? { error_message } : {}),
+    }).then(({ error }) => {
+      if (error) console.error('invitation log failed', { code: error.code, message: error.message })
     })
-    return json({ error: 'تعذر إرسال بريد الدعوة' }, 500)
+
+  try {
+    await sendLovableEmail(
+      {
+        to: invite.email,
+        from: FROM,
+        sender_domain: SENDER_DOMAIN,
+        subject: `دعوة للانضمام إلى ${organizationName}`,
+        html,
+        text,
+        purpose: 'transactional',
+        label: 'organization_invitation',
+        idempotency_key: `organization-invitation:${invite.id}:${invite.token}`,
+      },
+      { apiKey, sendUrl: Deno.env.get('LOVABLE_SEND_URL') },
+    )
+  } catch (error) {
+    if (error instanceof EmailAPIError && error.code === 'recipient_suppressed') {
+      await logRow('suppressed')
+      return json({ success: false, reason: 'recipient_suppressed' }, 200)
+    }
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('invitation send failed', { message: message.slice(0, 300) })
+    await logRow('failed', message.slice(0, 1000))
+    return json({ error: 'تعذر إرسال بريد الدعوة' }, 502)
   }
 
+  await logRow('sent')
   return json({ success: true })
 })
