@@ -45,7 +45,7 @@ const PaymentPage = () => {
   const [discountCode, setDiscountCode] = useState('');
 
   // Fetch plan details
-  const { data: plan, isLoading, isError } = useQuery({
+  const { data: plan, isLoading, isError, refetch: refetchPlan } = useQuery({
     queryKey: ['payment-plan', planId],
     queryFn: async () => {
       if (!planId) return null;
@@ -83,9 +83,21 @@ const PaymentPage = () => {
     ? (billing === 'yearly' ? plan.price_yearly : plan.price_monthly) 
     : 0;
 
+  const checkoutCapabilities = useQuery({
+    queryKey: ['subscription-checkout-capabilities', user?.id],
+    enabled: Boolean(user && orgId && plan && canPurchase),
+    retry: false,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<{ discounts: boolean }>('create-payment', { method: 'GET' });
+      if (error) throw error;
+      return data;
+    },
+  });
+  const discountAvailable = checkoutCapabilities.data?.discounts === true;
   const quote = useQuery({
     queryKey: ['subscription-price-quote', orgId, planId, billing, discountCode],
-    enabled: Boolean(user && orgId && plan && canPurchase),
+    enabled: Boolean(user && orgId && plan && canPurchase && discountAvailable),
     retry: false,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('quote_subscription_discount', {
@@ -98,9 +110,10 @@ const PaymentPage = () => {
       return data as unknown as SubscriptionPriceQuote;
     },
   });
-  const quotedAmount = quote.data?.amount_cents;
+  const quotedAmount = discountAvailable ? quote.data?.amount_cents : Math.round(price * 100);
   const payable = quotedAmount === undefined ? price : quotedAmount / 100;
-  const discount = quote.data?.discount_code ? quote.data : null;
+  const discount = discountAvailable && quote.data?.discount_code ? quote.data : null;
+  const checkoutPricingUnavailable = checkoutCapabilities.isLoading || (discountAvailable && (quote.isFetching || quote.isError));
 
   const durationLabel = billing === 'yearly' ? 'سنوي (12 شهر)' : 'شهري (30 يوم)';
   const durationDays = billing === 'yearly' ? 365 : (plan?.duration_days || 30);
@@ -110,7 +123,7 @@ const PaymentPage = () => {
     : 0;
 
   const handlePayment = async () => {
-    if (!plan || !user || !orgId || !canPurchase || quotedAmount === undefined || quote.isFetching || quote.isError) {
+    if (!plan || !planId || !user || !orgId || !canPurchase || quotedAmount === undefined || checkoutPricingUnavailable) {
       toast.error('بيانات غير مكتملة');
       return;
     }
@@ -122,22 +135,18 @@ const PaymentPage = () => {
 
     setIsProcessing(true);
     try {
-      const { data: preparedData, error: prepareError } = await supabase.rpc(
-        'prepare_subscription_checkout_with_discount',
-        {
-          _organization_id: orgId,
-          _plan_id: planId,
-          _billing_cycle: billing,
-          _discount_code: discountCode || undefined,
-        },
-      );
+      const selection = { _organization_id: orgId, _plan_id: planId, _billing_cycle: billing };
+      const { data: preparedData, error: prepareError } = discountAvailable
+        ? await supabase.rpc('prepare_subscription_checkout_with_discount', { ...selection, _discount_code: discountCode || undefined })
+        : await supabase.rpc('prepare_subscription_checkout', selection);
       if (prepareError) throw prepareError;
       const prepared = preparedData as unknown as PreparedSubscriptionCheckout;
       if (!prepared?.checkout_session_id || !prepared?.merchant_order_id || prepared.amount_cents<=0) {
         throw new Error('تعذر تجهيز جلسة دفع آمنة');
       }
-      if (prepared.amount_cents !== quotedAmount || prepared.discount_code !== quote.data?.discount_code) {
-        await quote.refetch();
+      if (prepared.amount_cents !== quotedAmount || (discountAvailable && prepared.discount_code !== quote.data?.discount_code)) {
+        if (discountAvailable) await quote.refetch();
+        else await refetchPlan();
         toast.info('اتغير مبلغ الدفع. راجع الإجمالي واضغط ادفع مرة تانية.');
         return;
       }
@@ -302,7 +311,7 @@ const PaymentPage = () => {
 
               <Separator />
 
-              {canPurchase && (
+              {canPurchase && discountAvailable && (
                 <div className="space-y-2">
                   <Label htmlFor="subscription-discount-code">كود الخصم</Label>
                   <form className="flex flex-wrap gap-2" onSubmit={(event) => {
@@ -399,7 +408,7 @@ const PaymentPage = () => {
                 className="w-full h-14 text-lg gap-3"
                 size="lg"
                 onClick={handlePayment}
-                disabled={isProcessing || quote.isFetching || quote.isError || quotedAmount === undefined}
+                disabled={isProcessing || !canPurchase || checkoutPricingUnavailable || !quotedAmount}
               >
                 {isProcessing ? (
                   <>

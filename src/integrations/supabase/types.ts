@@ -19152,6 +19152,16 @@ export type Database = {
         }
         Returns: Json
       }
+      get_platform_paymob_permissions: { Args: never; Returns: Json }
+      list_platform_paymob_staff: { Args: never; Returns: Json }
+      list_platform_paymob_transactions: {
+        Args: { p_search?: string; p_status?: string; p_offset?: number }
+        Returns: Json
+      }
+      set_platform_paymob_staff_permissions: {
+        Args: { p_email: string; p_can_void: boolean; p_can_refund: boolean }
+        Returns: undefined
+      }
       preview_existing_bookings_settlement: {
         Args: { _org: string }
         Returns: Json

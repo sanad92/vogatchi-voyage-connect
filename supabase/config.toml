@@ -15,6 +15,9 @@ verify_jwt = true
 [functions.paymob-webhook]
 verify_jwt = false
 
+[functions.platform-paymob-operations]
+verify_jwt = true
+
 [functions.whatsapp-queue-dispatch]
 verify_jwt = true
 

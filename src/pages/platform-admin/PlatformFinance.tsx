@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TablePager, PAGE_SIZE, PLATFORM_TABLE_CONTAINER } from '@/components/platform-admin/TablePager';
 import type { Tables } from '@/integrations/supabase/types';
+import PlatformPaymobPayments, { PlatformPaymobPermissions } from '@/components/platform-admin/PlatformPaymobPayments';
 
 const kinds: Record<string, string> = {
   asset: 'أصول', liability: 'التزامات', equity: 'حقوق ملكية', income: 'إيرادات', expense: 'مصروفات',
@@ -321,6 +322,7 @@ export default function PlatformFinance() {
           <TabsTrigger value="journal">قيود اليومية</TabsTrigger>
           <TabsTrigger value="balance">ميزان المراجعة</TabsTrigger>
           <TabsTrigger value="accounts">دليل الحسابات</TabsTrigger>
+          <TabsTrigger value="paymob">عمليات Paymob</TabsTrigger>
           {role === 'owner' && <TabsTrigger value="staff">الصلاحيات المالية</TabsTrigger>}
         </TabsList>
         <TabsContent value="journal">
@@ -385,7 +387,8 @@ export default function PlatformFinance() {
             </Table>}
           </CardContent></Card>
         </TabsContent>
-        {role === 'owner' && <TabsContent value="staff"><Staff /></TabsContent>}
+        <TabsContent value="paymob"><PlatformPaymobPayments /></TabsContent>
+        {role === 'owner' && <TabsContent value="staff"><Staff /><PlatformPaymobPermissions /></TabsContent>}
       </Tabs>
 
       <Dialog open={!!draft} onOpenChange={(open) => { if (!open && !posting.isPending) setDraft(null); }}>
