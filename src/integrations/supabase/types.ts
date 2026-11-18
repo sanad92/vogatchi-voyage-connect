@@ -17397,6 +17397,10 @@ export type Database = {
         Returns: undefined
       }
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      get_staff_invitation_status: {
+        Args: { _token: string; _email?: string }
+        Returns: Json
+      }
       activate_subscription_from_paymob: {
         Args: { _paymob_transaction_id: string }
         Returns: boolean
