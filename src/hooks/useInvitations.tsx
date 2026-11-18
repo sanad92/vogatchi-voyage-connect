@@ -13,6 +13,13 @@ export interface AcceptInvitationResult {
   organization_id?: string;
 }
 
+const sendInvitationEmail = async (invitationId: string) => {
+  const { error } = await supabase.functions.invoke('send-invitation-email', {
+    body: { invitation_id: invitationId },
+  });
+  if (error) throw new Error('تم حفظ الدعوة لكن تعذر إرسال البريد، جرّب إعادة الإرسال');
+};
+
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error) return error.message;
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
@@ -50,6 +57,8 @@ export const useInvitations = () => {
       });
 
       if (error) throw error;
+      const invitationId = (data as { id?: string } | null)?.id;
+      if (invitationId) await sendInvitationEmail(invitationId);
       return data;
     },
     onSuccess: () => {
@@ -57,6 +66,7 @@ export const useInvitations = () => {
       toast.success('تم إرسال الدعوة بنجاح');
     },
     onError: (error: unknown) => {
+      queryClient.invalidateQueries({ queryKey: ['invitations', orgId] });
       toast.error(getErrorMessage(error, 'حدث خطأ أثناء إرسال الدعوة'));
     },
   });
@@ -81,6 +91,7 @@ export const useInvitations = () => {
         _invitation_id: invitationId,
       });
       if (error) throw error;
+      await sendInvitationEmail(invitationId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invitations', orgId] });

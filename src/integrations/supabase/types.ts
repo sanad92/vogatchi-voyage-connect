@@ -19262,10 +19262,6 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: number
       }
-      queue_organization_invitation_email: {
-        Args: { _invitation_id: string }
-        Returns: number
-      }
       quote_booking_supplier_coverage: {
         Args: { _booking: string; _cost: number; _org: string }
         Returns: boolean
