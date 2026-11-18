@@ -13089,6 +13089,39 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_discount_codes: {
+        Row: {
+          code: string
+          created_at: string
+          duration_months: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          organization_id: string | null
+          percent: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          duration_months: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          percent: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          duration_months?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          percent?: number
+        }
+        Relationships: []
+      }
       subscription_plans: {
         Row: {
           created_at: string
@@ -19096,6 +19129,24 @@ export type Database = {
       prepare_subscription_checkout: {
         Args: {
           _billing_cycle: string
+          _organization_id: string
+          _plan_id: string
+        }
+        Returns: Json
+      }
+      prepare_subscription_checkout_with_discount: {
+        Args: {
+          _billing_cycle: string
+          _discount_code?: string
+          _organization_id: string
+          _plan_id: string
+        }
+        Returns: Json
+      }
+      quote_subscription_discount: {
+        Args: {
+          _billing_cycle: string
+          _discount_code?: string
           _organization_id: string
           _plan_id: string
         }

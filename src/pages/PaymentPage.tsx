@@ -3,8 +3,10 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
-import { useOrgId } from '@/hooks/useOrgId';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -14,12 +16,18 @@ import {
   Loader2, AlertTriangle, Sparkles
 } from 'lucide-react';
 
-interface PreparedSubscriptionCheckout {
+interface SubscriptionPriceQuote {
+  amount_cents: number;
+  original_amount_cents: number;
+  discount_code: string | null;
+  discount_percent: number | null;
+}
+
+interface PreparedSubscriptionCheckout extends SubscriptionPriceQuote {
   checkout_session_id: string;
   organization_id: string;
   plan_id: string;
   billing_cycle: 'monthly' | 'yearly';
-  amount_cents: number;
   currency: 'EGP';
   merchant_order_id: string;
   expires_at: string;
@@ -30,8 +38,11 @@ const PaymentPage = () => {
   const planId = searchParams.get('plan');
   const billing = searchParams.get('billing') === 'yearly' ? 'yearly' : 'monthly';
   const { user } = useOptimizedAuth();
-  const orgId = useOrgId();
+  const { organizationId: orgId, orgRole } = useOrganization();
+  const canPurchase = orgRole === 'owner' || orgRole === 'manager';
   const [isProcessing, setIsProcessing] = useState(false);
+  const [discountInput, setDiscountInput] = useState('');
+  const [discountCode, setDiscountCode] = useState('');
 
   // Fetch plan details
   const { data: plan, isLoading, isError } = useQuery({
@@ -68,9 +79,28 @@ const PaymentPage = () => {
     enabled: !!orgId,
   });
 
-  const price = plan 
+  const price = plan
     ? (billing === 'yearly' ? plan.price_yearly : plan.price_monthly) 
     : 0;
+
+  const quote = useQuery({
+    queryKey: ['subscription-price-quote', orgId, planId, billing, discountCode],
+    enabled: Boolean(user && orgId && plan && canPurchase),
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('quote_subscription_discount', {
+        _organization_id: orgId!,
+        _plan_id: planId!,
+        _billing_cycle: billing,
+        _discount_code: discountCode || undefined,
+      });
+      if (error) throw error;
+      return data as unknown as SubscriptionPriceQuote;
+    },
+  });
+  const quotedAmount = quote.data?.amount_cents;
+  const payable = quotedAmount === undefined ? price : quotedAmount / 100;
+  const discount = quote.data?.discount_code ? quote.data : null;
 
   const durationLabel = billing === 'yearly' ? 'سنوي (12 شهر)' : 'شهري (30 يوم)';
   const durationDays = billing === 'yearly' ? 365 : (plan?.duration_days || 30);
@@ -80,7 +110,7 @@ const PaymentPage = () => {
     : 0;
 
   const handlePayment = async () => {
-    if (!plan || !user || !orgId) {
+    if (!plan || !user || !orgId || !canPurchase || quotedAmount === undefined || quote.isFetching || quote.isError) {
       toast.error('بيانات غير مكتملة');
       return;
     }
@@ -93,17 +123,23 @@ const PaymentPage = () => {
     setIsProcessing(true);
     try {
       const { data: preparedData, error: prepareError } = await supabase.rpc(
-        'prepare_subscription_checkout',
+        'prepare_subscription_checkout_with_discount',
         {
           _organization_id: orgId,
           _plan_id: planId,
           _billing_cycle: billing,
+          _discount_code: discountCode || undefined,
         },
       );
       if (prepareError) throw prepareError;
       const prepared = preparedData as unknown as PreparedSubscriptionCheckout;
       if (!prepared?.checkout_session_id || !prepared?.merchant_order_id || prepared.amount_cents<=0) {
         throw new Error('تعذر تجهيز جلسة دفع آمنة');
+      }
+      if (prepared.amount_cents !== quotedAmount || prepared.discount_code !== quote.data?.discount_code) {
+        await quote.refetch();
+        toast.info('اتغير مبلغ الدفع. راجع الإجمالي واضغط ادفع مرة تانية.');
+        return;
       }
 
       const fullName = String(user.user_metadata?.full_name || user.email?.split('@')[0] || 'User');
@@ -147,7 +183,8 @@ const PaymentPage = () => {
       }
     } catch (err: unknown) {
       console.error('Payment error:', err);
-      toast.error(err instanceof Error ? err.message : 'فشل في بدء عملية الدفع');
+      const message = typeof err === 'object' && err && 'message' in err ? String(err.message) : 'فشل في بدء عملية الدفع';
+      toast.error(message);
     } finally {
       setIsProcessing(false);
     }
@@ -265,13 +302,56 @@ const PaymentPage = () => {
 
               <Separator />
 
+              {canPurchase && (
+                <div className="space-y-2">
+                  <Label htmlFor="subscription-discount-code">كود الخصم</Label>
+                  <form className="flex flex-wrap gap-2" onSubmit={(event) => {
+                    event.preventDefault();
+                    const code = discountInput.trim().toUpperCase();
+                    if (code === discountCode) void quote.refetch();
+                    else setDiscountCode(code);
+                  }}>
+                    <Input id="subscription-discount-code" className="min-w-32 flex-1" dir="ltr" autoComplete="off"
+                      maxLength={32} value={discountInput} disabled={isProcessing}
+                      onChange={(event) => setDiscountInput(event.target.value)} />
+                    <Button type="submit" variant="outline" disabled={!discountInput.trim() || isProcessing || quote.isFetching}>
+                      تطبيق
+                    </Button>
+                    {discountCode && (
+                      <Button type="button" variant="ghost" disabled={isProcessing}
+                        onClick={() => { setDiscountCode(''); setDiscountInput(''); }}>مسح الكود</Button>
+                    )}
+                  </form>
+                  {quote.isError && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p role="alert" className="text-sm text-destructive">{quote.error.message}</p>
+                      {!discountCode && (
+                        <Button type="button" size="sm" variant="outline" onClick={() => void quote.refetch()}>
+                          إعادة المحاولة
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {discount && (
+                    <p className="text-sm text-muted-foreground" aria-live="polite">
+                      خصم <bdi>{discount.discount_percent}%</bdi> · <bdi data-no-translate>{discount.discount_code}</bdi>
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Price */}
               <div className="flex items-center justify-between pt-2">
                 <span className="text-lg font-semibold text-foreground">الإجمالي</span>
                 <div className="text-left">
                   <div className="text-2xl font-bold text-primary">
-                    {price.toLocaleString('ar-EG')} ج.م
+                    {payable.toLocaleString('ar-EG', { maximumFractionDigits: 2 })} ج.م
                   </div>
+                  {discount && (
+                    <div className="text-sm text-muted-foreground line-through">
+                      {(discount.original_amount_cents / 100).toLocaleString('ar-EG')} ج.م
+                    </div>
+                  )}
                   {billing === 'yearly' && yearlyDiscount > 0 && (
                     <div className="text-sm text-green-600 font-medium">
                       وفر {yearlyDiscount}% مقارنة بالشهري
@@ -319,7 +399,7 @@ const PaymentPage = () => {
                 className="w-full h-14 text-lg gap-3"
                 size="lg"
                 onClick={handlePayment}
-                disabled={isProcessing || price === 0}
+                disabled={isProcessing || quote.isFetching || quote.isError || quotedAmount === undefined}
               >
                 {isProcessing ? (
                   <>
@@ -329,7 +409,7 @@ const PaymentPage = () => {
                 ) : (
                   <>
                     <CreditCard className="h-5 w-5" />
-                    ادفع {price.toLocaleString('ar-EG')} ج.م
+                    ادفع {payable.toLocaleString('ar-EG', { maximumFractionDigits: 2 })} ج.م
                   </>
                 )}
               </Button>
