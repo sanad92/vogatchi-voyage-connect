@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { ToolContext } from "@lovable.dev/mcp-js";
+import type { JsonValueInput, ToolContext } from "@lovable.dev/mcp-js";
 
 type RuntimeGlobals = typeof globalThis & {
   Deno?: { env?: { get?: (name: string) => string | undefined } };
@@ -75,6 +75,6 @@ export function failure(message: string) {
 export function rows(data: unknown) {
   return {
     content: [{ type: "text" as const, text: JSON.stringify(data ?? [], null, 2) }],
-    structuredContent: { data: data ?? [] },
+    structuredContent: { data: JSON.parse(JSON.stringify(data ?? [])) as JsonValueInput },
   };
 }

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "sdk_version": "0.28.0",
+  "sdk_version": "3.5.0",
   "path": "/functions/v1/mcp",
   "auth": {
     "type": "oauth",
@@ -26,7 +26,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
             "query": {
@@ -42,7 +42,8 @@
           },
           "required": [
             "query"
-          ]
+          ],
+          "additionalProperties": false
         },
         "outputSchema": null
       },
@@ -56,7 +57,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
             "stage": {
@@ -73,7 +74,8 @@
               "maximum": 9007199254740991,
               "description": "Maximum number of leads to return (default 20)."
             }
-          }
+          },
+          "additionalProperties": false
         },
         "outputSchema": null
       },
@@ -87,7 +89,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
             "status": {
@@ -104,7 +106,8 @@
               "maximum": 9007199254740991,
               "description": "Maximum number of quotes to return (default 20)."
             }
-          }
+          },
+          "additionalProperties": false
         },
         "outputSchema": null
       },
@@ -118,7 +121,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
             "status": {
@@ -139,7 +142,8 @@
               "maximum": 9007199254740991,
               "description": "Maximum number of bookings to return (default 20)."
             }
-          }
+          },
+          "additionalProperties": false
         },
         "outputSchema": null
       },
@@ -153,7 +157,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
             "booking_number": {
@@ -164,7 +168,8 @@
               "type": "string",
               "description": "Booking UUID."
             }
-          }
+          },
+          "additionalProperties": false
         },
         "outputSchema": null
       }

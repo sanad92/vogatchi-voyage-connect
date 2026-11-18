@@ -10,7 +10,7 @@ import { defineTool } from "npm:@lovable.dev/mcp-js@3.5.0";
 import { z } from "npm:zod@^4.6.7";
 
 // src/lib/mcp/supabase.ts
-import { createClient } from "npm:@supabase/supabase-js@^2.119.1";
+import { createClient } from "npm:@supabase/supabase-js@2.95.3";
 function runtimeEnv(name) {
   const runtime = globalThis;
   return runtime.Deno?.env?.get?.(name) ?? runtime.process?.env?.[name];
@@ -69,7 +69,7 @@ function failure(message) {
 function rows(data) {
   return {
     content: [{ type: "text", text: JSON.stringify(data ?? [], null, 2) }],
-    structuredContent: { data: data ?? [] }
+    structuredContent: { data: JSON.parse(JSON.stringify(data ?? [])) }
   };
 }
 
