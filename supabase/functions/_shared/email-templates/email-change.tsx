@@ -34,6 +34,8 @@ export const EmailChangeEmail = ({
 }: EmailChangeEmailProps) => (
   <Html lang="ar" dir="rtl">
     <Head>
+      <meta charSet="UTF-8" />
+      <meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />
       <style>{darkModeCss}</style>
     </Head>
     <Preview>تأكيد تغيير بريدك الإلكتروني في {siteName}</Preview>

@@ -27,6 +27,8 @@ export const InviteEmail = ({
 }: InviteEmailProps) => (
   <Html lang="ar" dir="rtl">
     <Head>
+      <meta charSet="UTF-8" />
+      <meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />
       <style>{darkModeCss}</style>
     </Head>
     <Preview>تمت دعوتك للانضمام إلى {siteName}</Preview>

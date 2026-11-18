@@ -29,6 +29,8 @@ export const SignupEmail = ({
 }: SignupEmailProps) => (
   <Html lang="ar" dir="rtl">
     <Head>
+      <meta charSet="UTF-8" />
+      <meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />
       <style>{darkModeCss}</style>
     </Head>
     <Preview>أكّد بريدك الإلكتروني للبدء في {siteName}</Preview>

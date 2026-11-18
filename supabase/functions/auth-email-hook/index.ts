@@ -17,12 +17,12 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
-  magiclink: 'Your login link',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  signup: 'تأكيد بريدك الإلكتروني',
+  invite: 'لديك دعوة للانضمام',
+  magiclink: 'رابط تسجيل الدخول',
+  recovery: 'إعادة تعيين كلمة المرور',
+  email_change: 'تأكيد بريدك الجديد',
+  reauthentication: 'رمز التحقق الخاص بك',
 }
 
 // Template mapping
@@ -36,7 +36,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "safarerp"
+const SITE_NAME = "SafarERP"
 const SENDER_DOMAIN = "notify.safarerp.com"
 const ROOT_DOMAIN = "safarerp.com"
 const FROM_DOMAIN = "safarerp.com" // Domain shown in From address (may be root or sender subdomain)

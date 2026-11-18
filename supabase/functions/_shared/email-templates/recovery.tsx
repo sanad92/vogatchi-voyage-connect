@@ -24,6 +24,8 @@ export const RecoveryEmail = ({
 }: RecoveryEmailProps) => (
   <Html lang="ar" dir="rtl">
     <Head>
+      <meta charSet="UTF-8" />
+      <meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />
       <style>{darkModeCss}</style>
     </Head>
     <Preview>إعادة تعيين كلمة المرور في {siteName}</Preview>

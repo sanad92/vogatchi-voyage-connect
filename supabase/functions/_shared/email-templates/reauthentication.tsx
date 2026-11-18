@@ -18,7 +18,10 @@ interface ReauthenticationEmailProps {
 
 export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
   <Html lang="ar" dir="rtl">
-    <Head />
+    <Head>
+      <meta charSet="UTF-8" />
+      <meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />
+    </Head>
     <Preview>رمز التحقق الخاص بك</Preview>
     <Body style={main}>
       <Container style={container}>
