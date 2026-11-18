@@ -76,14 +76,13 @@ serve(async (req) => {
       const signature = req.headers.get('X-Hub-Signature-256') ?? '';
       const rawBody = new Uint8Array(await req.arrayBuffer());
 
-      if (appSecret) {
-        const valid = await verifySignature(rawBody, signature, appSecret);
-        if (!valid) {
-          console.error('Invalid webhook signature');
-          return new Response('Forbidden', { status: 403, headers: corsHeaders });
-        }
-      } else {
-        console.warn('APP_SECRET missing - skipping signature verification');
+      if (!appSecret) {
+        console.error('[whatsapp-webhook] app secret not configured - rejecting delivery');
+        return new Response('Server misconfigured', { status: 503, headers: corsHeaders });
+      }
+      if (!(await verifySignature(rawBody, signature, appSecret))) {
+        console.error('Invalid webhook signature');
+        return new Response('Forbidden', { status: 403, headers: corsHeaders });
       }
 
       const body = JSON.parse(new TextDecoder().decode(rawBody));

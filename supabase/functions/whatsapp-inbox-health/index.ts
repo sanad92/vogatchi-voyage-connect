@@ -54,7 +54,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
     const { data: member } = await admin.from("organization_members").select("role")
-      .eq("organization_id", organizationId).eq("user_id", authData.user.id).maybeSingle();
+      .eq("organization_id", organizationId).eq("user_id", authData.user.id).eq("is_active", true).maybeSingle();
     if (!member || !["owner", "admin"].includes(member.role)) return json({ error: "هذه العملية متاحة لمدير المؤسسة فقط" }, 403);
 
     const { data: settings, error: settingsError } = await admin.from("whatsapp_settings")

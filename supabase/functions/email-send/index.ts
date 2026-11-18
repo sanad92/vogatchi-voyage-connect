@@ -2,6 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { requireUser, authErrorResponse } from '../_shared/auth.ts';
+import { isAllowedFile, MAX_MEDIA_BYTES } from '../_shared/file-policy.ts';
 import { smtpSession, decryptSecret, friendlyMailError } from '../_shared/mail.ts';
 
 const Body = z.object({
@@ -9,8 +10,8 @@ const Body = z.object({
   accountId: z.string().uuid().optional(),
   to: z.array(z.string().email()).min(1).max(20),
   cc: z.array(z.string().email()).max(20).optional(),
-  subject: z.string().min(1).max(300),
-  text: z.string().min(1).max(50000),
+  subject: z.string().trim().min(1).max(300).refine((v) => !/[\r\n\u0000-\u001f]/.test(v), 'invalid subject'),
+  text: z.string().trim().min(1).max(20000).refine((v) => !/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(v), 'invalid text'),
   attachments: z.array(z.object({ name: z.string().min(1).max(200), type: z.string().max(120), base64: z.string().max(14_000_000) })).max(10).optional(),
 });
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -22,6 +23,13 @@ Deno.serve(async (req) => {
     const parsed = Body.safeParse(await req.json());
     if (!parsed.success) return json({ error: 'بيانات غير صحيحة', details: parsed.error.flatten().fieldErrors }, 400);
     const b = parsed.data;
+    let totalBytes = 0;
+    for (const a of b.attachments ?? []) {
+      const size = Math.floor((a.base64.length * 3) / 4);
+      totalBytes += size;
+      if (!isAllowedFile(a.type, size, a.name)) return json({ error: 'نوع المرفق غير مسموح | Attachment type not allowed' }, 400);
+    }
+    if (totalBytes > MAX_MEDIA_BYTES) return json({ error: 'حجم المرفقات كبير جدًا | Attachments too large' }, 400);
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
     // deno-lint-ignore no-explicit-any
