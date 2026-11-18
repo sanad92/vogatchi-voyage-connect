@@ -12,6 +12,7 @@ export const PLAN_FEATURES = {
 } as const;
 
 export type PlanFeature = (typeof PLAN_FEATURES)[keyof typeof PLAN_FEATURES];
+export const CUSTOM_SUBSCRIPTION_PLAN_NAME = 'Customised';
 
 export const PLAN_FEATURE_LABELS: Record<PlanFeature, string> = {
   [PLAN_FEATURES.FINANCE]: 'الإدارة المالية والمحاسبة',
@@ -24,6 +25,23 @@ export const PLAN_FEATURE_LABELS: Record<PlanFeature, string> = {
   [PLAN_FEATURES.MULTI_BRANCH]: 'الفروع والأقسام',
   [PLAN_FEATURES.WHITE_LABEL]: 'الهوية المخصصة',
   [PLAN_FEATURES.ENTERPRISE_CONTROLS]: 'ضوابط المؤسسات المتقدمة',
+};
+
+export const SUBSCRIPTION_FEATURE_LABELS: Record<string, string> = {
+  basic_crm: 'العملاء وإدارة المبيعات',
+  sop_workflow: 'دورة العمل وتسليم المهام',
+  quotes: 'عروض الأسعار',
+  hotel_bookings: 'حجوزات الفنادق',
+  flight_bookings: 'حجوزات الطيران',
+  car_rentals: 'تأجير السيارات',
+  transport: 'الانتقالات',
+  suppliers: 'الموردون والمشتريات',
+  invoices: 'الفواتير والتحصيلات',
+  documents: 'المستندات والقسائم',
+  reports: 'التقارير الإدارية الأساسية',
+  commissions: 'عمولات الموظفين',
+  ...PLAN_FEATURE_LABELS,
+  priority_support: 'دعم بأولوية',
 };
 
 interface PlanFeatureRouteRule {

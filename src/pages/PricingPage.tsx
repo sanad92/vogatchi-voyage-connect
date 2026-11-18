@@ -31,6 +31,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { CUSTOM_SUBSCRIPTION_PLAN_NAME, SUBSCRIPTION_FEATURE_LABELS } from '@/lib/planFeatures';
 
 type PricingPlan = Database['public']['Tables']['subscription_plans']['Row'];
 
@@ -174,6 +175,10 @@ const PLAN_META: Record<string, { description: string; audience: string }> = {
     description: 'تحكم مؤسسي، فروع وهوية مخصصة لعمليات أكبر وأكثر تعقيدًا.',
     audience: 'للمجموعات والشركات متعددة الفروع',
   },
+  [CUSTOM_SUBSCRIPTION_PLAN_NAME]: {
+    description: 'باقة بموديولات وحدود استخدام مخصصة لطريقة شغل شركتك.',
+    audience: 'للشركات اللي تحتاج باقة مخصصة',
+  },
 };
 
 const RECOMMENDED_PLAN = 'Pro';
@@ -314,10 +319,14 @@ const PricingPage = () => {
               </div>
             </div>
           ) : (
-            <div className="grid gap-6 lg:grid-cols-3 lg:items-stretch">
+            <div className={`grid gap-6 sm:grid-cols-2 lg:items-stretch ${plans.length === 4 ? 'xl:grid-cols-4' : 'lg:grid-cols-3'}`}>
               {plans.map((plan) => {
                 const features = getFeatures(plan);
-                const included = PLAN_CARD_FEATURES.filter((feature) => hasFeature(features, feature));
+                const isCustom = plan.name === CUSTOM_SUBSCRIPTION_PLAN_NAME;
+                const cardFeatures = isCustom
+                  ? Object.entries(SUBSCRIPTION_FEATURE_LABELS).map(([key, label]) => ({ label, icon: CheckCircle2, keys: [key] }))
+                  : PLAN_CARD_FEATURES;
+                const included = cardFeatures.filter((feature) => hasFeature(features, feature));
                 const recommended = plan.name === RECOMMENDED_PLAN;
                 const monthly = Number(plan.price_monthly);
                 const yearly = Number(plan.price_yearly);
@@ -326,7 +335,7 @@ const PricingPage = () => {
                 const discount = yearlyDiscount(plan);
                 const checkoutUrl = `/payment?plan=${encodeURIComponent(plan.id)}&billing=${isYearly ? 'yearly' : 'monthly'}`;
                 const baseFeatures = getFeatures(plans[0]);
-                const highlights = included.filter((feature) => plan.id === plans[0].id || !hasFeature(baseFeatures, feature));
+                const highlights = included.filter((feature) => isCustom || plan.id === plans[0].id || !hasFeature(baseFeatures, feature));
                 const meta = PLAN_META[plan.name] ?? {
                   description: 'خطة مرنة لتشغيل شركتك على منصة واحدة.',
                   audience: 'لفرق شركات السياحة',
