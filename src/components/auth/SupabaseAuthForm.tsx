@@ -7,8 +7,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getAuthErrorMessage } from '@/lib/authErrorMessage';
+import { getAuthErrorMessage, getPasswordAuthErrorMessage } from '@/lib/authErrorMessage';
 import SafarLogo from '@/components/brand/VogantraLogo';
+import PasswordChecklist from '@/components/auth/PasswordChecklist';
+import { PASSWORD_MIN_LENGTH, PASSWORD_LENGTH_MESSAGE } from '@/lib/passwordRules';
 
 interface SupabaseAuthFormProps {
   defaultTab?: string;
@@ -20,6 +22,7 @@ const SupabaseAuthForm = ({ defaultTab = 'signin' }: SupabaseAuthFormProps) => {
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const { signIn, signUp, loading } = useOptimizedAuth();
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -38,16 +41,22 @@ const SupabaseAuthForm = ({ defaultTab = 'signin' }: SupabaseAuthFormProps) => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setPasswordError('');
     if (!email || !password || !fullName) {
       setError('يرجى إدخال جميع البيانات المطلوبة');
       return;
     }
-    if (password.length < 8) {
-      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      setPasswordError(PASSWORD_LENGTH_MESSAGE);
       return;
     }
     const result = await signUp(email, password, fullName);
     if (result.error) {
+      const feedback = getPasswordAuthErrorMessage(result.error);
+      if (feedback) {
+        setPasswordError(feedback);
+        return;
+      }
       const errorMsg = result.error instanceof Error ? result.error.message : String(result.error);
       if (errorMsg.includes('already') || errorMsg.includes('user_already_exists')) {
         setError('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من ذلك.');
@@ -127,11 +136,12 @@ const SupabaseAuthForm = ({ defaultTab = 'signin' }: SupabaseAuthFormProps) => {
               <div className="space-y-2">
                 <Label htmlFor="signup-password">كلمة المرور</Label>
                 <div className="relative">
-                  <Input id="signup-password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required className="text-right pr-10" placeholder="8 أحرف على الأقل" disabled={loading} minLength={8} />
+                  <Input id="signup-password" type={showPassword ? "text" : "password"} value={password} onChange={e => { setPassword(e.target.value); setPasswordError(''); }} autoComplete="new-password" aria-describedby="signup-password-guidance" aria-invalid={Boolean(passwordError)} required className="text-right pr-10" placeholder="أدخل كلمة مرور" disabled={loading} minLength={PASSWORD_MIN_LENGTH} />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" disabled={loading}>
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+                <PasswordChecklist id="signup-password-guidance" password={password} error={passwordError} />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (

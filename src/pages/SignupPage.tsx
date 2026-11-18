@@ -9,8 +9,11 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { Eye, EyeOff, UserPlus, Mail, Lock, User } from 'lucide-react';
 import AuthLayout from '@/components/auth/AuthLayout';
 import VogantraLogo from '@/components/brand/VogantraLogo';
+import PasswordChecklist from '@/components/auth/PasswordChecklist';
+import { PASSWORD_MIN_LENGTH, PASSWORD_LENGTH_MESSAGE } from '@/lib/passwordRules';
 import { getSafeInternalRedirect } from '@/lib/safeRedirect';
 import { isFreeEmail, BUSINESS_EMAIL_MESSAGE } from '@/lib/business-email';
+import { getPasswordAuthErrorMessage } from '@/lib/authErrorMessage';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
@@ -18,6 +21,7 @@ const SignupPage = () => {
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const { signUp, loading, isLoggedIn } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
   const [searchParams] = useSearchParams();
@@ -45,6 +49,7 @@ const SignupPage = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setPasswordError('');
     if (!email || !password || !fullName) {
       setError('يرجى إدخال جميع البيانات المطلوبة');
       return;
@@ -53,12 +58,17 @@ const SignupPage = () => {
       setError(BUSINESS_EMAIL_MESSAGE);
       return;
     }
-    if (password.length < 8) {
-      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      setPasswordError(PASSWORD_LENGTH_MESSAGE);
       return;
     }
     const result = await signUp(email, password, fullName, requestedRedirect || undefined);
     if (result.error) {
+      const feedback = getPasswordAuthErrorMessage(result.error);
+      if (feedback) {
+        setPasswordError(feedback);
+        return;
+      }
       const errorMsg = result.error instanceof Error ? result.error.message : String(result.error);
       if (errorMsg.includes('already') || errorMsg.includes('user_already_exists')) {
         setError('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من ذلك.');
@@ -139,12 +149,17 @@ const SignupPage = () => {
                 autoComplete="new-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={e => {
+                  setPassword(e.target.value);
+                  setPasswordError('');
+                }}
+                aria-describedby="signup-password-guidance"
+                aria-invalid={Boolean(passwordError)}
                 required
                 className="text-right pr-10 h-12"
-                placeholder="8 أحرف على الأقل"
+                placeholder="أدخل كلمة مرور"
                 disabled={loading}
-                minLength={8}
+                minLength={PASSWORD_MIN_LENGTH}
               />
               <button
                 type="button"
@@ -157,6 +172,7 @@ const SignupPage = () => {
               </button>
               <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             </div>
+            <PasswordChecklist id="signup-password-guidance" password={password} error={passwordError} />
           </div>
           <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
             {loading ? (

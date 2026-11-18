@@ -1,6 +1,7 @@
 type AuthErrorLike = {
   code?: unknown;
   message?: unknown;
+  reasons?: unknown;
   status?: unknown;
 };
 
@@ -56,3 +57,22 @@ export const getAuthErrorMessage = (
 
   return message ? `تعذر تسجيل الدخول: ${message}` : fallback;
 };
+
+export function getPasswordAuthErrorMessage(error: unknown): string | undefined {
+  const authError = readAuthError(error);
+  const message = typeof authError.message === 'string' ? authError.message : '';
+  const reasons = Array.isArray(authError.reasons) ? authError.reasons : [];
+  const knownWeak = /known to be weak|easy to guess/i.test(message);
+
+  if (authError.code !== 'weak_password' && !knownWeak) return undefined;
+  if (reasons.includes('pwned') || knownWeak) {
+    return 'كلمة المرور دي شائعة أو سهلة التخمين. اختَر كلمة مرور مختلفة وأطول.';
+  }
+  if (reasons.includes('length')) {
+    return 'كلمة المرور أقصر من المطلوب. استخدم كلمة مرور أطول.';
+  }
+  if (reasons.includes('characters')) {
+    return 'أضف حروفًا إنجليزية كبيرة وصغيرة وأرقامًا ورمزًا مثل ! أو #.';
+  }
+  return 'كلمة المرور غير مقبولة. جرّب كلمة مرور أطول ومختلفة.';
+}
