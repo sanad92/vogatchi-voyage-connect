@@ -1,5 +1,6 @@
 /** English translations keyed by the Arabic source string. Missing keys fall back to Arabic. */
 export const EN_DICTIONARY: Record<string, string> = {
+  "انتهت الجلسة بسبب عدم الاستخدام. سجّل الدخول للمتابعة.": "Your session expired due to inactivity. Sign in to continue.",
   "الدعوة محفوظة، لكن تعذّر تأكيد إرسال البريد. انسخ رابط الدعوة أو أعد المحاولة.": "The invitation was saved, but we could not confirm that the email was sent. Copy the invitation link or try again.",
   "الدعوة محفوظة، لكن مزوّد البريد أوقف الإرسال لهذا العنوان. انسخ رابط الدعوة لمشاركته.": "The invitation was saved, but the email provider suppressed this address. Copy the invitation link to share it.",
   "تعذّر تأكيد حفظ الدعوة. راجع قائمة الدعوات قبل إعادة المحاولة.": "We could not confirm that the invitation was saved. Check the invitation list before trying again.",
