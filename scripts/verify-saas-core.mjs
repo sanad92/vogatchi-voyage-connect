@@ -18,6 +18,15 @@ const redirects = await loadTypeScriptModule(new URL('../src/lib/safeRedirect.ts
 const authErrors = await loadTypeScriptModule(new URL('../src/lib/authErrorMessage.ts', import.meta.url));
 const passwords = await loadTypeScriptModule(new URL('../src/lib/passwordRules.ts', import.meta.url));
 
+const inviteEmail = await loadTypeScriptModule(new URL('../src/lib/invitationEmail.ts', import.meta.url));
+
+assert.equal(inviteEmail.getInvitationEmailWarning({ success: true }, null), null);
+assert.match(inviteEmail.getInvitationEmailWarning({ success: false, reason: 'recipient_suppressed' }, null), /أوقف الإرسال/);
+assert.match(inviteEmail.getInvitationEmailWarning({ success: false }, null), /تعذّر تأكيد/);
+assert.match(inviteEmail.getInvitationEmailWarning(null, null), /تعذّر تأكيد/);
+assert.match(inviteEmail.getInvitationEmailWarning({ success: 'true' }, null), /تعذّر تأكيد/);
+assert.match(inviteEmail.getInvitationEmailWarning({ success: true }, new Error('connection lost')), /تعذّر تأكيد/);
+
 const can = (role, departments, permission) =>
   access.hasPermissionForRole(role, departments, permission);
 
