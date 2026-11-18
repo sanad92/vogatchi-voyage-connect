@@ -671,6 +671,8 @@ export const EN_DICTIONARY: Record<string, string> = {
   'أعمار ديون الموردين': 'Supplier aging',
   'أوامر الدفع': 'Payment orders',
   'إدارة الاشتراك': 'Subscription',
+  'اشترك وادفع الآن': 'Subscribe and pay now',
+  'تجربتك المجانية مفعّلة': 'Your free trial is active',
   'إدارة الموردين': 'Supplier management',
   'إدارة صفحات الموقع': 'Website pages',
   'إدارة واتساب': 'WhatsApp settings',
