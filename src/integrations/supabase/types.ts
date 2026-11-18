@@ -781,20 +781,6 @@ export type Database = {
           },
         ]
       }
-      starter_automation_settings: {
-        Row: { organization_id: string; rule_key: string; enabled_at: string }
-        Insert: { organization_id: string; rule_key: string; enabled_at: string }
-        Update: { organization_id?: string; rule_key?: string; enabled_at?: string }
-        Relationships: [
-          {
-            foreignKeyName: "starter_automation_settings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       automation_rules: {
         Row: {
           created_at: string | null
@@ -2754,6 +2740,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          waiting_on: string | null
         }
         Insert: {
           assignee_id?: string | null
@@ -2770,6 +2757,7 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
+          waiting_on?: string | null
         }
         Update: {
           assignee_id?: string | null
@@ -2786,6 +2774,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          waiting_on?: string | null
         }
         Relationships: [
           {
@@ -9128,10 +9117,15 @@ export type Database = {
           created_at: string
           created_by: string | null
           currency: string
+          discount_code_id: string | null
+          discount_duration_months: number | null
+          discount_percent: number | null
+          discount_recorded: boolean
           expires_at: string
           id: string
           merchant_order_id: string
           organization_id: string
+          original_amount_cents: number | null
           paymob_order_id: string | null
           plan_id: string
           provider_transaction_id: string | null
@@ -9144,10 +9138,15 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          discount_code_id?: string | null
+          discount_duration_months?: number | null
+          discount_percent?: number | null
+          discount_recorded?: boolean
           expires_at?: string
           id?: string
           merchant_order_id: string
           organization_id: string
+          original_amount_cents?: number | null
           paymob_order_id?: string | null
           plan_id: string
           provider_transaction_id?: string | null
@@ -9160,10 +9159,15 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          discount_code_id?: string | null
+          discount_duration_months?: number | null
+          discount_percent?: number | null
+          discount_recorded?: boolean
           expires_at?: string
           id?: string
           merchant_order_id?: string
           organization_id?: string
+          original_amount_cents?: number | null
           paymob_order_id?: string | null
           plan_id?: string
           provider_transaction_id?: string | null
@@ -9171,6 +9175,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payment_checkout_sessions_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_discount_codes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payment_checkout_sessions_organization_id_fkey"
             columns: ["organization_id"]
@@ -13089,6 +13100,32 @@ export type Database = {
         }
         Relationships: []
       }
+      starter_automation_settings: {
+        Row: {
+          enabled_at: string
+          organization_id: string
+          rule_key: string
+        }
+        Insert: {
+          enabled_at: string
+          organization_id: string
+          rule_key: string
+        }
+        Update: {
+          enabled_at?: string
+          organization_id?: string
+          rule_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "starter_automation_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_discount_codes: {
         Row: {
           code: string
@@ -13120,7 +13157,15 @@ export type Database = {
           organization_id?: string | null
           percent?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subscription_discount_codes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscription_plans: {
         Row: {
@@ -17250,10 +17295,6 @@ export type Database = {
       }
     }
     Functions: {
-      set_starter_automation: {
-        Args: { _org: string; _rule: string; _enabled: boolean }
-        Returns: undefined
-      }
       _bank_baseline_is_locked: { Args: { _account: string }; Returns: boolean }
       _bank_book_balance_at: {
         Args: { _account: string; _as_of: string }
@@ -18017,6 +18058,15 @@ export type Database = {
           selling_price: number
         }[]
       }
+      finish_platform_paymob_action: {
+        Args: {
+          p_http_status?: number
+          p_id: string
+          p_provider_action_id?: string
+          p_status: string
+        }
+        Returns: string
+      }
       fiscal_year_reconciliation: {
         Args: { _org: string; _year: number }
         Returns: Json
@@ -18127,6 +18177,24 @@ export type Database = {
       get_booking_cancellation_workflow: {
         Args: { _booking: string }
         Returns: Json
+      }
+      get_booking_commission_statement: {
+        Args: { _org: string }
+        Returns: {
+          booking_id: string
+          booking_number: string
+          booking_type: string
+          can_settle: boolean
+          commission_amount: number
+          commission_rate: number
+          cost_needs_review: boolean
+          currency: string
+          employee_name: string
+          entitlement: number
+          id: string
+          payment_status: string
+          signed_balance: number
+        }[]
       }
       get_booking_profit_cockpit: { Args: { _booking: string }; Returns: Json }
       get_booking_staff: { Args: { _booking: string }; Returns: Json }
@@ -18458,6 +18526,10 @@ export type Database = {
         Returns: Json
       }
       get_ops_command_center: { Args: { p_date?: string }; Returns: Json }
+      get_ops_command_center_for_org: {
+        Args: { _day?: string; _org: string }
+        Returns: Json
+      }
       get_org_account_route: {
         Args: { _org_id: string; _routing_key: string }
         Returns: string
@@ -18504,6 +18576,11 @@ export type Database = {
         }[]
       }
       get_platform_finance_role: { Args: never; Returns: string }
+      get_platform_paymob_action: {
+        Args: { p_actor: string; p_id: string }
+        Returns: Json
+      }
+      get_platform_paymob_permissions: { Args: never; Returns: Json }
       get_profit_analytics_dashboard: {
         Args: {
           _currency?: string
@@ -18762,6 +18839,30 @@ export type Database = {
           payment_status: string
         }[]
       }
+      list_operations_queue: {
+        Args: {
+          _filter: string
+          _org: string
+          _page_size?: number
+          _skip?: number
+        }
+        Returns: {
+          booking_id: string
+          booking_number: string
+          can_act: boolean
+          completed_at: string
+          customer_id: string
+          customer_name: string
+          due_at: string
+          id: string
+          kind: string
+          priority: string
+          status: string
+          title: string
+          total_count: number
+          waiting_on: string
+        }[]
+      }
       list_org_account_routing: {
         Args: { _org_id: string }
         Returns: {
@@ -18837,6 +18938,11 @@ export type Database = {
           email: string
           role: string
         }[]
+      }
+      list_platform_paymob_staff: { Args: never; Returns: Json }
+      list_platform_paymob_transactions: {
+        Args: { p_offset?: number; p_search?: string; p_status?: string }
+        Returns: Json
       }
       log_admin_action: {
         Args: {
@@ -19143,25 +19249,6 @@ export type Database = {
         }
         Returns: Json
       }
-      quote_subscription_discount: {
-        Args: {
-          _billing_cycle: string
-          _discount_code?: string
-          _organization_id: string
-          _plan_id: string
-        }
-        Returns: Json
-      }
-      get_platform_paymob_permissions: { Args: never; Returns: Json }
-      list_platform_paymob_staff: { Args: never; Returns: Json }
-      list_platform_paymob_transactions: {
-        Args: { p_search?: string; p_status?: string; p_offset?: number }
-        Returns: Json
-      }
-      set_platform_paymob_staff_permissions: {
-        Args: { p_email: string; p_can_void: boolean; p_can_refund: boolean }
-        Returns: undefined
-      }
       preview_existing_bookings_settlement: {
         Args: { _org: string }
         Returns: Json
@@ -19182,6 +19269,15 @@ export type Database = {
       quote_booking_supplier_coverage: {
         Args: { _booking: string; _cost: number; _org: string }
         Returns: boolean
+      }
+      quote_subscription_discount: {
+        Args: {
+          _billing_cycle: string
+          _discount_code?: string
+          _organization_id: string
+          _plan_id: string
+        }
+        Returns: Json
       }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
@@ -19315,6 +19411,17 @@ export type Database = {
       }
       resend_organization_invitation: {
         Args: { _invitation_id: string }
+        Returns: Json
+      }
+      reserve_platform_paymob_action: {
+        Args: {
+          p_actor: string
+          p_amount_cents: number
+          p_id: string
+          p_kind: string
+          p_payment_id: string
+          p_reason: string
+        }
         Returns: Json
       }
       reset_demo_data: { Args: { _org_id: string }; Returns: Json }
@@ -19470,6 +19577,14 @@ export type Database = {
         Args: { p_email: string; p_role: string }
         Returns: undefined
       }
+      set_platform_paymob_staff_permissions: {
+        Args: { p_can_refund: boolean; p_can_void: boolean; p_email: string }
+        Returns: undefined
+      }
+      set_starter_automation: {
+        Args: { _enabled: boolean; _org: string; _rule: string }
+        Returns: undefined
+      }
       set_umrah_hotel_room_number: {
         Args: {
           _group_id: string
@@ -19507,6 +19622,17 @@ export type Database = {
           _supplier_terms: Json
         }
         Returns: Json
+      }
+      settle_booking_commission: {
+        Args: {
+          _commission: string
+          _expected: number
+          _rate: number
+          _reference: string
+          _request: string
+          _treasury: string
+        }
+        Returns: string
       }
       settle_refund_balance: {
         Args: {
@@ -19941,6 +20067,10 @@ export type Database = {
           p_status_id?: string
         }
         Returns: boolean
+      }
+      update_operations_task: {
+        Args: { _action: string; _org: string; _task: string; _waiting: string }
+        Returns: string
       }
       update_organization_salary_setting: {
         Args: { _setting_id: string; _setting_value: number }
