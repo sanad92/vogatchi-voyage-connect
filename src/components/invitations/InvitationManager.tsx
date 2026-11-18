@@ -117,6 +117,9 @@ const InvitationManager = () => {
                 const status = STATUS_CONFIG[inv.status] || STATUS_CONFIG.pending;
                 const isExpired = inv.status === 'pending' && new Date(inv.expires_at) < new Date();
                 const displayStatus = isExpired ? STATUS_CONFIG.expired : status;
+                const canResend = inv.status === 'pending' || inv.status === 'expired' || inv.status === 'cancelled';
+                const renew = isExpired || inv.status === 'expired' || inv.status === 'cancelled';
+                const resendLabel = renew ? 'تجديد الدعوة وإرسالها' : 'إعادة محاولة إرسال البريد';
 
                 return (
                   <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
@@ -152,18 +155,21 @@ const InvitationManager = () => {
                             variant="ghost"
                             size="icon"
                             onClick={() => cancelInvitation.mutate(inv.id)}
+                            disabled={cancelInvitation.isPending || resendInvitation.isPending}
                             title="إلغاء"
                           >
                             <X className="w-4 h-4 text-destructive" />
                           </Button>
                         </>
                       )}
-                      {(inv.status === 'expired' || inv.status === 'cancelled' || isExpired) && (
+                      {canResend && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => resendInvitation.mutate(inv.id)}
-                          title="إعادة إرسال"
+                          onClick={() => resendInvitation.mutate({ invitationId: inv.id, renew })}
+                          disabled={cancelInvitation.isPending || resendInvitation.isPending}
+                          title={resendLabel}
+                          aria-label={resendLabel}
                         >
                           <RefreshCw className="w-4 h-4" />
                         </Button>
