@@ -24,7 +24,7 @@ export const OrganizationInviteEmail = ({ inviterName, organizationName, roleLab
         <Text style={text}>
           دعاك <strong>{inviterName}</strong> للانضمام إلى <strong>{organizationName}</strong> بدور <strong>{roleLabel}</strong>.
         </Text>
-        <Text style={text}>الرابط صالح لمدة 7 أيام، وستختار كلمة مرور حسابك بنفسك.</Text>
+        <Text style={text}>الرابط صالح لمدة 7 أيام. افتح الدعوة وأكّد بريد العمل لإكمال الانضمام.</Text>
         <Button className="dm-btn" style={button} href={acceptUrl}>قبول الدعوة</Button>
         <Text style={small}>إذا لم يعمل الزر، انسخ الرابط التالي:<br />{acceptUrl}</Text>
         <Text style={footer}>إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذه الرسالة بأمان.</Text>

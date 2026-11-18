@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Check, Loader2, UserPlus, X } from 'lucide-react';
 import { useAcceptInvitation, type AcceptInvitationResult } from '@/hooks/useInvitations';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
@@ -40,8 +40,6 @@ function InvitationFlow({ token }: { token: string }) {
   const [sent, setSent] = useState(false);
   const [emailError, setEmailError] = useState('');
   const redirectPath = `/accept-invite?token=${encodeURIComponent(token)}`;
-  const loginPath = `/login?redirect=${encodeURIComponent(redirectPath)}`;
-  const signupPath = `/signup?redirect=${encodeURIComponent(redirectPath)}`;
   const validToken = invitationTokenPattern.test(token);
   const invitation = useQuery({
     queryKey: ['staff-invitation-status', token],
@@ -77,7 +75,10 @@ function InvitationFlow({ token }: { token: string }) {
       }
       const { error } = await supabase.auth.signInWithOtp({
         email: address,
-        options: { emailRedirectTo: `${window.location.origin}${redirectPath}` },
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: `${window.location.origin}${redirectPath}`,
+        },
       });
       if (error) {
         setEmailError(error.status === 429
@@ -162,17 +163,15 @@ function InvitationFlow({ token }: { token: string }) {
             <p role="status" className="text-muted-foreground">افتح رابط التأكيد الذي أرسلناه إلى بريدك لإكمال قبول الدعوة.</p>
           ) : (
             <>
-              <p className="text-muted-foreground">أكّد بريد العمل الذي وصلته الدعوة لإكمال الانضمام.</p>
+              <p className="text-muted-foreground">أدخل بريد العمل اللي وصلته الدعوة، وهيوصلك رابط تأكيد لإكمال الانضمام.</p>
               <form className="space-y-3 text-start" onSubmit={sendConfirmation}>
                 <Label htmlFor="invited-email">بريد العمل</Label>
                 <Input id="invited-email" type="email" dir="ltr" autoComplete="email" value={email}
                   onChange={event => setEmail(event.target.value)} required disabled={sending} />
-                <Button type="submit" className="w-full" disabled={sending}>إرسال رابط تأكيد البريد</Button>
+                <Button type="submit" className="w-full" disabled={sending}>
+                  {sending ? 'جارٍ الإرسال...' : 'متابعة قبول الدعوة'}
+                </Button>
               </form>
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm">
-                <Link className="text-primary underline" to={loginPath}>تسجيل الدخول بكلمة المرور</Link>
-                <Link className="text-primary underline" to={signupPath}>إنشاء حساب بكلمة مرور</Link>
-              </div>
             </>
           )}
           {emailError && <p role="alert" className="text-sm text-destructive">{emailError}</p>}
