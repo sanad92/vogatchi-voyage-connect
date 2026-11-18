@@ -17985,16 +17985,11 @@ export type Database = {
         Args: { p_approve: boolean; p_note?: string; p_request_id: string }
         Returns: Json
       }
-      delete_email: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
       delete_organization_cascade: {
         Args: { _org_id: string }
         Returns: undefined
       }
       dispatch_quote_followups: { Args: never; Returns: number }
-      email_queue_dispatch: { Args: never; Returns: undefined }
       emit_event: {
         Args: {
           p_aggregate_id: string
@@ -18007,10 +18002,6 @@ export type Database = {
         Returns: string
       }
       employee_org_match: { Args: { _employee_id: string }; Returns: boolean }
-      enqueue_email: {
-        Args: { payload: Json; queue_name: string }
-        Returns: number
-      }
       enrich_event_payload: {
         Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
         Returns: Json
@@ -19021,15 +19012,6 @@ export type Database = {
         Args: { _keep_id: string; _merge_ids: string[] }
         Returns: Json
       }
-      move_to_dlq: {
-        Args: {
-          dlq_name: string
-          message_id: number
-          payload: Json
-          source_queue: string
-        }
-        Returns: number
-      }
       normalize_email_address: { Args: { _email: string }; Returns: string }
       normalize_phone_digits: { Args: { _phone: string }; Returns: string }
       org_has_active_subscription: {
@@ -19274,14 +19256,6 @@ export type Database = {
           _plan_id: string
         }
         Returns: Json
-      }
-      read_email_batch: {
-        Args: { batch_size: number; queue_name: string; vt: number }
-        Returns: {
-          message: Json
-          msg_id: number
-          read_ct: number
-        }[]
       }
       recompute_broadcast_counters: {
         Args: { _broadcast_id: string }
