@@ -1,5 +1,20 @@
 import * as React from 'npm:react@18.3.1'
-import { renderAsync } from 'npm:@react-email/components@0.0.22'
+import { renderToStaticMarkup } from 'npm:react-dom@18.3.1/server'
+
+// renderAsync from @react-email 0.0.22 splits multi-byte UTF-8 characters at stream
+// chunk boundaries, corrupting Arabic text. Render synchronously instead.
+const renderHtml = (el: React.ReactElement) =>
+  '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">' +
+  renderToStaticMarkup(el)
+const htmlToText = (html: string) =>
+  html
+    .replace(/<(style|head)[\s\S]*?<\/\1>/gi, '')
+    .replace(/<a [^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, '$2 ($1)')
+    .replace(/<br\s*\/?>|<\/(p|h1|h2|div|tr)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&nbsp;/g, ' ')
+    .replace(/\n\s*\n+/g, '\n\n')
+    .trim()
 import { parseEmailWebhookPayload } from 'npm:@lovable.dev/email-js'
 import { WebhookError, verifyWebhookRequest } from 'npm:@lovable.dev/webhooks-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
@@ -129,7 +144,7 @@ async function handlePreview(req: Request): Promise<Response> {
   }
 
   const sampleData = SAMPLE_DATA[type] || {}
-  const html = await renderAsync(React.createElement(EmailTemplate, sampleData))
+  const html = renderHtml(React.createElement(EmailTemplate, sampleData))
 
   return new Response(html, {
     status: 200,
@@ -238,10 +253,8 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
 
   // Render React Email to HTML and plain text
-  const html = await renderAsync(React.createElement(EmailTemplate, templateProps))
-  const text = await renderAsync(React.createElement(EmailTemplate, templateProps), {
-    plainText: true,
-  })
+  const html = renderHtml(React.createElement(EmailTemplate, templateProps))
+  const text = htmlToText(html)
 
   // Enqueue email for async processing by the dispatcher (process-email-queue).
   const supabase = createClient(
