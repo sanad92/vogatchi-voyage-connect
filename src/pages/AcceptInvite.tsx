@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getAuthErrorMessage, getPasswordAuthErrorMessage } from '@/lib/authErrorMessage';
+import { PASSWORD_LENGTH_MESSAGE, PASSWORD_MIN_LENGTH } from '@/lib/passwordRules';
 
 const invitationTokenPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
@@ -36,6 +38,7 @@ function InvitationFlow({ token }: { token: string }) {
   const [result, setResult] = useState<AcceptInvitationResult | null>(null);
   const attemptedUser = useRef<string>();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [emailError, setEmailError] = useState('');
@@ -57,7 +60,7 @@ function InvitationFlow({ token }: { token: string }) {
     });
   }, [acceptInvitation, status, token, user]);
 
-  async function sendConfirmation(event: FormEvent<HTMLFormElement>) {
+  async function continueInvitation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (sending || sent) return;
     setEmailError('');
@@ -73,22 +76,65 @@ function InvitationFlow({ token }: { token: string }) {
         setEmailError('استخدم نفس بريد العمل الذي وصلته الدعوة.');
         return;
       }
-      const { error } = await supabase.auth.signInWithOtp({
-        email: address,
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: `${window.location.origin}${redirectPath}`,
-        },
-      });
-      if (error) {
-        setEmailError(error.status === 429
-          ? 'تم طلب روابط كثيرة. انتظر قليلًا ثم أعد المحاولة.'
-          : 'تعذّر إرسال رابط التأكيد. حاول مرة أخرى.');
-        return;
+      const emailRedirectTo = `${window.location.origin}${redirectPath}`;
+      switch (currentInvitation.account_state) {
+        case 'new': {
+          if (password.length < PASSWORD_MIN_LENGTH) {
+            setEmailError(PASSWORD_LENGTH_MESSAGE);
+            return;
+          }
+          const { data, error } = await supabase.auth.signUp({
+            email: address,
+            password,
+            options: { emailRedirectTo },
+          });
+          if (error) throw error;
+          if (data.user?.identities?.length === 0) {
+            setEmailError('هذا البريد مسجّل بالفعل. أدخل كلمة المرور الحالية.');
+            return;
+          }
+          setPassword('');
+          if (!data.session) setSent(true);
+          break;
+        }
+        case 'existing': {
+          if (!password) {
+            setEmailError('أدخل كلمة المرور.');
+            return;
+          }
+          const { error } = await supabase.auth.signInWithPassword({ email: address, password });
+          if (error?.code === 'email_not_confirmed') {
+            const { error: resendError } = await supabase.auth.resend({
+              type: 'signup',
+              email: address,
+              options: { emailRedirectTo },
+            });
+            if (resendError) throw resendError;
+            setSent(true);
+          } else if (error) {
+            setEmailError(getAuthErrorMessage(error));
+            return;
+          }
+          setPassword('');
+          break;
+        }
+        case 'passwordless': {
+          // Preserve access for accounts already created with a confirmation link.
+          const { error } = await supabase.auth.signInWithOtp({
+            email: address,
+            options: { shouldCreateUser: false, emailRedirectTo },
+          });
+          if (error) throw error;
+          setPassword('');
+          setSent(true);
+          break;
+        }
+        default:
+          setEmailError('تعذّر التحقق من الدعوة.');
       }
-      setSent(true);
-    } catch {
-      setEmailError('تعذّر إرسال رابط التأكيد. حاول مرة أخرى.');
+    } catch (error) {
+      setEmailError(getPasswordAuthErrorMessage(error)
+        ?? 'تعذّر إكمال قبول الدعوة. حاول مرة أخرى.');
     } finally {
       setSending(false);
     }
@@ -163,11 +209,18 @@ function InvitationFlow({ token }: { token: string }) {
             <p role="status" className="text-muted-foreground">افتح رابط التأكيد الذي أرسلناه إلى بريدك لإكمال قبول الدعوة.</p>
           ) : (
             <>
-              <p className="text-muted-foreground">أدخل بريد العمل اللي وصلته الدعوة، وهيوصلك رابط تأكيد لإكمال الانضمام.</p>
-              <form className="space-y-3 text-start" onSubmit={sendConfirmation}>
+              <p className="text-muted-foreground">أدخل بريد العمل اللي وصلته الدعوة وكلمة المرور لإكمال الانضمام.</p>
+              <form className="space-y-3 text-start" onSubmit={continueInvitation}>
                 <Label htmlFor="invited-email">بريد العمل</Label>
                 <Input id="invited-email" type="email" dir="ltr" autoComplete="email" value={email}
                   onChange={event => setEmail(event.target.value)} required disabled={sending} />
+                <Label htmlFor="invited-password">كلمة المرور</Label>
+                <Input id="invited-password" type="password" dir="ltr" autoComplete="new-password"
+                  value={password} onChange={event => setPassword(event.target.value)}
+                  aria-describedby="invited-password-guidance" disabled={sending} />
+                <p id="invited-password-guidance" className="text-sm text-muted-foreground">
+                  لو ده حسابك الأول، اختار كلمة مرور من ٨ أحرف على الأقل. لو عندك حساب، استخدم كلمتك الحالية.
+                </p>
                 <Button type="submit" className="w-full" disabled={sending}>
                   {sending ? 'جارٍ الإرسال...' : 'متابعة قبول الدعوة'}
                 </Button>
