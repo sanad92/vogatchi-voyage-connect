@@ -209,7 +209,7 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
           data: { full_name: fullName || '' },
         },
       });
-      if (error) throw new Error(error.message);
+      if (error) throw error;
 
       if (data.user && !data.user.email_confirmed_at) {
         toast.success('تم إنشاء الحساب! يرجى فحص بريدك الإلكتروني');
@@ -219,8 +219,6 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       }
       return { error: null };
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'فشل في إنشاء الحساب';
-      toast.error(msg);
       return { error };
     } finally {
       setLoading(false);
