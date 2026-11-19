@@ -147,7 +147,7 @@ const PlatformAdminOrganizations = () => {
 
   const deleteOrg = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.rpc('delete_organization_cascade', { _org_id: id });
+      const { error } = await supabase.functions.invoke('platform-delete-organization', { body: { organization_id: id } });
       if (error) throw error;
     },
     onSuccess: () => {

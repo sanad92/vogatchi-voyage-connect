@@ -162,6 +162,13 @@
       "when": 1795037578274,
       "tag": "0022_create_booking_atomic_static_sql",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795102688853,
+      "tag": "0023_server_only_org_delete",
+      "breakpoints": true
     }
   ]
 }
