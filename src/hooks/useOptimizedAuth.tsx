@@ -129,19 +129,16 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
 
   const applySession = useCallback((current: Session): boolean => {
     if (signingOutRef.current) return false;
-    const activityKey = getBrowserSessionActivityKey(current.access_token);
+    const activityKey = startBrowserSessionActivity(current.access_token);
     currentSessionRef.current = current;
 
-    if (activityKey) {
-      startBrowserSessionActivity(activityKey);
-      if (browserSessionTimeRemaining(activityKey) === 0) {
-        // Auth callbacks hold an SDK lock. Request sign-out after they return.
-        setLoading(true);
-        setTimeout(() => {
-          if (mountedRef.current) void endSession('idle', activityKey);
-        }, 0);
-        return false;
-      }
+    if (activityKey && browserSessionTimeRemaining(activityKey) === 0) {
+      // Auth callbacks hold an SDK lock. Request sign-out after they return.
+      setLoading(true);
+      setTimeout(() => {
+        if (mountedRef.current) void endSession('idle', activityKey);
+      }, 0);
+      return false;
     }
 
     setSession(current);
