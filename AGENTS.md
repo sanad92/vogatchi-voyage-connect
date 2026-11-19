@@ -13,6 +13,8 @@
 
 ## Development agent workflow
 
+- At the start of a project task, the director reads the [Safar ERP product brief](docs/product-brief.md) and confirms the active task and current evidence. Give module managers the relevant brief excerpts and scoped references to pass to their specialists. Specialists can read the relevant section if more context is needed.
+
 ### Development director
 
 - The main Codex agent is the development director and owns the final diff, verification, and report. Work on one bounded item at a time. Handle localized work directly as the single executor. Bring in a module manager when the item needs coordination across distinct workstreams or when the user requests managed delegation.
