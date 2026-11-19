@@ -3158,6 +3158,13 @@ export type Database = {
             foreignKeyName: "bookings_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -3533,6 +3540,13 @@ export type Database = {
             foreignKeyName: "car_rentals_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_rentals_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -3691,6 +3705,13 @@ export type Database = {
             columns: ["bank_account_id"]
             isOneToOne: false
             referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_payments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
             referencedColumns: ["id"]
           },
           {
@@ -3966,6 +3987,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "cost_centers_manager_employee_id_fkey"
+            columns: ["manager_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cost_centers_manager_employee_id_fkey"
             columns: ["manager_employee_id"]
@@ -5517,6 +5545,64 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_attendance: {
+        Row: {
+          actual_hours: number | null
+          attendance_date: string
+          check_in_time: string | null
+          check_out_time: string | null
+          employee_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          status: string
+        }
+        Insert: {
+          actual_hours?: number | null
+          attendance_date: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          employee_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          status: string
+        }
+        Update: {
+          actual_hours?: number | null
+          attendance_date?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_attendance_organization_id_employee_id_fkey"
+            columns: ["organization_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["organization_id", "id"]
+          },
+          {
+            foreignKeyName: "employee_attendance_organization_id_employee_id_fkey"
+            columns: ["organization_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["organization_id", "id"]
+          },
+          {
+            foreignKeyName: "employee_attendance_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_commission_periods: {
         Row: {
           bank_account_id: string | null
@@ -5596,6 +5682,13 @@ export type Database = {
             foreignKeyName: "employee_commission_periods_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_commission_periods_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -5668,6 +5761,13 @@ export type Database = {
             foreignKeyName: "employee_commissions_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_commissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -5712,38 +5812,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      employee_attendance: {
-        Row: {
-          id: string
-          organization_id: string
-          employee_id: string
-          attendance_date: string
-          status: string
-          check_in_time: string | null
-          check_out_time: string | null
-          actual_hours: number | null
-          notes: string | null
-        }
-        Insert: {
-          organization_id: string
-          employee_id: string
-          attendance_date: string
-          status: string
-          check_in_time?: string | null
-          check_out_time?: string | null
-          notes?: string | null
-        }
-        Update: Partial<Database["public"]["Tables"]["employee_attendance"]["Insert"]>
-        Relationships: [
-          {
-            foreignKeyName: "employee_attendance_organization_id_employee_id_fkey"
-            columns: ["organization_id", "employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["organization_id", "id"]
           },
         ]
       }
@@ -6665,6 +6733,13 @@ export type Database = {
             foreignKeyName: "flight_bookings_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -7275,6 +7350,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hotel_bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
             referencedColumns: ["id"]
           },
           {
@@ -8452,6 +8534,13 @@ export type Database = {
             foreignKeyName: "monthly_salaries_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_salaries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -8698,17 +8787,6 @@ export type Database = {
           },
         ]
       }
-      organization_role_permission_defaults: {
-        Row: {
-          organization_id: string
-          base_role: string
-          permission_key: string
-          granted: boolean
-        }
-        Insert: Database["public"]["Tables"]["organization_role_permission_defaults"]["Row"]
-        Update: Partial<Database["public"]["Tables"]["organization_role_permission_defaults"]["Row"]>
-        Relationships: []
-      }
       organization_permission_catalog: {
         Row: {
           created_at: string
@@ -8936,6 +9014,42 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_role_permission_defaults: {
+        Row: {
+          base_role: string
+          granted: boolean
+          organization_id: string
+          permission_key: string
+        }
+        Insert: {
+          base_role: string
+          granted: boolean
+          organization_id: string
+          permission_key: string
+        }
+        Update: {
+          base_role?: string
+          granted?: boolean
+          organization_id?: string
+          permission_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_role_permission_defaults_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_role_permission_defaults_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "organization_permission_catalog"
+            referencedColumns: ["permission_key"]
           },
         ]
       }
@@ -10989,6 +11103,13 @@ export type Database = {
             foreignKeyName: "profiles_linked_employee_id_fkey"
             columns: ["linked_employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_linked_employee_id_fkey"
+            columns: ["linked_employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -11485,6 +11606,13 @@ export type Database = {
           vat_rate?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "quotes_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotes_assigned_employee_id_fkey"
             columns: ["assigned_employee_id"]
@@ -14720,6 +14848,13 @@ export type Database = {
             foreignKeyName: "transport_bookings_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -14808,6 +14943,89 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      treasury_transfers: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          currency: string
+          from_account_id: string
+          from_account_name: string
+          id: string
+          journal_entry_id: string
+          organization_id: string
+          receipt_reference: string | null
+          reference_number: string
+          request_id: string
+          to_account_id: string
+          to_account_name: string
+          transfer_date: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          currency: string
+          from_account_id: string
+          from_account_name: string
+          id?: string
+          journal_entry_id: string
+          organization_id: string
+          receipt_reference?: string | null
+          reference_number: string
+          request_id: string
+          to_account_id: string
+          to_account_name: string
+          transfer_date: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          currency?: string
+          from_account_id?: string
+          from_account_name?: string
+          id?: string
+          journal_entry_id?: string
+          organization_id?: string
+          receipt_reference?: string | null
+          reference_number?: string
+          request_id?: string
+          to_account_id?: string
+          to_account_name?: string
+          transfer_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treasury_transfers_from_account_id_fkey"
+            columns: ["from_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_transfers_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: true
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_transfers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_transfers_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trip_service_amendments: {
         Row: {
@@ -15322,6 +15540,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "wa_queue_agents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "wa_queue_agents_employee_id_fkey"
             columns: ["employee_id"]
@@ -16006,6 +16231,13 @@ export type Database = {
           whatsapp_settings_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_wa_conv_assigned"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_wa_conv_assigned"
             columns: ["assigned_to"]
@@ -16970,10 +17202,6 @@ export type Database = {
       }
     }
     Views: {
-      employee_directory: {
-        Row: Database["public"]["Tables"]["employees"]["Row"] & { linked_user_id: string | null }
-        Relationships: []
-      }
       car_rentals_unified: {
         Row: {
           created_at: string | null
@@ -17011,6 +17239,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
             referencedColumns: ["id"]
           },
           {
@@ -17102,6 +17337,43 @@ export type Database = {
           },
         ]
       }
+      employee_directory: {
+        Row: {
+          allowances: number | null
+          bank_account_number: string | null
+          bank_name: string | null
+          base_salary: number | null
+          commission_rate: number | null
+          commission_type: string | null
+          created_at: string | null
+          department: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          employee_code: string | null
+          full_name: string | null
+          hire_date: string | null
+          id: string | null
+          is_active: boolean | null
+          linked_user_id: string | null
+          national_id: string | null
+          organization_id: string | null
+          phone: string | null
+          position: string | null
+          salary_scale_level: number | null
+          total_commission_earned: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flight_bookings_unified: {
         Row: {
           airline_name: string | null
@@ -17150,6 +17422,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
             referencedColumns: ["id"]
           },
           {
@@ -17239,6 +17518,13 @@ export type Database = {
             foreignKeyName: "bookings_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -17308,6 +17594,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
             referencedColumns: ["id"]
           },
           {
@@ -17444,10 +17737,6 @@ export type Database = {
         Returns: undefined
       }
       accept_invitation: { Args: { _token: string }; Returns: Json }
-      get_staff_invitation_status: {
-        Args: { _token: string; _email?: string }
-        Returns: Json
-      }
       activate_subscription_from_paymob: {
         Args: { _paymob_transaction_id: string }
         Returns: boolean
@@ -18633,6 +18922,10 @@ export type Database = {
         Returns: Json
       }
       get_smart_operational_alerts: { Args: { _org_id: string }; Returns: Json }
+      get_staff_invitation_status: {
+        Args: { _email?: string; _token: string }
+        Returns: Json
+      }
       get_supplier_aging_details_v2: {
         Args: {
           _as_of_date?: string
@@ -18807,6 +19100,10 @@ export type Database = {
         Args: { p_event: Database["public"]["Tables"]["domain_events"]["Row"] }
         Returns: undefined
       }
+      has_org_hr_permission: {
+        Args: { _org_id: string; _permission: string }
+        Returns: boolean
+      }
       has_org_permission: {
         Args: { _org_id: string; _permission: string }
         Returns: boolean
@@ -18880,6 +19177,32 @@ export type Database = {
           id: string
           payment_status: string
         }[]
+      }
+      list_company_treasury_transfers: {
+        Args: { _org: string }
+        Returns: {
+          amount: number
+          created_at: string
+          created_by: string
+          currency: string
+          from_account_id: string
+          from_account_name: string
+          id: string
+          journal_entry_id: string
+          organization_id: string
+          receipt_reference: string | null
+          reference_number: string
+          request_id: string
+          to_account_id: string
+          to_account_name: string
+          transfer_date: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "treasury_transfers"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       list_operations_queue: {
         Args: {
@@ -19199,6 +19522,40 @@ export type Database = {
       post_commission_period_payment: {
         Args: { _period_id: string }
         Returns: string
+      }
+      post_company_treasury_transfer: {
+        Args: {
+          _amount: number
+          _date: string
+          _from_account: string
+          _org: string
+          _receipt_reference?: string
+          _request: string
+          _to_account: string
+        }
+        Returns: {
+          amount: number
+          created_at: string
+          created_by: string
+          currency: string
+          from_account_id: string
+          from_account_name: string
+          id: string
+          journal_entry_id: string
+          organization_id: string
+          receipt_reference: string | null
+          reference_number: string
+          request_id: string
+          to_account_id: string
+          to_account_name: string
+          transfer_date: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "treasury_transfers"
+          isOneToOne: true
+          isSetofReturn: true
+        }
       }
       post_customer_payment: { Args: { _payment_id: string }; Returns: string }
       post_customer_refund: { Args: { _refund_id: string }; Returns: string }
