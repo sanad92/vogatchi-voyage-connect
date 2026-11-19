@@ -1,10 +1,14 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowUpLeft, BriefcaseBusiness, ChevronLeft, RefreshCw, Search, X } from 'lucide-react';
 import { bookingStatusLabel } from '@safar-shared/bookingStatus';
 import { customerDisplayName } from '@safar-shared/customerDisplayName';
-import { getOverview, listBookings, listCustomers, type Booking, type Customer, type ListPage } from './erp';
+import { normalizeCustomerPhone } from '@safar-shared/customerPhone';
+import {
+  canEditCustomerContact, getOverview, listBookings, listCustomers, updateCustomerContact,
+  type Booking, type Customer, type CustomerContact, type ListPage,
+} from './erp';
 
 const numberFormat = new Intl.NumberFormat('ar-EG');
 const dateFormat = new Intl.DateTimeFormat('ar-EG', {
@@ -98,7 +102,7 @@ interface ListScreenProps<T> {
   empty: string;
   load: (organizationId: string, page: number, search: string, signal: AbortSignal) => Promise<ListPage<T>>;
   Row: (props: { record: T; open: () => void }) => ReactNode;
-  Details: (props: { record: T; close: () => void }) => ReactNode;
+  Details: (props: { record: T; close: () => void; organizationId: string; onUpdated: (record: T) => void }) => ReactNode;
 }
 
 function ListScreen<T extends { id: string }>({
@@ -107,6 +111,7 @@ function ListScreen<T extends { id: string }>({
   const [input, setInput] = useState('');
   const [filter, setFilter] = useState({ term: '', page: 0 });
   const [selected, setSelected] = useState<T | null>(null);
+  const queryClient = useQueryClient();
   const term = input.trim();
   const searching = term !== filter.term;
 
@@ -158,7 +163,11 @@ function ListScreen<T extends { id: string }>({
           )}
         </>
       )}
-      {selected && <Details record={selected} close={() => setSelected(null)} />}
+      {selected && <Details record={selected} close={() => setSelected(null)} organizationId={organizationId}
+        onUpdated={record => {
+          setSelected(record);
+          void queryClient.invalidateQueries({ queryKey: [section, organizationId] });
+        }} />}
     </>
   );
 }
@@ -207,30 +216,125 @@ function CustomerRow({ record, open }: { record: Customer; open: () => void }) {
 function BookingDetails({ record, close }: { record: Booking; close: () => void }) {
   return (
     <DetailsSheet title="تفاصيل الحجز" close={close}>
-      <div><dt>رقم الحجز</dt><dd dir="auto">{record.booking_number}</dd></div>
-      <div><dt>العميل</dt><dd>{customerDisplayName(record.customer_name) || '—'}</dd></div>
-      <div><dt>الخدمة</dt><dd>{bookingType(record.booking_type)}</dd></div>
-      <div><dt>الحالة</dt><dd>{bookingStatusLabel(record.status)}</dd></div>
-      <div><dt>البداية</dt><dd dir="ltr">{record.start_date || '—'}</dd></div>
-      <div><dt>النهاية</dt><dd dir="ltr">{record.end_date || '—'}</dd></div>
+      <dl>
+        <div><dt>رقم الحجز</dt><dd dir="auto">{record.booking_number}</dd></div>
+        <div><dt>العميل</dt><dd>{customerDisplayName(record.customer_name) || '—'}</dd></div>
+        <div><dt>الخدمة</dt><dd>{bookingType(record.booking_type)}</dd></div>
+        <div><dt>الحالة</dt><dd>{bookingStatusLabel(record.status)}</dd></div>
+        <div><dt>البداية</dt><dd dir="ltr">{record.start_date || '—'}</dd></div>
+        <div><dt>النهاية</dt><dd dir="ltr">{record.end_date || '—'}</dd></div>
+      </dl>
     </DetailsSheet>
   );
 }
 
-function CustomerDetails({ record, close }: { record: Customer; close: () => void }) {
+function CustomerDetails({ record, close, organizationId, onUpdated }: {
+  record: Customer;
+  close: () => void;
+  organizationId: string;
+  onUpdated: (record: Customer) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+  const savingRef = useRef(false);
+  const name = customerDisplayName(record.name) || record.name;
+  const permission = useQuery({
+    queryKey: ['customer-edit-permission', organizationId],
+    queryFn: ({ signal }) => canEditCustomerContact(organizationId, signal),
+  });
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (savingRef.current) return;
+    setError('');
+    const form = new FormData(event.currentTarget);
+    const nextName = String(form.get('name') ?? '').trim();
+    const nextPhone = String(form.get('phone') ?? '').trim();
+    const nextEmail = String(form.get('email') ?? '').trim();
+    const contact: CustomerContact = {};
+
+    if (nextName !== name.trim()) {
+      if (nextName.length < 2) return setError('الاسم يجب أن يكون حرفين على الأقل.');
+      contact.name = nextName;
+    }
+    if (nextPhone !== (record.phone ?? '').trim()) {
+      const normalizedPhone = normalizeCustomerPhone(nextPhone);
+      if (!/^\+?[\d\s()-]+$/.test(nextPhone) || !/^\d{10,15}$/.test(normalizedPhone)) {
+        return setError('أدخل رقم هاتف صحيحًا من 10 إلى 15 رقمًا.');
+      }
+      contact.phone = normalizedPhone;
+    }
+    if (nextEmail !== (record.email ?? '').trim()) {
+      if (nextEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextEmail)) {
+        return setError('البريد الإلكتروني غير صحيح.');
+      }
+      contact.email = nextEmail.toLowerCase() || null;
+    }
+    if (!Object.keys(contact).length) {
+      setEditing(false);
+      return;
+    }
+
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      const updated = await updateCustomerContact(organizationId, record, contact);
+      onUpdated(updated);
+      setSaved(true);
+      setEditing(false);
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'تعذّر حفظ بيانات العميل.');
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  }
+
   return (
-    <DetailsSheet title="بيانات العميل" close={close}>
-      <div><dt>الاسم</dt><dd>{customerDisplayName(record.name) || record.name}</dd></div>
-      <div><dt>الهاتف</dt><dd dir="ltr">{record.phone || '—'}</dd></div>
-      <div><dt>البريد الإلكتروني</dt><dd dir="ltr">{record.email || '—'}</dd></div>
+    <DetailsSheet title={editing ? 'تعديل بيانات العميل' : 'بيانات العميل'} close={close} dismissible={!saving}>
+      {editing ? (
+        <form className="contact-form" onSubmit={save} noValidate>
+          {error && <p className="notice error" role="alert">{error}</p>}
+          <label>الاسم<input name="name" autoComplete="off" dir="auto" defaultValue={name} disabled={saving} /></label>
+          <label>الهاتف<input name="phone" type="tel" dir="ltr" defaultValue={record.phone ?? ''} disabled={saving} /></label>
+          <label>البريد الإلكتروني<input name="email" type="email" dir="ltr" defaultValue={record.email ?? ''} disabled={saving} /></label>
+          <div className="contact-actions">
+            <button type="submit" className="primary" disabled={saving}>{saving ? 'جارٍ الحفظ…' : 'حفظ التعديلات'}</button>
+            <button type="button" className="outline" disabled={saving} onClick={() => setEditing(false)}>إلغاء</button>
+          </div>
+        </form>
+      ) : (
+        <>
+          {saved && <p className="notice" role="status">تم حفظ بيانات العميل.</p>}
+          <dl>
+            <div><dt>الاسم</dt><dd>{name}</dd></div>
+            <div><dt>الهاتف</dt><dd dir="ltr">{record.phone || '—'}</dd></div>
+            <div><dt>البريد الإلكتروني</dt><dd dir="ltr">{record.email || '—'}</dd></div>
+          </dl>
+          {permission.data === true && !permission.isError && (
+            <button type="button" className="outline contact-edit" onClick={() => {
+              setError('');
+              setSaved(false);
+              setEditing(true);
+            }}>تعديل بيانات التواصل</button>
+          )}
+        </>
+      )}
     </DetailsSheet>
   );
 }
 
-function DetailsSheet({ title, close, children }: { title: string; close: () => void; children: ReactNode }) {
+function DetailsSheet({ title, close, children, dismissible = true }: {
+  title: string;
+  close: () => void;
+  children: ReactNode;
+  dismissible?: boolean;
+}) {
   const opener = useRef(document.activeElement);
   return (
-    <Dialog.Root open onOpenChange={open => { if (!open) close(); }}>
+    <Dialog.Root open onOpenChange={open => { if (!open && dismissible) close(); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="sheet-overlay" />
         <Dialog.Content className="sheet" aria-describedby={undefined} onCloseAutoFocus={event => {
@@ -239,9 +343,9 @@ function DetailsSheet({ title, close, children }: { title: string; close: () => 
         }}>
           <header className="sheet-heading">
             <Dialog.Title>{title}</Dialog.Title>
-            <Dialog.Close className="icon-button" aria-label="إغلاق"><X aria-hidden="true" /></Dialog.Close>
+            <Dialog.Close className="icon-button" aria-label="إغلاق" disabled={!dismissible}><X aria-hidden="true" /></Dialog.Close>
           </header>
-          <dl>{children}</dl>
+          {children}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

@@ -6,6 +6,7 @@ type Tables = Database['public']['Tables'];
 export type Booking = Pick<Tables['bookings']['Row'],
   'id' | 'booking_number' | 'customer_name' | 'booking_type' | 'start_date' | 'end_date' | 'status'>;
 export type Customer = Pick<Tables['customers']['Row'], 'id' | 'name' | 'email' | 'phone'>;
+export type CustomerContact = Partial<Pick<Customer, 'name' | 'email' | 'phone'>>;
 export type Organization = Pick<Tables['organizations']['Row'], 'id' | 'name'> & { role: string };
 export interface Overview {
   todayBookings: number;
@@ -56,6 +57,7 @@ export async function listOrganizations(userId: string, signal: AbortSignal): Pr
 }
 
 const bookingColumns = 'id, booking_number, customer_name, booking_type, start_date, end_date, status';
+const customerColumns = 'id, name, email, phone';
 const pageSize = 20;
 const cleanSearch = (value: string) => value.trim().slice(0, 100)
   .replace(/[^\p{L}\p{M}\p{N}\s@.+-]/gu, ' ').replace(/\s+/g, ' ').trim();
@@ -100,7 +102,7 @@ export async function listBookings(org: string, page: number, search: string, si
 }
 
 export async function listCustomers(org: string, page: number, search: string, signal: AbortSignal): Promise<ListPage<Customer>> {
-  let query = erp.from('customers').select('id, name, email, phone')
+  let query = erp.from('customers').select(customerColumns)
     .eq('organization_id', org).eq('is_demo', false).is('archived_at', null)
     .order('created_at', { ascending: false, nullsFirst: false }).order('id');
   const term = cleanSearch(search);
@@ -109,4 +111,34 @@ export async function listCustomers(org: string, page: number, search: string, s
   const { data, error } = await query.range(start, start + pageSize).abortSignal(signal);
   if (error) throw error;
   return { rows: data.slice(0, pageSize), more: data.length > pageSize };
+}
+
+export async function canEditCustomerContact(org: string, signal?: AbortSignal) {
+  const permission = erp.rpc('has_org_permission', { _org_id: org, _permission: 'customers_edit' });
+  const { data, error } = await (signal ? permission.abortSignal(signal) : permission);
+  if (error) throw new Error('تعذّر التحقق من صلاحية تعديل العملاء.');
+  return data === true;
+}
+
+export async function updateCustomerContact(org: string, current: Customer, contact: CustomerContact) {
+  if (!(await canEditCustomerContact(org))) {
+    throw new Error('ليس لديك صلاحية تعديل العملاء.');
+  }
+
+  let update = erp.from('customers').update(contact).eq('id', current.id).eq('organization_id', org)
+    .eq('is_demo', false).is('archived_at', null);
+  for (const field of ['name', 'email', 'phone'] as const) {
+    if (contact[field] === undefined) continue;
+    const previous = current[field];
+    update = previous === null ? update.is(field, null) : update.eq(field, previous);
+  }
+
+  const { data, error } = await update.select(customerColumns).maybeSingle();
+  if (error?.code === '23505') {
+    throw new Error(/الهاتف|البريد/.test(error.message) ? error.message : 'رقم الهاتف أو البريد مسجل بالفعل.');
+  }
+  if (error?.code === '42501') throw new Error('الحساب لا يسمح بتعديل بيانات هذا العميل.');
+  if (error) throw new Error('تعذّر حفظ بيانات العميل. حاول مرة أخرى.');
+  if (!data) throw new Error('تعذّر حفظ التعديل. أغلق التفاصيل وحدّث قائمة العملاء قبل المحاولة.');
+  return data;
 }

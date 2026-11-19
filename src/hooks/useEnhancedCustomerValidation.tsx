@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useOrgId } from './useOrgId';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
+import { normalizeCustomerPhone } from '@/lib/customerPhone';
 import type { DuplicateContactResult } from '@/types/customer';
 
 const emptyResult: DuplicateContactResult = {
@@ -12,16 +13,8 @@ const emptyResult: DuplicateContactResult = {
 export const useEnhancedCustomerValidation = () => {
   const orgId = useOrgId();
 
-  const normalizePhoneNumber = useCallback((phone: string): string => {
-    const digits = phone?.replace(/\D/g, '') || '';
-    if (/^201\d{9}$/.test(digits)) return digits;
-    if (/^01\d{9}$/.test(digits)) return `20${digits.slice(1)}`;
-    if (/^1\d{9}$/.test(digits)) return `20${digits}`;
-    return digits;
-  }, []);
-
   const generatePhoneVariants = useCallback((phone: string): string[] => {
-    const normalized = normalizePhoneNumber(phone);
+    const normalized = normalizeCustomerPhone(phone);
     const variants = new Set([phone, normalized]);
     if (normalized.startsWith('201')) {
       const localNumber = normalized.slice(2);
@@ -31,15 +24,15 @@ export const useEnhancedCustomerValidation = () => {
       variants.add(`+20 ${localNumber}`);
     }
     return [...variants].filter((value) => value.replace(/\D/g, '').length >= 10);
-  }, [normalizePhoneNumber]);
+  }, []);
 
   const validatePhoneNumber = useCallback((phone: string) => {
-    const normalized = normalizePhoneNumber(phone);
+    const normalized = normalizeCustomerPhone(phone);
     const isValid = /^\d{10,15}$/.test(normalized);
     return isValid
       ? { isValid: true }
       : { isValid: false, message: 'رقم الهاتف غير صحيح' };
-  }, [normalizePhoneNumber]);
+  }, []);
 
   const checkCustomerDuplication = useCallback(async (
     customerData: { phone: string; email?: string; name: string },
@@ -72,7 +65,7 @@ export const useEnhancedCustomerValidation = () => {
   ).emailResult, [checkCustomerDuplication]);
 
   return {
-    normalizePhoneNumber,
+    normalizePhoneNumber: normalizeCustomerPhone,
     generatePhoneVariants,
     validatePhoneNumber,
     checkDuplicatePhone,
