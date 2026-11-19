@@ -19,6 +19,7 @@
 
 - The main Codex agent is the development director and owns the final diff, verification, and report. Work on one bounded item at a time. Handle localized work directly as the single executor. Bring in a module manager when the item needs coordination across distinct workstreams or when the user requests managed delegation.
 - Use the smallest team that covers the work. A manager can complete a scoped assignment directly or delegate distinct pieces based on the work needed. Avoid sending multiple agents to investigate the same question. Give each delegate only the relevant files or diff, acceptance criteria, and evidence to return. Coordinate ownership of shared files and keep dependent edits sequential.
+- Use `safar_ui_ux` for new or materially changed user journeys when a design handoff or independent design review is needed, and `safar_database_architect` for changes to the data model, constraints, tenant boundaries, or migration strategy that need independent design work. The frontend and backend agents implement the relevant changes. The director can route small fixes directly with scoped acceptance checks.
 - Run the checks for the affected path first. Broaden verification when a shared contract changes, a targeted check suggests a wider regression, or the current item calls for a release build. For money changes, use an independent finance reviewer. For changes to authentication or organization access, have someone other than the implementer review access controls. Use one independent reviewer when that reviewer can cover the relevant acceptance checks. Return findings to the responsible person and rerun affected checks.
 - Close each item with a short record of the change, checks, unresolved blockers, and next work. Continue into another item only within the requested scope or batch.
 - Use the named profiles when available. If the client supports delegation but cannot load a named profile, pass the relevant file's instructions to that agent. If a module manager cannot start subagents in the client, have the manager return scoped assignments, dispatch the specialists from the main thread, and send their outputs back to the manager for review. If the client cannot delegate at all, perform the applicable checks directly. Report which roles ran, how they ran, and what remains unverified.
@@ -65,8 +66,10 @@
 | Android and iOS, app updates, and push notifications | `safar_mobile` |
 | Document center, templates, PDF, printing, and branding | `safar_documents` |
 | AI-assisted flows, tools, and evaluations | `safar_ai` |
-| Shared UI, navigation, accessibility, RTL, and localization | `safar_frontend` |
-| Shared server code, data contracts, and implementation across domains | `safar_backend` |
+| User experience design, interaction flows, accessibility, and responsive Arabic and English design | `safar_ui_ux` |
+| Frontend implementation, shared UI, navigation, and localization | `safar_frontend` |
+| Database architecture, models, constraints, transaction design, and migration strategy | `safar_database_architect` |
+| Backend implementation, APIs, data contracts, and cross-domain server code | `safar_backend` |
 | QA and regression verification | `safar_qa` |
 | Independent financial reconciliation and verification | `safar_finance_review` |
 | CI, releases, deployment sequencing, and monitoring | `safar_release` |
