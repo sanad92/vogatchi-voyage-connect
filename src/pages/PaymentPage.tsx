@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useRef, useState } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
@@ -35,6 +36,8 @@ interface PreparedSubscriptionCheckout extends SubscriptionPriceQuote {
 
 const PaymentPage = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const preparedCheckout = useRef<{ selection: string; checkout: PreparedSubscriptionCheckout } | null>(null);
   const planId = searchParams.get('plan');
   const billing = searchParams.get('billing') === 'yearly' ? 'yearly' : 'monthly';
   const { user } = useOptimizedAuth();
@@ -136,11 +139,15 @@ const PaymentPage = () => {
     setIsProcessing(true);
     try {
       const selection = { _organization_id: orgId, _plan_id: planId, _billing_cycle: billing };
-      const { data: preparedData, error: prepareError } = discountAvailable
-        ? await supabase.rpc('prepare_subscription_checkout_with_discount', { ...selection, _discount_code: discountCode || undefined })
-        : await supabase.rpc('prepare_subscription_checkout', selection);
-      if (prepareError) throw prepareError;
-      const prepared = preparedData as unknown as PreparedSubscriptionCheckout;
+      const selectionKey = JSON.stringify([user.id, selection, quotedAmount, discountCode]);
+      let prepared = preparedCheckout.current?.selection === selectionKey ? preparedCheckout.current.checkout : null;
+      if (!prepared || Date.parse(prepared.expires_at) <= Date.now()) {
+        const { data, error } = discountAvailable
+          ? await supabase.rpc('prepare_subscription_checkout_with_discount', { ...selection, _discount_code: discountCode || undefined })
+          : await supabase.rpc('prepare_subscription_checkout', selection);
+        if (error) throw error;
+        prepared = data as unknown as PreparedSubscriptionCheckout;
+      }
       if (!prepared?.checkout_session_id || !prepared?.merchant_order_id || prepared.amount_cents<=0) {
         throw new Error('تعذر تجهيز جلسة دفع آمنة');
       }
@@ -150,6 +157,8 @@ const PaymentPage = () => {
         toast.info('اتغير مبلغ الدفع. راجع الإجمالي واضغط ادفع مرة تانية.');
         return;
       }
+
+      preparedCheckout.current = { selection: selectionKey, checkout: prepared };
 
       const fullName = String(user.user_metadata?.full_name || user.email?.split('@')[0] || 'User');
       const nameParts = fullName.trim().split(/\s+/).filter(Boolean);
@@ -182,6 +191,10 @@ const PaymentPage = () => {
         },
       });
 
+      if (error instanceof FunctionsHttpError && error.context.status === 409) {
+        navigate(`/payment-success/${prepared.checkout_session_id}`);
+        return;
+      }
       if (error) throw error;
 
       if (data?.iframe_url) {

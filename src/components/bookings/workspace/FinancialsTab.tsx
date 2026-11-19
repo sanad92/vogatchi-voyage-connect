@@ -19,13 +19,18 @@ export const FinancialsTab = ({ workspace }: Props) => {
   const { canProcessPayments, canRefundPayments } = useSupabasePermissions();
   const pilgrimageBooking = isPilgrimageBookingType(workspace.booking?.booking_type);
   const cancelled = workspace.booking?.status === 'cancelled';
-  const paymentInvoices = (workspace.invoices as Array<Record<string, unknown>>).map((invoice) => ({
-    id: String(invoice.id),
-    invoice_number: typeof invoice.invoice_number === 'string' ? invoice.invoice_number : null,
-    total_amount: Number(invoice.total_amount ?? invoice.final_amount ?? 0),
-  }));
+  const paymentInvoices = (workspace.invoices as Array<Record<string, unknown>>).flatMap(invoice => {
+    const remaining = Number(invoice.remaining_amount ?? (
+      Number(invoice.final_amount ?? invoice.total_amount ?? 0) - Number(invoice.total_paid_amount ?? 0)
+    ));
+    const status = String(invoice.status ?? 'draft').toLowerCase();
+    if (['draft', 'void', 'cancelled', 'canceled', 'paid'].includes(status) || remaining <= 0
+      || (invoice.currency ?? 'EGP') !== f.currency || !Number.isFinite(remaining)) return [];
+    return [{ id: String(invoice.id), invoice_number: String(invoice.invoice_number ?? ''), remaining }];
+  });
+  const outstanding = paymentInvoices.reduce((sum, invoice) => sum + invoice.remaining, 0);
   const fixedInvoiceId = pilgrimageBooking && paymentInvoices.length === 1 ? paymentInvoices[0].id : undefined;
-  const canRecord = !!workspace.booking?.id && (!pilgrimageBooking || (canProcessPayments() && !cancelled && !!fixedInvoiceId));
+  const canRecord = !!workspace.booking?.id && canProcessPayments() && !cancelled && (!pilgrimageBooking || !!fixedInvoiceId);
   const payments = workspace.payments as Array<{
     id: string;
     amount?: number | null;
@@ -49,7 +54,7 @@ export const FinancialsTab = ({ workspace }: Props) => {
                 bookingId={workspace.booking.id}
                 customerId={workspace.booking.customer_id ?? workspace.customer?.id}
                 currency={f.currency}
-                outstanding={f.outstanding}
+                outstanding={outstanding}
                 invoices={paymentInvoices}
                 fixedInvoiceId={fixedInvoiceId}
                 onSaved={() => workspace.refetch()}
@@ -70,12 +75,12 @@ export const FinancialsTab = ({ workspace }: Props) => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle className="text-base">الدفعات ({workspace.payments.length})</CardTitle>
-          {!pilgrimageBooking && workspace.booking?.id && (
+          {!pilgrimageBooking && canRecord && (
             <RecordPaymentDialog
               bookingId={workspace.booking.id}
               customerId={workspace.booking.customer_id ?? workspace.customer?.id}
               currency={f.currency}
-              outstanding={f.outstanding}
+              outstanding={outstanding}
               invoices={paymentInvoices}
               onSaved={() => workspace.refetch()}
             />

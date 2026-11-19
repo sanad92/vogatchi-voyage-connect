@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 export interface SecuritySettings {
   organization_id: string;
   mfa_required: boolean;
-  session_timeout_min: number;
   ip_allowlist: string[];
   password_policy: { min_length: number; require_upper: boolean; require_number: boolean; require_symbol: boolean };
   org_pin_set_at: string | null;
@@ -22,7 +21,7 @@ export const useSecuritySettings = () => {
       if (!orgId) return null;
       const { data, error } = await (supabase as any)
         .from('security_settings')
-        .select('organization_id,mfa_required,session_timeout_min,ip_allowlist,password_policy,org_pin_set_at')
+        .select('organization_id,mfa_required,ip_allowlist,password_policy,org_pin_set_at')
         .eq('organization_id', orgId)
         .maybeSingle();
       if (error) throw error;

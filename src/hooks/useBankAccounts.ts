@@ -71,7 +71,7 @@ export const useBankAccounts = () => {
   return {
     bankAccounts, transactions, isLoading,
     addBankAccount: addBankAccountMutation.mutate, deleteBankAccount: deleteBankAccountMutation.mutate,
-    addTransaction: addTransactionMutation.mutate, getAccountsByCurrency,
+    addTransaction: addTransactionMutation.mutateAsync, getAccountsByCurrency,
     isAddingAccount: addBankAccountMutation.isPending, isDeletingAccount: deleteBankAccountMutation.isPending, isAddingTransaction: addTransactionMutation.isPending
   };
 };

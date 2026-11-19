@@ -2,11 +2,12 @@ import { isPilgrimageBookingType } from '@/lib/pilgrimage/operations';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useOrgId } from '@/hooks/useOrgId';
+import { useCustomerContext } from '@/hooks/useCustomerContext';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { sanitizeSearchTerm } from '@/lib/postgrest-safe';
 import { ListLoadError } from '@/components/common/ListLoadError';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { bookingStatusLabel } from '@/lib/bookingStatus';
 import { customerDisplayName } from '@/lib/customerDisplayName';
 import { useUnifiedBookings, BookingType, BookingStatus } from '@/hooks/useUnifiedBookings';
@@ -40,6 +41,9 @@ const UnifiedBookings = () => {
   usePageTitle('الحجوزات الموحدة');
   const navigate = useNavigate();
   const orgId = useOrgId();
+  const [params, setParams] = useSearchParams();
+  const customerId = params.get('customer_id');
+  const customer = useCustomerContext(orgId, customerId);
   const { hasPermission, canCreateBookings } = useSupabasePermissions();
   const canViewFinance = hasPermission('financial_view');
   const [search, setSearch] = useState('');
@@ -48,7 +52,8 @@ const UnifiedBookings = () => {
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  const { bookings, totalCount, isLoading, error, refetch, isFetching } = useUnifiedBookings({
+  const { bookings, totalCount, isLoading: bookingsLoading, error, refetch, isFetching } = useUnifiedBookings({
+    customerId: customerId === null ? undefined : customer.data?.id ?? null,
     type: typeFilter !== 'all' ? typeFilter as BookingType : undefined,
     status: statusFilter !== 'all' ? statusFilter as BookingStatus : undefined,
     search: search || undefined,
@@ -56,12 +61,13 @@ const UnifiedBookings = () => {
     pageSize,
   });
 
+  const isLoading = customer.isLoading || bookingsLoading;
   const totalPages = Math.ceil(totalCount / pageSize);
 
   const searchTerm = sanitizeSearchTerm(search);
   const summary = useQuery({
     queryKey: ['unified-bookings', orgId, 'summary', typeFilter, statusFilter, searchTerm, canViewFinance],
-    enabled: !!orgId,
+    enabled: !!orgId && customerId === null,
     queryFn: async () => {
       const { data, error } = await callUntypedRpc<{ currency: string | null; confirmed: number; pending: number; profit: number | null }[]>(
         'unified_booking_list_summary', {
@@ -76,8 +82,16 @@ const UnifiedBookings = () => {
   });
   const confirmedCount = summary.data?.reduce((total, row) => total + Number(row.confirmed), 0);
   const pendingCount = summary.data?.reduce((total, row) => total + Number(row.pending), 0);
-  const filtered = !!searchTerm || typeFilter !== 'all' || statusFilter !== 'all';
-  const clearFilters = () => { setSearch(''); setTypeFilter('all'); setStatusFilter('all'); setPage(1); };
+  const filtered = customerId !== null || !!searchTerm || typeFilter !== 'all' || statusFilter !== 'all';
+  const clearFilters = () => {
+    const next = new URLSearchParams(params);
+    next.delete('customer_id');
+    setParams(next, { replace: true });
+    setSearch('');
+    setTypeFilter('all');
+    setStatusFilter('all');
+    setPage(1);
+  };
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -86,12 +100,16 @@ const UnifiedBookings = () => {
         description="حجوزات الفنادق والطيران والسيارات والنقل والحج والعمرة"
         icon={CalendarDays}
         actions={canCreateBookings() && (
-          <Button onClick={() => navigate('/bookings/new')}>
+          <Button onClick={() => navigate(customer.data ? `/bookings/new?${new URLSearchParams({ customer_id: customer.data.id })}` : '/bookings/new')}>
             <Plus className="h-4 w-4 ml-2" />
             حجز جديد
           </Button>
         )}
       />
+
+      {customerId !== null && !customer.isLoading && <p role="status">
+        {customer.data ? `حجوزات العميل ${customer.data.name}` : 'العميل الموجود في الرابط غير متاح في الشركة الحالية.'}
+      </p>}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -104,7 +122,7 @@ const UnifiedBookings = () => {
             </div>
           </div>
         </Card>
-        <Card className="p-4">
+        {customerId === null && <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10"><TrendingUp className="h-5 w-5 text-primary" /></div>
             <div>
@@ -112,8 +130,8 @@ const UnifiedBookings = () => {
               <p className="text-2xl font-bold">{summary.isError ? '—' : confirmedCount ?? '—'}</p>
             </div>
           </div>
-        </Card>
-        <Card className="p-4">
+        </Card>}
+        {customerId === null && <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-muted"><Clock className="h-5 w-5 text-muted-foreground" /></div>
             <div>
@@ -121,8 +139,8 @@ const UnifiedBookings = () => {
               <p className="text-2xl font-bold">{summary.isError ? '—' : pendingCount ?? '—'}</p>
             </div>
           </div>
-        </Card>
-        {canViewFinance && <Card className="p-4">
+        </Card>}
+        {customerId === null && canViewFinance && <Card className="p-4">
           <p className="text-sm text-muted-foreground">ربح الحجوزات المطابقة حسب العملة</p>
           {summary.isError || !summary.data?.length ? <p className="text-lg font-semibold">—</p> :
             summary.data.filter(row => row.currency && row.profit !== null).map(row => (

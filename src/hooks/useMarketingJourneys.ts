@@ -48,10 +48,11 @@ export function useJourney(journeyId?: string) {
     queryKey: ['marketing-journey', journeyId],
     enabled: !!journeyId,
     queryFn: async () => {
-      const [{ data: j }, { data: steps }] = await Promise.all([
+      const [{ data: j, error: journeyError }, { data: steps, error: stepsError }] = await Promise.all([
         (supabase as any).from('marketing_journeys').select('*').eq('id', journeyId).maybeSingle(),
         (supabase as any).from('journey_steps').select('*').eq('journey_id', journeyId).order('step_order'),
       ]);
+      if (journeyError || stepsError) throw journeyError ?? stepsError;
       return { journey: j as MarketingJourney | null, steps: (steps ?? []) as JourneyStep[] };
     },
   });
@@ -61,8 +62,9 @@ export function useUpsertJourney() {
   const qc = useQueryClient();
   const orgId = useOrgId();
   return useMutation({
-    mutationFn: async (input: Partial<MarketingJourney> & { id?: string }) => {
-      const payload: any = {
+    mutationFn: async (input: Pick<MarketingJourney, 'name' | 'trigger_event'> & Partial<MarketingJourney>) => {
+      if (!orgId) throw new Error('لا توجد شركة نشطة');
+      const payload = {
         organization_id: orgId,
         name: input.name,
         description: input.description ?? null,
@@ -70,14 +72,9 @@ export function useUpsertJourney() {
         trigger_event: input.trigger_event,
         enrollment_condition: input.enrollment_condition ?? {},
         goal_event: input.goal_event ?? null,
-        is_active: input.is_active ?? false,
+        is_active: false,
         is_template: false,
       };
-      if (input.id) {
-        const { error } = await (supabase as any).from('marketing_journeys').update(payload).eq('id', input.id);
-        if (error) throw error;
-        return input.id;
-      }
       const { data, error } = await (supabase as any).from('marketing_journeys').insert(payload).select('id').single();
       if (error) throw error;
       return data.id as string;
@@ -95,74 +92,75 @@ export function useCloneJourneyTemplate() {
   const orgId = useOrgId();
   return useMutation({
     mutationFn: async (templateId: string) => {
-      const { data: tpl } = await (supabase as any).from('marketing_journeys').select('*').eq('id', templateId).single();
-      const { data: steps } = await (supabase as any).from('journey_steps').select('*').eq('journey_id', templateId).order('step_order');
-      const { data: created, error } = await (supabase as any).from('marketing_journeys').insert({
-        organization_id: orgId,
-        name: `${tpl.name} (نسخة)`,
-        description: tpl.description,
-        category: tpl.category,
-        trigger_event: tpl.trigger_event,
-        enrollment_condition: tpl.enrollment_condition,
-        goal_event: tpl.goal_event,
-        is_active: false,
-        is_template: false,
-      }).select('id').single();
+      if (!orgId) throw new Error('لا توجد شركة نشطة');
+      const { data, error } = await (supabase as any).rpc('clone_marketing_journey_template', {
+        p_template_id: templateId,
+        p_org_id: orgId,
+      });
       if (error) throw error;
-      if (steps?.length) {
-        await (supabase as any).from('journey_steps').insert(
-          steps.map((s: any, i: number) => ({
-            journey_id: created.id,
-            step_order: i,
-            step_type: s.step_type,
-            config: s.config,
-            delay_minutes: s.delay_minutes,
-          })),
-        );
-      }
-      return created.id as string;
+      return data as string;
     },
     onSuccess: () => {
       toast.success('تم نسخ القالب');
       qc.invalidateQueries({ queryKey: ['marketing-journeys'] });
     },
+    onError: () => toast.error('تعذّر نسخ القالب'),
   });
 }
 
-export function useToggleJourney() {
+export function usePauseJourney() {
   const qc = useQueryClient();
+  const orgId = useOrgId();
   return useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await (supabase as any).from('marketing_journeys').update({ is_active }).eq('id', id);
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from('marketing_journeys')
+        .update({ is_active: false }).eq('id', id).eq('organization_id', orgId).eq('is_template', false)
+        .select('id').single();
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['marketing-journeys'] }),
+    onError: () => toast.error('تعذّر إيقاف الرحلة'),
   });
 }
 
-export function useSaveJourneySteps() {
+export function useSaveJourneyDraft() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ journeyId, steps }: { journeyId: string; steps: Partial<JourneyStep>[] }) => {
-      await (supabase as any).from('journey_steps').delete().eq('journey_id', journeyId);
-      if (steps.length) {
-        const { error } = await (supabase as any).from('journey_steps').insert(
-          steps.map((s, i) => ({
-            journey_id: journeyId,
-            step_order: i,
-            step_type: s.step_type,
-            config: s.config ?? {},
-            delay_minutes: s.delay_minutes ?? 0,
-          })),
-        );
-        if (error) throw error;
-      }
+    mutationFn: async (input: {
+      journeyId: string;
+      name: string;
+      description: string;
+      category: string;
+      trigger_event: string;
+      goal_event: string | null;
+      steps: Partial<JourneyStep>[];
+    }) => {
+      const { error } = await (supabase as any).rpc('save_marketing_journey_draft', {
+        p_journey_id: input.journeyId,
+        p_name: input.name,
+        p_description: input.description,
+        p_category: input.category,
+        p_trigger_event: input.trigger_event,
+        p_goal_event: input.goal_event,
+        p_steps: input.steps.map((step) => ({
+          id: step.id ?? null,
+          step_type: step.step_type,
+          config: step.config ?? {},
+          delay_minutes: step.delay_minutes ?? 0,
+        })),
+      });
+      if (error) throw error;
     },
-    onSuccess: (_d, v) => {
-      toast.success('تم حفظ الخطوات');
-      qc.invalidateQueries({ queryKey: ['marketing-journey', v.journeyId] });
+    onSuccess: async (_result, { journeyId }) => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['marketing-journey', journeyId] }),
+        qc.invalidateQueries({ queryKey: ['marketing-journeys'] }),
+      ]);
+      toast.success('تم حفظ الرحلة وخطواتها');
     },
-    onError: (e: any) => toast.error(e?.message || 'فشل الحفظ'),
+    onError: (error: { code?: string }) => toast.error(
+      error.code === '55000' ? 'توجد تسجيلات جارية في الرحلة' : 'تعذّر حفظ الرحلة وخطواتها',
+    ),
   });
 }
 
@@ -187,10 +185,11 @@ export function useJourneyAnalytics(journeyId?: string) {
     queryKey: ['journey-analytics', journeyId],
     enabled: !!journeyId,
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from('journey_enrollments')
         .select('status')
         .eq('journey_id', journeyId);
+      if (error) throw error;
       const rows = (data ?? []) as { status: string }[];
       const by = (s: string) => rows.filter(r => r.status === s).length;
       return {

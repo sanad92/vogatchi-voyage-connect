@@ -21,12 +21,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Wallet } from 'lucide-react';
 
 const PAYMENT_METHODS = [
-  { value: 'cash', label: 'نقدي' },
-  { value: 'bank_transfer', label: 'تحويل بنكي' },
-  { value: 'card', label: 'بطاقة' },
-  { value: 'wallet', label: 'محفظة إلكترونية' },
-  { value: 'cheque', label: 'شيك' },
-  { value: 'other', label: 'أخرى' },
+  { value: 'cash', label: 'نقدي', accountKinds: ['cash'] },
+  { value: 'bank_transfer', label: 'تحويل بنكي', accountKinds: ['bank'] },
+  { value: 'card', label: 'بطاقة', accountKinds: ['bank', 'card', 'gateway'] },
+  { value: 'wallet', label: 'محفظة إلكترونية', accountKinds: ['bank', 'wallet', 'gateway'] },
+  { value: 'cheque', label: 'شيك', accountKinds: ['bank'] },
+  { value: 'other', label: 'أخرى', accountKinds: ['bank', 'card', 'wallet', 'gateway'] },
 ];
 
 interface Props {
@@ -34,7 +34,7 @@ interface Props {
   customerId?: string | null;
   currency?: string;
   outstanding?: number;
-  invoices?: Array<{ id: string; invoice_number?: string | null; total_amount?: number | null }>;
+  invoices?: Array<{ id: string; invoice_number?: string | null; remaining: number }>;
   onSaved?: () => void;
   fixedInvoiceId?: string;
   trigger?: React.ReactNode;
@@ -56,35 +56,43 @@ export const RecordPaymentDialog = ({
   const { data: accounts = [] } = useTreasuryAccounts();
 
   const [open, setOpen] = useState(false);
-  const [amount, setAmount] = useState<string>(outstanding > 0 ? String(outstanding) : '');
+  const [enteredAmount, setAmount] = useState<string | null>(null);
   const [method, setMethod] = useState('cash');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
   const [reference, setReference] = useState('');
-  const [invoiceId, setInvoiceId] = useState<string>('none');
+  const [invoiceId, setInvoiceId] = useState('');
   const [accountId, setAccountId] = useState('');
   const [notes, setNotes] = useState('');
   const [exchangeRate, setExchangeRate] = useState('');
   const request = useRef<{ payload: string; id: string } | null>(null);
+  const accountKinds = PAYMENT_METHODS.find(option => option.value === method)?.accountKinds ?? [];
   const receiptAccounts = accounts.filter(account =>
-    account.currency === currency && (method === 'cash' ? account.treasury_kind === 'cash' : account.treasury_kind !== 'cash'),
+    account.currency === currency && accountKinds.includes(account.treasury_kind),
   );
   const selectedAccount = receiptAccounts.find(account => account.id === accountId);
 
+  const selectedInvoice = invoices.find(invoice => invoice.id === (fixedInvoiceId ?? invoiceId));
+  const isAdvance = !fixedInvoiceId && invoiceId === 'advance';
+  const amount = enteredAmount ?? (selectedInvoice ? String(selectedInvoice.remaining) : '');
+  const receiptAmount = Number(amount);
+  const allocated = Math.min(selectedInvoice?.remaining ?? 0, receiptAmount);
+  const advance = receiptAmount - allocated;
+
   const reset = () => {
-    setAmount(outstanding > 0 ? String(outstanding) : '');
+    setAmount(null);
     setMethod('cash');
     setPaymentDate(new Date().toISOString().slice(0, 10));
     setReference('');
-    setInvoiceId('none');
+    setInvoiceId('');
     setAccountId('');
     setNotes('');
     setExchangeRate('');
-    request.current = null;
   };
 
   const save = useMutation({
     mutationFn: async () => {
       if (!orgId) throw new Error('لا توجد منظمة نشطة');
+      if (!selectedInvoice && !isAdvance) throw new Error('اختر فاتورة أو دفعة مقدمة.');
       const value = Number(amount);
       if (!Number.isFinite(value) || value <= 0) throw new Error('أدخل مبلغًا صحيحًا أكبر من صفر');
       if (!selectedAccount) throw new Error('اختر حساب الاستلام بنفس عملة الدفعة.');
@@ -92,7 +100,7 @@ export const RecordPaymentDialog = ({
       if (!Number.isFinite(rate) || rate <= 0) throw new Error('أدخل سعر الصرف قبل تسجيل الدفعة');
 
       const payload = {
-        _invoice_id: fixedInvoiceId ?? (invoiceId === 'none' ? null : invoiceId),
+        _invoice_id: selectedInvoice?.id ?? null,
         _amount: value, _currency: currency, _exchange_rate: rate,
         _method: method, _treasury_account_id: selectedAccount.id,
         _payment_date: paymentDate, _reference: reference.trim() || null, _notes: notes.trim() || null,
@@ -115,6 +123,7 @@ export const RecordPaymentDialog = ({
       queryClient.invalidateQueries({ queryKey: ['booking-financial-summary'] });
       queryClient.invalidateQueries({ queryKey: ['booking-profit-cockpit', bookingId] });
       onSaved?.();
+      request.current = null;
       reset();
       setOpen(false);
     },
@@ -122,8 +131,14 @@ export const RecordPaymentDialog = ({
       toast({ title: 'تعذر تسجيل الدفعة', description: error instanceof Error ? error.message : 'حدث خطأ غير متوقع', variant: 'destructive' }),
   });
 
+  const changeOpen = (nextOpen: boolean) => {
+    if (save.isPending) return;
+    if (!nextOpen && !save.isError) reset();
+    setOpen(nextOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={nextOpen => { if (!save.isPending) setOpen(nextOpen); }}>
+    <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
           <Button size="sm">
@@ -189,16 +204,16 @@ export const RecordPaymentDialog = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>مرتبطة بفاتورة</Label>
-              <Select value={fixedInvoiceId ?? invoiceId} onValueChange={setInvoiceId} disabled={!!fixedInvoiceId}>
-                <SelectTrigger><SelectValue placeholder="بدون" /></SelectTrigger>
+              <Label>تخصيص الدفعة</Label>
+              <Select value={fixedInvoiceId ?? invoiceId} onValueChange={id => { setInvoiceId(id); setAmount(null); }} disabled={!!fixedInvoiceId}>
+                <SelectTrigger><SelectValue placeholder="اختر فاتورة أو دفعة مقدمة" /></SelectTrigger>
                 <SelectContent>
-                  {!fixedInvoiceId && <SelectItem value="none">بدون</SelectItem>}
                   {invoices.map((inv) => (
                     <SelectItem key={inv.id} value={inv.id}>
-                      {inv.invoice_number || inv.id.slice(0, 8)} — {Number(inv.total_amount ?? 0).toLocaleString()}
+                      {inv.invoice_number || inv.id.slice(0, 8)} — {inv.remaining.toLocaleString()} {currency}
                     </SelectItem>
                   ))}
+                  {!fixedInvoiceId && <SelectItem value="advance">دفعة مقدمة بدون تخصيص لفاتورة</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
@@ -217,6 +232,13 @@ export const RecordPaymentDialog = ({
               {receiptAccounts.length === 0 && <p className="text-xs text-muted-foreground">لا يوجد حساب متاح لعملة الدفعة وطريقة الدفع.</p>}
             </div>
           </div>
+
+          {(selectedInvoice || isAdvance) && Number.isFinite(receiptAmount) && receiptAmount > 0 && (
+            <div className="text-sm text-muted-foreground" aria-live="polite">
+              <p><span>سداد الفاتورة</span> · {allocated.toLocaleString(undefined, { maximumFractionDigits: 2 })} {currency}</p>
+              <p><span>مقدم العميل</span> · {advance.toLocaleString(undefined, { maximumFractionDigits: 2 })} {currency}</p>
+            </div>
+          )}
 
           {currency !== 'EGP' && <div className="space-y-2">
             <Label htmlFor="pay-exchange-rate">سعر الصرف إلى الجنيه</Label>
@@ -237,8 +259,9 @@ export const RecordPaymentDialog = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" disabled={save.isPending} onClick={() => setOpen(false)}>إلغاء</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending || !selectedAccount || !paymentDate}>
+          <Button variant="outline" disabled={save.isPending} onClick={() => changeOpen(false)}>إلغاء</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || (!selectedInvoice && !isAdvance)
+            || !selectedAccount || !paymentDate || !Number.isFinite(receiptAmount) || receiptAmount <= 0}>
             {save.isPending ? 'جارٍ الحفظ...' : 'حفظ الدفعة'}
           </Button>
         </DialogFooter>

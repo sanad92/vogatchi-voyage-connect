@@ -15,6 +15,9 @@ interface Props {
   children: (ref: React.RefObject<HTMLDivElement>) => ReactNode;
   /** Optional hook to persist the generated PDF into the existing document records. */
   onGenerated?: (blob: Blob) => Promise<void> | void;
+  beforeOutput?: () => Promise<void>;
+  requireSavedCopy?: boolean;
+  readOnly?: boolean;
 }
 
 export const DocumentPreviewDialog = ({
@@ -24,12 +27,27 @@ export const DocumentPreviewDialog = ({
   fileName,
   children,
   onGenerated,
+  beforeOutput,
+  requireSavedCopy,
+  readOnly,
 }: Props) => {
   const sheetRef = useRef<HTMLDivElement>(null);
   const printRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    if (readOnly || busy) return;
+    if (beforeOutput) {
+      setBusy(true);
+      try {
+        await beforeOutput();
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'تعذّر التحقق من صلاحية المستند.');
+        return;
+      } finally {
+        setBusy(false);
+      }
+    }
     document.body.classList.add('printing-document');
     const cleanup = () => {
       document.body.classList.remove('printing-document');
@@ -42,15 +60,21 @@ export const DocumentPreviewDialog = ({
 
   const handleDownload = async () => {
     const el = sheetRef.current;
-    if (!el) return;
+    if (!el || readOnly || busy) return;
     setBusy(true);
     try {
+      await beforeOutput?.();
       const blob = await elementToPdfBlob(el);
-      await onGenerated?.(blob);
+      try {
+        await onGenerated?.(blob);
+      } catch (error) {
+        if (requireSavedCopy) throw error;
+        toast.warning('تعذّر حفظ نسخة PDF في أرشيف المستندات.');
+      }
       downloadBlob(blob, fileName);
-      toast.success('تم إنشاء ملف PDF');
+      toast.success('تم تجهيز ملف PDF للتحميل');
     } catch (e: any) {
-      toast.error(e?.message || 'تعذّر إنشاء ملف PDF');
+      toast.error(e instanceof Error ? e.message : 'تعذّر إنشاء أو حفظ ملف PDF.');
     } finally {
       setBusy(false);
     }
@@ -66,8 +90,8 @@ export const DocumentPreviewDialog = ({
           <DialogHeader className="px-6 py-4 border-b no-print">
             <div className="flex items-center justify-between gap-4">
               <DialogTitle className="text-base">{title}</DialogTitle>
-              <div className="flex items-center gap-2 ms-auto">
-                <Button size="sm" variant="outline" onClick={handlePrint}>
+              {!readOnly && <div className="flex items-center gap-2 ms-auto">
+                <Button size="sm" variant="outline" onClick={handlePrint} disabled={busy}>
                   <Printer className="h-4 w-4 ml-1" />
                   طباعة
                 </Button>
@@ -79,7 +103,7 @@ export const DocumentPreviewDialog = ({
                   )}
                   تحميل PDF
                 </Button>
-              </div>
+              </div>}
             </div>
           </DialogHeader>
 
@@ -93,7 +117,7 @@ export const DocumentPreviewDialog = ({
 
       {/* Dedicated print surface — kept out of the dialog so print CSS can
           isolate it from the rest of the app shell. */}
-      {open &&
+      {open && !readOnly &&
         createPortal(
           <div ref={printRef} className="doc-print-root hidden">
             {children(PRINT_REF)}

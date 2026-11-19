@@ -67,7 +67,7 @@ const sourceLink = (row: GLRow): { href: string; label: string } | null => {
   if (sourceType === 'invoice' && sourceId) return { href: `/invoices?id=${sourceId}`, label: 'الفاتورة' };
   if (sourceType === 'customer_payment') return { href: '/customer-ledger', label: 'تحصيل العميل' };
   if (sourceType === 'supplier_invoice' || sourceType === 'supplier_payment') return { href: '/supplier-ledger', label: 'حساب المورد' };
-  if (sourceType === 'expense') return { href: '/expenses', label: 'المصروف' };
+  if (sourceType === 'expense') return { href: '/expense-management?tab=expenses', label: 'المصروفات' };
   return null;
 };
 

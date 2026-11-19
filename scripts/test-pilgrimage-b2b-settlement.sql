@@ -102,6 +102,21 @@ GRANT SELECT, UPDATE ON public.pilgrimage_programs TO authenticated;
 \i scripts/deploy-pilgrimage-b2b-passengers.sql
 \i scripts/deploy-pilgrimage-availability-search.sql
 
+-- Both operators and external agency contacts use the actual signed-in portal projection.
+ALTER TABLE public.organizations ADD COLUMN name text NOT NULL DEFAULT 'Fixture operator',
+  ADD COLUMN is_active boolean NOT NULL DEFAULT true;
+CREATE TABLE public.profiles (id uuid PRIMARY KEY, is_active boolean);
+CREATE TABLE auth.users (id uuid PRIMARY KEY, email text, email_confirmed_at timestamptz, banned_until timestamptz);
+INSERT INTO auth.users VALUES
+  ('00000000-0000-4000-8000-000000000031', 'agency@one.example', now(), NULL),
+  ('00000000-0000-4000-8000-000000000021', 'manager@other.example', now(), NULL);
+CREATE FUNCTION public.is_free_email(text) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
+\i supabase/migrations/20261113233607_pilgrimage_agency_portal.sql
+\i supabase/migrations/20261119231332_show_agency_cancellation_refunds.sql
+INSERT INTO pilgrimage_portal_private.agreement_access(agreement_id, email, granted_by)
+SELECT id, 'agency@one.example', approved_by FROM public.pilgrimage_b2b_agreements
+WHERE sale_id = '00000000-0000-4000-8000-000000000303';
+
 CREATE OR REPLACE FUNCTION public._org_permission_state(org uuid, actor uuid, permission text)
 RETURNS TABLE(granted boolean, data_scope text) LANGUAGE sql STABLE
 AS $$
@@ -328,10 +343,21 @@ BEGIN
   END;
 END $$;
 
+SET test.user_id = '00000000-0000-4000-8000-000000000031';
+DO $$
+DECLARE portal jsonb := public.get_pilgrimage_agency_portal();
+BEGIN
+  IF jsonb_array_length(portal) <> 1
+    OR (portal->0->'cancellation') IS DISTINCT FROM '{"status":"requested","credit_note":null,"refund":null}'::jsonb
+    OR (portal->0->>'capacity')::int IS DISTINCT FROM 10
+  THEN RAISE EXCEPTION 'Agency did not see the pending cancellation with seats still reserved'; END IF;
+END $$;
+
 SET test.user_id = '00000000-0000-4000-8000-000000000021';
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM public.pilgrimage_b2b_cancellations)
+  IF public.get_pilgrimage_agency_portal() IS DISTINCT FROM '[]'::jsonb
+    OR EXISTS (SELECT 1 FROM public.pilgrimage_b2b_cancellations)
     OR EXISTS (SELECT 1 FROM public.supplier_payment_orders WHERE pilgrimage_b2b_agreement_id IS NOT NULL) THEN
     RAISE EXCEPTION 'Cross-tenant settlement data exposed';
   END IF;
@@ -343,6 +369,10 @@ DECLARE
   request_id uuid;
   bill uuid;
   refund uuid;
+  portal jsonb;
+  expected_cancellation jsonb;
+  agency_actor constant text := '00000000-0000-4000-8000-000000000031';
+  reviewer_actor constant text := '00000000-0000-4000-8000-000000000013';
   bank constant uuid := '00000000-0000-4000-8000-000000000601';
 BEGIN
   SELECT id, invoice_id INTO STRICT request_id, bill FROM public.pilgrimage_b2b_cancellations;
@@ -364,6 +394,17 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.refund_requests WHERE id = refund AND amount = 4900 AND status = 'approved') THEN
     RAISE EXCEPTION 'Partial collections not recognized as refund liability';
   END IF;
+  expected_cancellation := jsonb_build_object('status', 'approved', 'credit_note', 'CN-B2B-' || request_id,
+    'refund', jsonb_build_object('status', 'due', 'amount', 4900, 'currency', 'EGP'));
+  PERFORM set_config('test.user_id', agency_actor, true);
+  portal := public.get_pilgrimage_agency_portal();
+  IF jsonb_array_length(portal) <> 1
+    OR (portal->0->'cancellation') IS DISTINCT FROM expected_cancellation
+    OR (portal->0->'invoice'->>'status') IS DISTINCT FROM 'cancelled'
+    OR (portal->0->'invoice'->>'remaining')::numeric IS DISTINCT FROM 0
+    OR (portal->0->>'capacity')::int IS DISTINCT FROM 0
+  THEN RAISE EXCEPTION 'Agency did not see closed invoice, released seats and refund due'; END IF;
+  PERFORM set_config('test.user_id', reviewer_actor, true);
   PERFORM public.pay_refund_request(refund, bank, 'AGENCY-REFUND');
   PERFORM public.pay_refund_request(refund, bank, 'agency-refund');
   DELETE FROM public.bank_account_transactions WHERE related_invoice_id = bill AND transaction_type = 'refund';
@@ -371,6 +412,11 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.refund_requests WHERE id = refund AND status = 'paid') THEN
     RAISE EXCEPTION 'Refund not paid';
   END IF;
+  PERFORM set_config('test.user_id', agency_actor, true);
+  IF (public.get_pilgrimage_agency_portal()->0->'cancellation') IS DISTINCT FROM
+    jsonb_set(expected_cancellation, '{refund,status}', '"paid"'::jsonb)
+  THEN RAISE EXCEPTION 'Agency did not see the refund disbursement'; END IF;
+  PERFORM set_config('test.user_id', reviewer_actor, true);
   IF (SELECT sum(debit-credit) FROM public.get_customer_ledger(
     '00000000-0000-4000-8000-000000000101', NULL, NULL) WHERE reference <> 'LEGACY-VALID') <> 0 THEN
     RAISE EXCEPTION 'Cancelled agency account did not settle to zero';

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Phone, Mail, MapPin } from 'lucide-react';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Menu, Phone, Mail } from 'lucide-react';
+import { publicSiteContact } from './publicSiteContact';
 
 const SiteHeader = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,16 +11,11 @@ const SiteHeader = () => {
   const navItems = [
     { name: 'الرئيسية', href: '/', ariaLabel: 'الصفحة الرئيسية' },
     { name: 'عنا', href: '/about', ariaLabel: 'حول الشركة' },
-    { name: 'الخدمات', href: '/#services', ariaLabel: 'خدماتنا' },
     { name: 'اتصل بنا', href: '/contact', ariaLabel: 'تواصل معنا' },
   ];
 
   const handleNavClick = () => {
     setIsOpen(false);
-  };
-
-  const handleWhatsAppClick = () => {
-    window.open('https://wa.me/201103442881?text=مرحباً، أريد الاستفسار عن خدماتكم السياحية', '_blank');
   };
 
   return (
@@ -31,16 +27,12 @@ const SiteHeader = () => {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">
                 <Phone className="h-3 w-3" />
-                <span>01103442881</span>
+                <a dir="ltr" href={publicSiteContact.telephone}>{publicSiteContact.phoneLabel}</a>
               </div>
               <div className="flex items-center gap-1">
                 <Mail className="h-3 w-3" />
-                <span>hello@vogantra.com</span>
+                <a dir="ltr" href={`mailto:${publicSiteContact.email}`}>{publicSiteContact.email}</a>
               </div>
-            </div>
-            <div className="hidden sm:flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              <span>الرياض، المملكة العربية السعودية</span>
             </div>
           </div>
         </div>
@@ -50,11 +42,11 @@ const SiteHeader = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2" aria-label="فوجاتشي للتسويق السياحي">
+          <Link to="/" className="flex items-center space-x-2" aria-label={publicSiteContact.name}>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
               ف
             </div>
-            <span className="hidden font-bold sm:inline-block">فوجاتشي للتسويق السياحي</span>
+            <span className="hidden font-bold sm:inline-block">{publicSiteContact.name}</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -81,12 +73,8 @@ const SiteHeader = () => {
             >
               <Link to="/login">تسجيل الدخول</Link>
             </Button>
-            <Button
-              onClick={handleWhatsAppClick}
-              className="hidden sm:inline-flex"
-              size="sm"
-            >
-              احجز الآن
+            <Button asChild className="hidden sm:inline-flex" size="sm">
+              <a href={publicSiteContact.whatsApp} target="_blank" rel="noopener noreferrer">تواصل عبر واتساب</a>
             </Button>
             
             {/* Mobile Menu */}
@@ -98,6 +86,7 @@ const SiteHeader = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[240px] sm:w-[300px]">
+                <SheetTitle className="sr-only">روابط الموقع</SheetTitle>
                 <div className="flex flex-col space-y-4 mt-4">
                   <Link
                     to="/"
@@ -134,15 +123,10 @@ const SiteHeader = () => {
                     >
                       <Link to="/login">تسجيل الدخول</Link>
                     </Button>
-                    <Button
-                      onClick={() => {
-                        handleWhatsAppClick();
-                        handleNavClick();
-                      }}
-                      className="w-full"
-                      size="sm"
-                    >
-                      احجز الآن
+                    <Button asChild className="w-full" size="sm">
+                      <a href={publicSiteContact.whatsApp} target="_blank" rel="noopener noreferrer" onClick={handleNavClick}>
+                        تواصل عبر واتساب
+                      </a>
                     </Button>
                   </div>
                 </div>

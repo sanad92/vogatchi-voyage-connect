@@ -14,7 +14,7 @@ import { ar } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 interface BookingRequestFormProps {
-  onSubmit?: (data: BookingRequestData) => void;
+  onSubmit?: (data: BookingRequestData) => Promise<{ reference: string }>;
 }
 
 interface BookingRequestData {
@@ -89,6 +89,8 @@ const BookingRequestForm = ({ onSubmit }: BookingRequestFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!onSubmit || isSubmitting) return;
+
     
     if (!formData.customerName || !formData.customerPhone || !formData.serviceType) {
       toast.error('يرجى ملء الحقول المطلوبة');
@@ -98,14 +100,9 @@ const BookingRequestForm = ({ onSubmit }: BookingRequestFormProps) => {
     setIsSubmitting(true);
     
     try {
-      // هنا سيتم إرسال البيانات لقاعدة البيانات
-      console.log('📋 بيانات طلب الحجز:', formData);
-      
-      if (onSubmit) {
-        await onSubmit(formData);
-      }
-      
-      toast.success('تم إرسال طلب الحجز بنجاح!');
+      const receipt = await onSubmit(formData);
+      if (!receipt.reference?.trim()) throw new Error('Missing booking request receipt');
+      toast.success('تم استلام طلب الحجز', { description: `رقم الطلب: ${receipt.reference}` });
       
       // إعادة تعيين النموذج
       setFormData({
@@ -122,13 +119,22 @@ const BookingRequestForm = ({ onSubmit }: BookingRequestFormProps) => {
         images: []
       });
       
-    } catch (error) {
-      console.error('خطأ في إرسال طلب الحجز:', error);
+    } catch {
       toast.error('حدث خطأ في إرسال الطلب');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (!onSubmit) {
+    return (
+      <Card className="mx-auto w-full max-w-4xl">
+        <CardContent className="py-6 text-center">
+          <p role="status">استقبال طلبات الحجز عبر الإنترنت غير متاح حاليًا.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-4xl mx-auto">

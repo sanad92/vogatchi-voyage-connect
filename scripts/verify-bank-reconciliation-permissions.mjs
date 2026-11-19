@@ -48,6 +48,7 @@ const imports = {
   papaparse: { default: { parse: () => ({ data: [], errors: [] }), unparse: () => '' } },
   xlsx: { read: () => ({}), utils: { sheet_to_json: () => [] }, SSF: { parse_date_code: () => null } },
   'lucide-react': Object.fromEntries(['AlertTriangle', 'CheckCircle2', 'Download', 'FileSpreadsheet', 'Landmark', 'Link2', 'Loader2', 'Plus', 'Sparkles', 'Unlink'].map(n => [n, n])),
+  '@/lib/spreadsheet-safe': await loadModule('../src/lib/spreadsheet-safe.ts', {}),
   '@/hooks/use-toast': { useToast: () => ({ toast: noop }) },
   '@/components/finance/BankBaselineCard': { default: 'BankBaselineCard' },
   '@/hooks/useBankReconciliation': {

@@ -1,0 +1,71 @@
+name: Release verification
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked dependencies
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun install --frozen-lockfile
+      - name: Verify organization boundaries, staff, and platform flows
+        run: |
+          node scripts/verify-saas-core.mjs
+          node scripts/verify-tenant-isolation.mjs
+          node scripts/verify-company-core.mjs
+          node scripts/verify-organization-roles-and-hr.mjs
+          node scripts/verify-platform-paymob-actions.mjs
+          node scripts/verify-subscription-checkout.mjs
+          node scripts/verify-private-storage-visibility.mjs
+          node scripts/verify-email-read-state.mjs
+          node scripts/verify-document-deletion-audit.mjs
+          node scripts/verify-historical-migration-prerequisites.mjs
+          node scripts/verify-mcp-organization-scope.mjs
+      - name: Verify money and booking behavior
+        run: |
+          node scripts/verify-financial-formulas.mjs
+          node scripts/verify-payment-acceptance.mjs
+          node scripts/verify-bank-reconciliation-permissions.mjs
+          node scripts/verify-closed-bank-reconciliation.mjs
+          node scripts/verify-booking-financial-preview.mjs
+          node scripts/verify-customer-receipt-treasury.mjs
+          node scripts/verify-treasury-receipt-review.mjs
+          node scripts/verify-financial-validation.mjs
+          node scripts/verify-supplier-payout-retries.mjs
+          node scripts/verify-supplier-allotment-release.mjs
+          node scripts/verify-trip-file-integrated.mjs
+          node scripts/verify-trip-file-hotelbeds-contract.mjs
+          node scripts/verify-pilgrimage-availability-bookings.mjs
+          node scripts/verify-pilgrimage-agency-portal.mjs
+          node scripts/verify-booking-voucher-confirmation.mjs
+      - name: Verify operations, public pages and reporting
+        run: |
+          bun run test:whatsapp
+          bun run test:crm
+          bun run test:itinerary
+          node scripts/verify-invitation-email-origin.mjs
+          node scripts/verify-meta-deletion-confirmation.mjs
+          node scripts/verify-operations-remediation.mjs
+          node scripts/verify-booking-automation-access.mjs
+          node scripts/verify-sales-customer-context.mjs
+          node scripts/verify-scoped-report-rows.mjs
+          node scripts/verify-dom-translation-state.mjs
+          node scripts/verify-module-navigation.mjs
+          node scripts/verify-remaining-backlog.mjs
+      - name: Type check
+        run: bunx --no-install tsc --noEmit -p tsconfig.app.json
+      - name: Build
+        run: bun run build

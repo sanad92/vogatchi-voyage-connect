@@ -93,6 +93,7 @@ export default function PaymentOrders() {
   const [params, setParams] = useSearchParams();
   const orderId = params.get("id");
   const bookingId = params.get("booking_id");
+  const supplierId = params.get("supplier_id");
   const [references, setReferences] = useState<Record<string, string>>({});
   const [exchangeRates, setExchangeRates] = useState<Record<string, string>>({});
   const [scheduledDay, setScheduledDay] = useState("");
@@ -104,7 +105,7 @@ export default function PaymentOrders() {
   const approve = useApproveSupplierPO();
   const pay = useRecordSupplierPayment();
   const query = useQuery({
-    queryKey: ["supplier-payment-orders-all", orgId, orderId, bookingId, scheduledDay],
+    queryKey: ["supplier-payment-orders-all", orgId, orderId, bookingId, supplierId, scheduledDay],
     enabled: !!orgId,
     queryFn: async () => {
       let request = (supabase as any)
@@ -115,6 +116,7 @@ export default function PaymentOrders() {
         .order("created_at", { ascending: false });
       if (orderId) request = request.eq("id", orderId);
       if (bookingId) request = request.eq("booking_id", bookingId);
+      if (supplierId) request = request.eq("supplier_id", supplierId);
       if (!orderId && scheduledDay) request = request.eq("schedule_date", scheduledDay)
         .in("status", ["draft", "pending", "approved", "partially_paid"]).neq("approval_status", "rejected");
       const { data, error } = await request;
@@ -171,6 +173,11 @@ export default function PaymentOrders() {
       <Card>
         <CardContent className="flex flex-wrap gap-3 pt-6">
           {orderId ? <Button variant="outline" onClick={() => setParams({})}>عرض كل أوامر الدفع</Button> : <>
+            {supplierId && <Button variant="outline" onClick={() => setParams(previous => {
+              const next = new URLSearchParams(previous);
+              next.delete('supplier_id');
+              return next;
+            })}>عرض أوامر كل الموردين</Button>}
             <div className="relative min-w-64 flex-1">
               <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input

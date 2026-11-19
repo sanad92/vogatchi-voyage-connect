@@ -1,4 +1,5 @@
-const inactivityTimeoutMs = 60 * 60 * 1000;
+export const BROWSER_SESSION_INACTIVITY_MINUTES = 60;
+const inactivityTimeoutMs = BROWSER_SESSION_INACTIVITY_MINUTES * 60 * 1000;
 const activityWriteIntervalMs = 10 * 1000;
 const storagePrefix = 'safarerp.session.activity.';
 const fallbackActivity = new Map<string, string>();

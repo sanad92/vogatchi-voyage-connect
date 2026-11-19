@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAutomationRules, useAutomationLogs, useStarterAutomationRules, TRIGGER_LABELS, ACTION_LABELS, TRIGGER_ICONS, ACTION_ICONS, type TriggerType, type ActionType } from '@/hooks/useAutomationRules';
+import { useAutomationRules, useAutomationLogs, useStarterAutomationRules, supportsCustomAutomation, TRIGGER_LABELS, ACTION_LABELS, TRIGGER_ICONS, ACTION_ICONS, type TriggerType, type ActionType } from '@/hooks/useAutomationRules';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,63 +24,18 @@ const AutomationRules = () => {
   const { settings, setEnabled } = useStarterAutomationRules();
   const { data: logs = [], isLoading: logsLoading } = useAutomationLogs();
   const [showCreate, setShowCreate] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    trigger_type: 'booking_created' as TriggerType,
-    trigger_config: {} as Record<string, any>,
-    actions: [{ action_type: 'send_email' as ActionType, action_config: {}, sort_order: 0, is_active: true }],
+  const [formData, setFormData] = useState({ name: '', description: '', subject: '' });
+
+  const handleCreate = () => createRule.mutate(formData, {
+    onSuccess: () => {
+      setShowCreate(false);
+      setFormData({ name: '', description: '', subject: '' });
+    },
   });
-
-  const handleCreate = () => {
-    createRule.mutate({
-      name: formData.name,
-      description: formData.description,
-      trigger_type: formData.trigger_type,
-      trigger_config: formData.trigger_config,
-      actions: formData.actions,
-    }, {
-      onSuccess: () => {
-        setShowCreate(false);
-        setFormData({
-          name: '', description: '', trigger_type: 'booking_created',
-          trigger_config: {},
-          actions: [{ action_type: 'send_email', action_config: {}, sort_order: 0, is_active: true }],
-        });
-      },
-    });
-  };
-
-  const addAction = () => {
-    setFormData(prev => ({
-      ...prev,
-      actions: [...prev.actions, { action_type: 'send_email' as ActionType, action_config: {}, sort_order: prev.actions.length, is_active: true }],
-    }));
-  };
-
-  const removeAction = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      actions: prev.actions.filter((_, i) => i !== index),
-    }));
-  };
-
-  const updateActionType = (index: number, type: ActionType) => {
-    setFormData(prev => ({
-      ...prev,
-      actions: prev.actions.map((a, i) => i === index ? { ...a, action_type: type } : a),
-    }));
-  };
-
-  const updateActionConfig = (index: number, key: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      actions: prev.actions.map((a, i) => i === index ? { ...a, action_config: { ...a.action_config, [key]: value } } : a),
-    }));
-  };
 
   const statusIcon = (status: string) => {
     switch (status) {
+      case 'queued': return <Clock className="h-4 w-4 text-amber-600" />;
       case 'completed': return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
       case 'failed': return <XCircle className="h-4 w-4 text-destructive" />;
       case 'processing': return <Clock className="h-4 w-4 text-amber-600" />;
@@ -90,6 +45,7 @@ const AutomationRules = () => {
 
   const statusLabel = (status: string) => {
     switch (status) {
+      case 'queued': return 'البريد في الانتظار';
       case 'completed': return 'مكتمل';
       case 'failed': return 'فشل';
       case 'processing': return 'قيد التنفيذ';
@@ -99,7 +55,7 @@ const AutomationRules = () => {
 
   const enabledRuleKeys = new Set(settings.data?.map(setting => setting.rule_key));
   const enabledLibraryRules = AUTOMATION_LIBRARY.filter(rule => enabledRuleKeys.has(rule.key));
-  const activeRulesCount = rules.filter(r => r.is_active).length + enabledLibraryRules.length;
+  const activeRulesCount = rules.filter(r => r.is_active && supportsCustomAutomation(r)).length + enabledLibraryRules.length;
   const completedCount = (logs as any[]).filter((l: any) => l.status === 'completed').length;
   const failedCount = (logs as any[]).filter((l: any) => l.status === 'failed').length;
   const [logFilter, setLogFilter] = useState<string>('all');
@@ -215,15 +171,16 @@ const AutomationRules = () => {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {rules.map(rule => (
-                <Card key={rule.id} className={!rule.is_active ? 'opacity-60' : ''}>
+              {rules.map(rule => {
+                const supported = supportsCustomAutomation(rule);
+                return <Card key={rule.id} className={!rule.is_active ? 'opacity-60' : ''}>
                   <CardContent className="p-4 md:p-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="font-semibold text-foreground truncate">{rule.name}</h3>
-                          <Badge variant={rule.is_active ? 'default' : 'secondary'}>
-                            {rule.is_active ? 'نشط' : 'معطل'}
+                          <Badge variant={rule.is_active && supported ? 'default' : 'secondary'}>
+                            {supported ? (rule.is_active ? 'نشط' : 'معطل') : 'تنفيذ غير متاح'}
                           </Badge>
                         </div>
                         {rule.description && (
@@ -234,7 +191,7 @@ const AutomationRules = () => {
                             {TRIGGER_ICONS[rule.trigger_type as TriggerType]} {TRIGGER_LABELS[rule.trigger_type as TriggerType] || rule.trigger_type}
                           </Badge>
                           <span className="text-muted-foreground">→</span>
-                          {(rule.automation_actions || []).map((action: any, i: number) => (
+                          {(rule.automation_actions || []).map((action, i) => (
                             <Badge key={i} variant="outline" className="gap-1">
                               {ACTION_ICONS[action.action_type as ActionType]} {ACTION_LABELS[action.action_type as ActionType] || action.action_type}
                             </Badge>
@@ -244,6 +201,8 @@ const AutomationRules = () => {
                       {canEdit && <div className="flex items-center gap-3">
                         <Switch
                           checked={rule.is_active}
+                          disabled={toggleRule.isPending || (!supported && !rule.is_active)}
+                          aria-label={rule.is_active ? 'إيقاف القاعدة' : 'تفعيل القاعدة'}
                           onCheckedChange={(checked) => toggleRule.mutate({ id: rule.id, is_active: checked })}
                         />
                         <Button
@@ -257,8 +216,8 @@ const AutomationRules = () => {
                       </div>}
                     </div>
                   </CardContent>
-                </Card>
-              ))}
+                </Card>;
+              })}
             </div>
           )}
         </TabsContent>
@@ -361,128 +320,17 @@ const AutomationRules = () => {
               />
             </div>
 
+            <p className="text-sm text-muted-foreground">
+              عند تسجيل عميل جديد له بريد إلكتروني، يُضاف بريد ترحيب إلى قائمة الانتظار.
+            </p>
             <div>
-              <Label>المحفز (Trigger)</Label>
-              <Select
-                value={formData.trigger_type}
-                onValueChange={(v) => setFormData(p => ({ ...p, trigger_type: v as TriggerType }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(TRIGGER_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {TRIGGER_ICONS[key as TriggerType]} {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {formData.trigger_type === 'before_travel' && (
-              <div>
-                <Label>عدد الأيام قبل السفر</Label>
-                <Input
-                  type="number"
-                  value={formData.trigger_config.days_before || 3}
-                  onChange={e => setFormData(p => ({ ...p, trigger_config: { ...p.trigger_config, days_before: parseInt(e.target.value) } }))}
-                  min={1}
-                  max={30}
-                />
-              </div>
-            )}
-
-            {formData.trigger_type === 'booking_status_changed' && (
-              <div>
-                <Label>الحالة المحددة (اختياري)</Label>
-                <Input
-                  value={formData.trigger_config.status_name || ''}
-                  onChange={e => setFormData(p => ({ ...p, trigger_config: { ...p.trigger_config, status_name: e.target.value } }))}
-                  placeholder="مثال: مؤكد"
-                />
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>الإجراءات (Actions)</Label>
-                <Button type="button" variant="outline" size="sm" onClick={addAction} className="gap-1">
-                  <Plus className="h-3 w-3" />
-                  إضافة إجراء
-                </Button>
-              </div>
-
-              {formData.actions.map((action, index) => (
-                <Card key={index}>
-                  <CardContent className="p-3 space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <Select
-                        value={action.action_type}
-                        onValueChange={(v) => updateActionType(index, v as ActionType)}
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(ACTION_LABELS).map(([key, label]) => (
-                            <SelectItem key={key} value={key}>
-                              {ACTION_ICONS[key as ActionType]} {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {formData.actions.length > 1 && (
-                        <Button type="button" variant="ghost" size="icon" onClick={() => removeAction(index)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      )}
-                    </div>
-
-                    {action.action_type === 'send_email' && (
-                      <div>
-                        <Label className="text-xs">عنوان البريد</Label>
-                        <Input
-                          value={(action.action_config as any).subject || ''}
-                          onChange={e => updateActionConfig(index, 'subject', e.target.value)}
-                          placeholder="تأكيد الحجز"
-                          className="text-sm"
-                        />
-                      </div>
-                    )}
-
-                    {action.action_type === 'send_whatsapp' && (
-                      <div>
-                        <Label className="text-xs">نص الرسالة</Label>
-                        <Textarea
-                          value={(action.action_config as any).message_template || ''}
-                          onChange={e => updateActionConfig(index, 'message_template', e.target.value)}
-                          placeholder="مرحباً {{customer_name}}، تم تسجيل حجزك بنجاح."
-                          rows={2}
-                          className="text-sm"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          متغيرات متاحة: {'{{customer_name}}'}, {'{{booking_type}}'}, {'{{travel_date}}'}, {'{{total_amount}}'}
-                        </p>
-                      </div>
-                    )}
-
-                    {action.action_type === 'send_reminder' && (
-                      <div>
-                        <Label className="text-xs">أيام قبل السفر</Label>
-                        <Input
-                          type="number"
-                          value={(action.action_config as any).days_before || 3}
-                          onChange={e => updateActionConfig(index, 'days_before', e.target.value)}
-                          min={1}
-                          max={30}
-                          className="text-sm"
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+              <Label htmlFor="automation-email-subject">عنوان البريد (اختياري)</Label>
+              <Input
+                id="automation-email-subject"
+                value={formData.subject}
+                onChange={e => setFormData(p => ({ ...p, subject: e.target.value }))}
+                placeholder="مرحبًا بك"
+              />
             </div>
           </div>
 
@@ -490,7 +338,7 @@ const AutomationRules = () => {
             <Button variant="outline" onClick={() => setShowCreate(false)}>إلغاء</Button>
             <Button
               onClick={handleCreate}
-              disabled={!formData.name || createRule.isPending}
+              disabled={!formData.name.trim() || createRule.isPending}
               className="gap-2"
             >
               <Play className="h-4 w-4" />

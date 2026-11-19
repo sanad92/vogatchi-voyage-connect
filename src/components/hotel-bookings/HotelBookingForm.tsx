@@ -20,7 +20,7 @@ import {
 
 interface HotelBookingFormProps {
   booking?: HotelBooking | null;
-  onSuccess: () => void;
+  onSuccess: (saved?: { id: string; parentId?: string | null }) => void;
   onCancel: () => void;
 }
 

@@ -76,7 +76,7 @@ export const TRIGGER_LABELS: Record<TriggerType, string> = {
 };
 
 export const ACTION_LABELS: Record<ActionType, string> = {
-  send_email: 'إرسال بريد إلكتروني',
+  send_email: 'إضافة بريد إلى قائمة الانتظار',
   send_whatsapp: 'إرسال رسالة واتساب',
   create_invoice: 'إنشاء فاتورة',
   send_reminder: 'إرسال تذكير',
@@ -98,6 +98,14 @@ export const ACTION_ICONS: Record<ActionType, string> = {
   send_reminder: '⏰',
 };
 
+export function supportsCustomAutomation(rule: Pick<AutomationRule, 'trigger_type' | 'trigger_config' | 'automation_actions'>) {
+  const actions = rule.automation_actions?.filter(action => action.is_active) ?? [];
+  const config = rule.trigger_config;
+  return rule.trigger_type === 'customer_registered' && config?.has_email === true
+    && Object.keys(config).length === 1 && actions.length > 0
+    && actions.every(action => action.action_type === 'send_email');
+}
+
 export function useAutomationRules() {
   const orgId = useOrgId();
   const queryClient = useQueryClient();
@@ -118,14 +126,8 @@ export function useAutomationRules() {
   });
 
   const createRule = useMutation({
-    mutationFn: async (input: {
-      name: string;
-      description?: string;
-      trigger_type: TriggerType;
-      trigger_config?: Record<string, any>;
-      actions: Omit<AutomationAction, 'id' | 'rule_id'>[];
-    }) => {
-      if (!orgId) throw new Error('No organization');
+    mutationFn: async (input: { name: string; description?: string; subject?: string }) => {
+      if (!orgId) throw new Error('لا توجد شركة نشطة');
       const { data: user } = await supabase.auth.getUser();
 
       const { data: rule, error: ruleError } = await supabase
@@ -134,86 +136,35 @@ export function useAutomationRules() {
           organization_id: orgId,
           name: input.name,
           description: input.description || null,
-          trigger_type: input.trigger_type,
-          trigger_config: input.trigger_config || {},
+          trigger_type: 'customer_registered',
+          trigger_config: { has_email: true },
+          is_active: false,
           created_by: user.user?.id || null,
         })
         .select()
         .single();
       if (ruleError) throw ruleError;
 
-      if (input.actions.length > 0) {
-        const actionsToInsert = input.actions.map((a, i) => ({
-          rule_id: rule.id,
-          action_type: a.action_type,
-          action_config: a.action_config || {},
-          sort_order: i,
-          is_active: a.is_active ?? true,
-        }));
-        const { error: actError } = await supabase
-          .from('automation_actions')
-          .insert(actionsToInsert);
-        if (actError) throw actError;
-      }
+      const { error: actionError } = await supabase.from('automation_actions').insert({
+        rule_id: rule.id,
+        action_type: 'send_email',
+        action_config: { subject: input.subject?.trim() ?? '' },
+        sort_order: 0,
+        is_active: true,
+      });
+      if (actionError) throw actionError;
       return rule;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['automation-rules', orgId] });
-      toast.success('تم إنشاء قاعدة الأتمتة بنجاح');
-    },
-    onError: (err: any) => toast.error(err.message || 'حدث خطأ'),
-  });
-
-  const updateRule = useMutation({
-    mutationFn: async (input: {
-      id: string;
-      name?: string;
-      description?: string;
-      trigger_type?: TriggerType;
-      trigger_config?: Record<string, any>;
-      is_active?: boolean;
-      actions?: Omit<AutomationAction, 'id' | 'rule_id'>[];
-    }) => {
-      const updates: any = {};
-      if (input.name !== undefined) updates.name = input.name;
-      if (input.description !== undefined) updates.description = input.description;
-      if (input.trigger_type !== undefined) updates.trigger_type = input.trigger_type;
-      if (input.trigger_config !== undefined) updates.trigger_config = input.trigger_config;
-      if (input.is_active !== undefined) updates.is_active = input.is_active;
-
-      const { error } = await supabase
-        .from('automation_rules')
-        .update(updates)
-        .eq('id', input.id);
-      if (error) throw error;
-
-      if (input.actions) {
-        await supabase.from('automation_actions').delete().eq('rule_id', input.id);
-        if (input.actions.length > 0) {
-          const actionsToInsert = input.actions.map((a, i) => ({
-            rule_id: input.id,
-            action_type: a.action_type,
-            action_config: a.action_config || {},
-            sort_order: i,
-            is_active: a.is_active ?? true,
-          }));
-          const { error: actErr } = await supabase
-            .from('automation_actions')
-            .insert(actionsToInsert);
-          if (actErr) throw actErr;
-        }
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['automation-rules', orgId] });
-      toast.success('تم تحديث القاعدة بنجاح');
+      toast.success('تم حفظ القاعدة. فعّلها من قائمة القواعد لبدء وضع البريد في الانتظار.');
     },
     onError: (err: any) => toast.error(err.message || 'حدث خطأ'),
   });
 
   const deleteRule = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('automation_rules').delete().eq('id', id);
+      const { error } = await supabase.from('automation_rules').delete().eq('id', id).eq('organization_id', orgId!);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -225,10 +176,17 @@ export function useAutomationRules() {
 
   const toggleRule = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      if (!orgId) throw new Error('لا توجد شركة نشطة');
+      if (is_active) {
+        const { data, error } = await supabase.from('automation_rules')
+          .select('*, automation_actions(*)').eq('id', id).eq('organization_id', orgId).single();
+        if (error) throw error;
+        if (!supportsCustomAutomation(data as AutomationRule)) throw new Error('تنفيذ هذه القاعدة غير متاح.');
+      }
       const { error } = await supabase
         .from('automation_rules')
         .update({ is_active })
-        .eq('id', id);
+        .eq('id', id).eq('organization_id', orgId).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => {
@@ -241,7 +199,6 @@ export function useAutomationRules() {
     rules: rulesQuery.data || [],
     isLoading: rulesQuery.isLoading,
     createRule,
-    updateRule,
     deleteRule,
     toggleRule,
   };
