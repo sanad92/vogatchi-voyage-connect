@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Wallet, Plus } from 'lucide-react';
 import { ListLoadError } from '@/components/common/ListLoadError';
+import { TreasuryReceiptReview } from '@/components/finance/TreasuryReceiptReview';
 import { CashTreasuryCounts } from '@/components/finance/CashTreasuryCounts';
 import TreasuryTransferDialog, { type TreasuryTransfer } from '@/components/finance/TreasuryTransferDialog';
 import type { Database } from '@/integrations/supabase/types';
@@ -44,6 +45,7 @@ export default function TreasuryManagement() {
   const { hasPermission, getPermissionScope } = useSupabasePermissions();
   const canTransfer = hasPermission('banking_transfer') && getPermissionScope('banking_transfer') === 'organization';
   const canCount = hasPermission('banking_transactions') && getPermissionScope('banking_transactions') === 'organization';
+  const canReviewReceipts = hasPermission('financial_view') && getPermissionScope('financial_view') === 'organization';
   const accountsQuery = useTreasuryAccounts();
   const accounts: BankAccount[] = accountsQuery.data ?? [];
   const transfersQuery = useQuery({
@@ -170,6 +172,8 @@ export default function TreasuryManagement() {
       </Card>
 
       {orgId && <CashTreasuryCounts key={orgId} orgId={orgId} accounts={accounts} canRecord={canCount} />}
+      {orgId && canReviewReceipts && <TreasuryReceiptReview key={`receipt-review-${orgId}`} orgId={orgId}
+        canViewBookings={hasPermission('bookings_view')} canViewInvoices={hasPermission('invoices_view')} />}
 
       <Card>
         <CardHeader><CardTitle className="text-base">أحدث التحويلات الداخلية</CardTitle></CardHeader>
