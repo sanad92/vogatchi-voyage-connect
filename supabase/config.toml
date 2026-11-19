@@ -27,3 +27,7 @@ verify_jwt = false
 
 [functions.send-invitation-email]
 verify_jwt = false
+
+[functions.process-email-queue]
+# Uses the internal service-key guard, including Supabase secret keys.
+verify_jwt = false

@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   Building2, CreditCard, BanknoteIcon, Settings, Calculator,
   UserCog, ScrollText, Database, Activity, Package,
-  LayoutDashboard, TrendingUp, Globe, Zap, Workflow, PanelRightClose, PanelRightOpen, LifeBuoy
+  LayoutDashboard, TrendingUp, Globe, Zap, Workflow, PanelRightClose, PanelRightOpen, LifeBuoy, ShieldCheck
 } from 'lucide-react';
 import SafarLogo from '@/components/brand/VogantraLogo';
 import { cn } from '@/lib/utils';
@@ -59,6 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { title: 'حسابات المنصة', href: '/platform/accounts', icon: UserCog },
       { title: 'سجل التدقيق', href: '/platform/audit', icon: ScrollText, ownerOnly: true },
+      { title: 'طلبات حذف بيانات Meta', href: '/platform/meta-data-deletion', icon: ShieldCheck, ownerOnly: true },
       { title: 'إعدادات المنصة', href: '/platform/settings', icon: Settings, ownerOnly: true },
     ],
   },

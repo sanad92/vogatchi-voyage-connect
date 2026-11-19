@@ -58,7 +58,7 @@ function basic(value: string) {
   return btoa(String.fromCharCode(...encode.encode(value)));
 }
 
-async function requestJson(send: Send, url: string, init: RequestInit, stage: 'auth' | 'read', limit: number) {
+async function requestJson(send: Send, url: string, init: RequestInit, stage: 'auth' | 'read', limit: number, expectedStatus?: number) {
   try {
     const response = await send(url, { ...init, redirect: 'error', signal: AbortSignal.timeout(10_000) });
     if (!response.ok) {
@@ -69,6 +69,10 @@ async function requestJson(send: Send, url: string, init: RequestInit, stage: 'a
       if (stage === 'read' && [400, 404, 422].includes(response.status)) {
         throw new CompanyProviderError('sample_not_verified');
       }
+      throw new CompanyProviderError('provider_unavailable');
+    }
+    if (expectedStatus !== undefined && response.status !== expectedStatus) {
+      await response.body?.cancel().catch(() => undefined);
       throw new CompanyProviderError('provider_unavailable');
     }
     const body = await readBoundedJsonBody(response.body, limit);
@@ -182,13 +186,21 @@ export async function readCompanyAirPnr({
   }
 }
 
-export async function verifyEta(environment: ProviderEnvironment, credentials: CompanyCredentials, send: Send = fetch) {
-  const test = environment === 'preproduction';
-  const identity = test ? 'https://id.preprod.eta.gov.eg' : 'https://id.eta.gov.eg';
-  const api = test ? 'https://api.preprod.invoicing.eta.gov.eg' : 'https://api.invoicing.eta.gov.eg';
-  const { token } = await getToken(send, identity + '/connect/token', { grant_type: 'client_credentials' }, {
+const etaPreprodIdentity = 'https://id.preprod.eta.gov.eg';
+const etaPreprodApi = 'https://api.preprod.invoicing.eta.gov.eg';
+
+async function etaToken(identity: string, credentials: CompanyCredentials, send: Send) {
+  const { token } = await getToken(send, `${identity}/connect/token`, { grant_type: 'client_credentials' }, {
     Authorization: 'Basic ' + basic(`${credentials.clientId}:${credentials.clientSecret}`),
   });
+  return token;
+}
+
+export async function verifyEta(environment: ProviderEnvironment, credentials: CompanyCredentials, send: Send = fetch) {
+  const test = environment === 'preproduction';
+  const identity = test ? etaPreprodIdentity : 'https://id.eta.gov.eg';
+  const api = test ? etaPreprodApi : 'https://api.invoicing.eta.gov.eg';
+  const token = await etaToken(identity, credentials, send);
   const catalog = await requestJson(send, api + '/api/v1.0/documenttypes', {
     method: 'GET',
     headers: { Authorization: 'Bearer ' + token, Accept: 'application/json' },
@@ -197,6 +209,101 @@ export async function verifyEta(environment: ProviderEnvironment, credentials: C
   if (!Array.isArray(invoice?.documentTypeVersions) || !invoice.documentTypeVersions.length) {
     throw new CompanyProviderError('document_type_unavailable');
   }
+}
+
+const etaReferencePattern = /^[A-Za-z0-9]{26}$/;
+type EtaSignedSample = { json: string; internalId: string };
+
+function hasDuplicateJsonKeys(json: string) {
+  const containers: (Set<string> | null)[] = [];
+  for (const [symbol, quoted, colon] of json.matchAll(/("(?:\\[\s\S]|[^"\\])*")(\s*:)?|[{}\[\]]/g)) {
+    if (quoted && colon) {
+      const keys = containers.at(-1);
+      const key = (JSON.parse(quoted) as string).toLowerCase();
+      if (keys?.has(key)) return true;
+      keys?.add(key);
+    } else if (symbol === '{') containers.push(new Set());
+    else if (symbol === '[') containers.push(null);
+    else if (symbol === '}' || symbol === ']') containers.pop();
+  }
+  return false;
+}
+
+export function parseEtaSignedSample(json: unknown): EtaSignedSample | null {
+  if (typeof json !== 'string' || encode.encode(json).length > 250_000) return null;
+  try {
+    const envelope = JSON.parse(json);
+    if (!envelope || Object.keys(envelope).length !== 1 || !Array.isArray(envelope.documents)
+      || envelope.documents.length !== 1 || hasDuplicateJsonKeys(json)) return null;
+    const [sample] = envelope.documents;
+    const internalId = sample?.internalID ?? sample?.internalId;
+    if (!sample || !['I', 'i'].includes(sample.documentType) || sample.documentTypeVersion !== '1.0'
+      || (sample.internalID !== undefined && sample.internalId !== undefined)
+      || typeof internalId !== 'string' || !/^[A-Za-z0-9._/-]{1,50}$/.test(internalId)
+      || !Array.isArray(sample.signatures) || !sample.signatures.some((signature: unknown) => {
+        if (!signature || typeof signature !== 'object') return false;
+        const { signatureType, value } = signature as Record<string, unknown>;
+        return signatureType === 'I' && typeof value === 'string' && value.length >= 16
+          && /^[A-Za-z0-9+/]+={0,2}$/.test(value);
+      })) return null;
+    return { json, internalId };
+  } catch {
+    return null;
+  }
+}
+
+type EtaSubmissionResult = { status: 'submitted'; submissionId: string; documentId: string } | { status: 'rejected' | 'not_sent' | 'unknown' };
+
+export async function submitEtaPreprodSample(credentials: CompanyCredentials, sample: EtaSignedSample, send: Send = fetch): Promise<EtaSubmissionResult> {
+  let token: string;
+  try {
+    token = await etaToken(etaPreprodIdentity, credentials, send);
+  } catch {
+    return { status: 'not_sent' };
+  }
+
+  try {
+    const body = await requestJson(send, `${etaPreprodApi}/api/v1.0/documentsubmissions/`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: sample.json,
+    }, 'read', 65_536, 202);
+    if (!Array.isArray(body.acceptedDocuments) || !Array.isArray(body.rejectedDocuments)) return { status: 'unknown' };
+    const [accepted] = body.acceptedDocuments;
+    const [rejected] = body.rejectedDocuments;
+    if (body.acceptedDocuments.length === 0 && body.rejectedDocuments.length === 1 && rejected?.internalId === sample.internalId) {
+      return { status: 'rejected' };
+    }
+    if (body.acceptedDocuments.length !== 1 || body.rejectedDocuments.length !== 0 || accepted?.internalId !== sample.internalId
+      || typeof body.submissionUUID !== 'string' || !etaReferencePattern.test(body.submissionUUID)
+      || typeof accepted?.uuid !== 'string' || !etaReferencePattern.test(accepted.uuid)) return { status: 'unknown' };
+    return { status: 'submitted', submissionId: body.submissionUUID, documentId: accepted.uuid };
+  } catch {
+    // A timed-out POST may have reached ETA. Never retry a submission automatically.
+    return { status: 'unknown' };
+  }
+}
+
+export async function refreshEtaPreprodSample(credentials: CompanyCredentials, sample: {
+  internalId: string;
+  submissionId: string;
+  documentId: string;
+}, send: Send = fetch): Promise<'submitted' | 'valid' | 'invalid' | 'rejected' | 'cancelled'> {
+  if (!etaReferencePattern.test(sample.submissionId) || !etaReferencePattern.test(sample.documentId)) {
+    throw new CompanyProviderError('sample_not_verified');
+  }
+  const token = await etaToken(etaPreprodIdentity, credentials, send);
+  const body = await requestJson(send, `${etaPreprodApi}/api/v1.0/documentsubmissions/${sample.submissionId}?pageNo=1&pageSize=1`, {
+    method: 'GET',
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/json' },
+  }, 'read', 65_536, 200);
+  const doc = Array.isArray(body.documentSummary) && body.documentSummary.length === 1 ? body.documentSummary[0] : null;
+  if (body.uuid !== sample.submissionId || body.documentCount !== 1 || doc?.uuid !== sample.documentId || doc?.internalId !== sample.internalId) {
+    throw new CompanyProviderError('sample_not_verified');
+  }
+  const status = typeof doc.status === 'string' && doc.status.toLowerCase();
+  if (status === 'submitted' || status === 'valid' || status === 'invalid' || status === 'rejected' || status === 'cancelled') return status;
+  throw new CompanyProviderError('sample_not_verified');
 }
 
 export interface ZatcaSample { uuid: string; invoiceHash: string; invoice: string }

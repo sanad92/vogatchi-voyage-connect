@@ -1,29 +1,72 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgId } from "@/hooks/useOrgId";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import type { Tables } from "@/integrations/supabase/types";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { callUntypedRpc } from "@/lib/supabaseRpc";
+import { publicPageSlugPattern } from "@/lib/publicBooking";
 import { toast } from "sonner";
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, Zap, Plus } from 'lucide-react';
 import CMSGuide from '@/components/cms/CMSGuide';
+import PublicSiteSettings from '@/components/cms/PublicSiteSettings';
 import { getExamplePage } from '@/utils/cmsExamples';
 
-type PageRow = Pick<Tables<'pages'>, 'id' | 'slug' | 'title' | 'description' | 'is_published'>;
+type PageRow = Pick<Tables<'pages'>, 'id' | 'slug' | 'title' | 'description'>;
+interface CompanyPublications {
+  slug: string;
+  enabled: boolean;
+  pages: { pageId: string; slug: string }[];
+}
 
 const CMSPages: React.FC = () => {
   const orgId = useOrgId();
+  const { orgRole } = useOrganization();
   if (!orgId) return null;
-  return <CompanyCMSPages key={orgId} orgId={orgId} />;
+  return <CompanyCMSPages key={orgId} orgId={orgId} canManagePublicSite={orgRole === "owner" || orgRole === "admin"} />;
 };
 
-function CompanyCMSPages({ orgId }: { orgId: string }) {
+function CompanyCMSPages({ orgId, canManagePublicSite }: { orgId: string; canManagePublicSite: boolean }) {
   const [pages, setPages] = useState<PageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: '', slug: '', description: '' });
   const navigate = useNavigate();
+  const [publishing, setPublishing] = useState(false);
+  const publication = useQuery({
+    queryKey: ['company-publications', orgId],
+    queryFn: async () => {
+      const { data, error } = await callUntypedRpc<CompanyPublications>('get_company_publications', { _org: orgId });
+      if (error) throw new Error('Unable to load public pages');
+      return data;
+    },
+    enabled: canManagePublicSite,
+    retry: false,
+  });
+
+  const setPublication = async (page: PageRow, publish: boolean) => {
+    if (publishing) return;
+    setPublishing(true);
+    try {
+      const { data, error } = await callUntypedRpc<boolean>('set_company_page_publication', {
+        _org: orgId, _page: page.id, _publish: publish,
+      });
+      if (error?.code === '22023') {
+        toast.error('راجع معرّف الصفحة وحجم العنوان والوصف والأقسام النصية.');
+        return;
+      }
+      if (error || data !== publish) throw new Error('Unable to change page publication');
+      await publication.refetch();
+      toast.success(publish ? 'تم نشر النسخة النصية' : 'تم إلغاء النشر');
+    } catch {
+      toast.error(publish ? 'تعذّر نشر الصفحة' : 'تعذّر إلغاء نشر الصفحة');
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   const addExamplePage = async (slug: string, pageName: string) => {
     const exampleBlocks = getExamplePage(slug);
@@ -70,10 +113,10 @@ function CompanyCMSPages({ orgId }: { orgId: string }) {
     }
   };
 
-  const loadPages = async () => {
+  const loadPages = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase.from("pages")
-      .select("id,slug,title,description,is_published")
+      .select("id,slug,title,description")
       .eq("organization_id", orgId)
       .order("created_at", { ascending: false });
     if (error) {
@@ -82,17 +125,17 @@ function CompanyCMSPages({ orgId }: { orgId: string }) {
       setPages(data ?? []);
     }
     setLoading(false);
-  };
+  }, [orgId]);
 
   useEffect(() => {
-    loadPages();
-  }, []);
+    void loadPages();
+  }, [loadPages]);
 
   const createPage = async (e: React.FormEvent) => {
     e.preventDefault();
     const title = form.name.trim();
     const slug = form.slug.trim();
-    if (!title || !slug || creating) return;
+    if (!title || !publicPageSlugPattern.test(slug) || creating) return;
     setCreating(true);
     const { error } = await supabase.from("pages").insert({
       organization_id: orgId,
@@ -118,9 +161,7 @@ function CompanyCMSPages({ orgId }: { orgId: string }) {
         </div>
       </div>
 
-      <p role="status" className="text-sm text-muted-foreground">
-        الصفحات محفوظة داخل الشركة. إتاحة رابط عام تتطلب ربط نطاق بالشركة وإعداد مسار النشر.
-      </p>
+      {canManagePublicSite && <PublicSiteSettings orgId={orgId} />}
       <Tabs defaultValue="pages" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pages">الصفحات</TabsTrigger>
@@ -136,6 +177,7 @@ function CompanyCMSPages({ orgId }: { orgId: string }) {
                 className="border rounded-md bg-card px-3 py-2"
                 placeholder="الاسم"
                 required
+                maxLength={140}
                 aria-label="اسم الصفحة"
                 value={form.name}
                 onChange={e => setForm({ ...form, name: e.target.value })}
@@ -145,6 +187,9 @@ function CompanyCMSPages({ orgId }: { orgId: string }) {
                 placeholder="معرّف الصفحة"
                 required
                 aria-label="معرّف الصفحة"
+                title="من 3 إلى 80 حرفًا إنجليزيًا صغيرًا أو رقمًا"
+                pattern="[a-z0-9][a-z0-9\-]{1,78}[a-z0-9]"
+                maxLength={80}
                 value={form.slug}
                 onChange={e => setForm({ ...form, slug: e.target.value })}
               />
@@ -169,18 +214,47 @@ function CompanyCMSPages({ orgId }: { orgId: string }) {
             <div className="grid gap-3">
               {loading && <div className="text-muted-foreground">جاري التحميل...</div>}
               {!loading && pages.length === 0 && <div className="text-muted-foreground">لا توجد صفحات بعد</div>}
-              {pages.map((p) => (
-                <div key={p.id} className="rounded-lg border bg-card p-4 flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="font-semibold">{p.title}</div>
-                    <div className="text-xs text-muted-foreground">{p.slug} · {p.is_published ? 'حالة نشر سابقة محفوظة' : 'مسودة'}</div>
-                    {p.description && <div className="text-sm text-muted-foreground">{p.description}</div>}
+              {canManagePublicSite && publication.isError && (
+                <p role="alert" className="text-sm text-destructive">تعذّر تحميل حالة النشر العامة.</p>
+              )}
+              {publication.data?.enabled && (
+                <p className="text-sm text-muted-foreground">
+                  النسخة العامة تعرض العنوان والوصف وأقسام النص المخصص المفعّلة وقت النشر. اضغط تحديث النشر بعد تعديل المسودة.
+                </p>
+              )}
+              {pages.map((page) => {
+                const published = publication.data?.pages.find(entry => entry.pageId === page.id);
+                const publicPath = published && publication.data?.enabled
+                  ? `/p/${publication.data.slug}/pages/${published.slug}`
+                  : null;
+
+                return (
+                  <div key={page.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-4">
+                    <div className="space-y-1">
+                      <div className="font-semibold">{page.title}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {page.slug} · {published ? (publicPath ? 'نسخة عامة منشورة' : 'نسخة عامة متوقفة') : 'مسودة'}
+                      </div>
+                      {page.description && <div className="text-sm text-muted-foreground">{page.description}</div>}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/admin/cms/pages/${page.id}/blocks`)}>الأقسام</Button>
+                      {publication.data?.enabled && (
+                        <Button variant="outline" size="sm" disabled={publishing || !publicPageSlugPattern.test(page.slug)}
+                          onClick={() => void setPublication(page, true)}>
+                          {published ? 'تحديث النشر' : 'نشر نسخة نصية'}
+                        </Button>
+                      )}
+                      {published && (
+                        <Button variant="outline" size="sm" disabled={publishing} onClick={() => void setPublication(page, false)}>
+                          إلغاء النشر
+                        </Button>
+                      )}
+                      {publicPath && <Link className="text-sm text-primary underline" to={publicPath} target="_blank" rel="noopener">عرض الرابط العام</Link>}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => navigate(`/admin/cms/pages/${p.id}/blocks`)} className="border rounded-md px-3 py-1">الأقسام</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         </TabsContent>

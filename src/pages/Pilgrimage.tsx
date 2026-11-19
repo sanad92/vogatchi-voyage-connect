@@ -170,11 +170,11 @@ const Pilgrimage = () => {
     queryKey: ['umrah-unified-links', orgId, programId],
     enabled: !!orgId && !!programId && usesGroupedRooming,
     queryFn: async () => {
-      const { data, error } = await sb.from('umrah_inventory_bookings').select('id,booking_id,availability_sale_id')
+      const { data, error } = await sb.from('umrah_inventory_bookings').select('id,booking_id,availability_sale_id,mode')
         .eq('organization_id', orgId).eq('program_id', programId).not('booking_id', 'is', null);
       if (error) throw error;
-      return new Map<string, { booking_id: string; availability_sale_id: string | null }>(
-        data.map((row: { id: string; booking_id: string; availability_sale_id: string | null }) => [row.id, row]),
+      return new Map<string, { booking_id: string; availability_sale_id: string | null; mode: string }>(
+        data.map((row: { id: string; booking_id: string; availability_sale_id: string | null; mode: string }) => [row.id, row]),
       );
     },
   });
@@ -182,6 +182,7 @@ const Pilgrimage = () => {
   const programPilgrims = useMemo(() => pilgrims.filter((g) => g.program_id === programId)
     .map((g) => ({ ...g, reserved_refunds: operationRefunds.data?.get(g.id) ?? 0,
       unified_booking_id: reservationLinks.data?.get(g.inventory_booking_id)?.booking_id ?? null,
+      inventory_room_mode: reservationLinks.data?.get(g.inventory_booking_id)?.mode,
       manual_allotment_booking: !!reservationLinks.data?.get(g.inventory_booking_id)?.availability_sale_id })),
     [pilgrims, programId, operationRefunds.data, reservationLinks.data]);
   const approvedEdit = useBookingStaff(
@@ -520,6 +521,7 @@ const Pilgrimage = () => {
             <PilgrimageOperations key={`${orgId}:${program.id}`} orgId={orgId} program={program} programs={programs}
               passengers={programPilgrims} canManage={canManageOperations} onChanged={refresh}
               canCancel={hasPermission('bookings_cancel')}
+              canCreateReplacement={hasPermission('bookings_create') && hasPermission('invoices_create')}
               canViewRefunds={hasPermission('financial_view') && getPermissionScope('financial_view') === 'organization'} />
           </TabsContent>}
 

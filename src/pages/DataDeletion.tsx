@@ -3,7 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
 
-const confirmationFormat = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+const confirmationFormat = /^(?:[0-9a-f]{32}|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$/i;
+const statusMessages = {
+  received: 'تم تسجيل طلب حذف البيانات وهو بانتظار المراجعة.',
+  in_review: 'طلب حذف البيانات قيد المراجعة.',
+  verification_required: 'الطلب بانتظار التحقق من هوية صاحب البيانات ونطاق الطلب. تواصل معنا بالبريد واذكر رمز التأكيد.',
+  completed: 'اكتملت معالجة طلب حذف البيانات.',
+};
+type DeletionStatus = keyof typeof statusMessages;
 
 const DataDeletion: React.FC = () => {
   const [params] = useSearchParams();
@@ -14,9 +21,9 @@ const DataDeletion: React.FC = () => {
     enabled: validCode,
     retry: false,
     queryFn: async () => {
-      const { data, error } = await callUntypedRpc<boolean>('verify_meta_deletion_confirmation', { _confirmation_code: code });
+      const { data, error } = await callUntypedRpc<DeletionStatus | null>('get_meta_deletion_request_status', { _confirmation_code: code });
       if (error) throw error;
-      return data === true;
+      return data && Object.prototype.hasOwnProperty.call(statusMessages, data) ? data : null;
     },
   });
 
@@ -26,9 +33,9 @@ const DataDeletion: React.FC = () => {
         <h1 className="text-3xl font-bold mb-4">طلب حذف البيانات</h1>
 
         {code && confirmation.isSuccess && confirmation.data ? (
-          <div className="mb-6 rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-            تم تسجيل طلب حذف البيانات. احتفظ بالرمز للاستفسار عن المعالجة.
-            <div className="mt-2 font-mono text-xs bg-white p-2 rounded border">{code}</div>
+          <div className="mb-6 rounded-md border bg-card p-4 text-sm" role="status">
+            {statusMessages[confirmation.data]}
+            <div className="mt-2 break-all font-mono text-xs" dir="ltr">{code}</div>
           </div>
         ) : code && (
           <p className="mb-6 text-sm" role={confirmation.isError ? 'alert' : 'status'}>
@@ -44,27 +51,20 @@ const DataDeletion: React.FC = () => {
           </p>
           <ol className="list-decimal pr-6 space-y-2">
             <li>
-              <strong>من داخل المنصة:</strong> افتح لوحة إدارة WhatsApp ← الإعدادات ← <em>فصل الحساب</em>. هذا يوقف الاستقبال/الإرسال فورًا ويحذف رمز الوصول الخاص بمنظمتك.
+              <strong>من داخل المنصة</strong> استخدم «فصل الحساب» من إعدادات WhatsApp لإيقاف اتصال حساب الشركة.
             </li>
             <li>
-              <strong>عبر البريد:</strong> أرسل طلبًا إلى
+              <strong>عبر البريد</strong> أرسل طلبًا إلى
               {' '}<a href="mailto:privacy@vogatchi.com" className="text-primary underline">privacy@vogatchi.com</a>{' '}
-              مع ذكر معرّف المنظمة ورقم WhatsApp Business. سنؤكد الحذف خلال 7 أيام عمل.
+              مع رمز تأكيد الطلب إن كان لديك، حتى نتمكن من متابعة المراجعة.
             </li>
             <li>
-              <strong>عبر Meta:</strong> استخدم الرابط الذي يقدمه Meta للتحقق من تسجيل طلبك.
+              <strong>عبر Meta</strong> استخدم الرابط الذي يقدمه Meta لمتابعة حالة طلبك.
             </li>
           </ol>
 
-          <h2 className="text-xl font-semibold mt-8">ما الذي يُحذف</h2>
-          <ul className="list-disc pr-6 space-y-1">
-            <li>رمز الوصول الخاص بحساب WhatsApp Business الخاص بمنظمتك.</li>
-            <li>سجل محادثات ورسائل WhatsApp المرتبطة بالمنظمة.</li>
-            <li>سجلات ربط/فصل الحساب.</li>
-          </ul>
-
-          <p className="text-muted-foreground text-xs mt-8">
-            ملاحظة: قد نحتفظ ببعض السجلات المحاسبية أو الأمنية للفترة التي يقتضيها القانون.
+          <p className="text-muted-foreground">
+            تحدد المراجعة البيانات المرتبطة بالطلب وما يمكن حذفه ضمن نطاقه.
           </p>
         </section>
       </div>

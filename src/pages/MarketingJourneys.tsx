@@ -1,12 +1,13 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Copy, Zap, Target, Users } from 'lucide-react';
+import { Plus, Copy, Zap, Users } from 'lucide-react';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import {
   useMarketingJourneys,
   useCloneJourneyTemplate,
-  usePauseJourney,
+  useSetJourneyActive,
   useUpsertJourney,
 } from '@/hooks/useMarketingJourneys';
 
@@ -15,8 +16,10 @@ export default function MarketingJourneys() {
   const journeysQuery = useMarketingJourneys();
   const { data: journeys = [], isLoading } = journeysQuery;
   const clone = useCloneJourneyTemplate();
-  const pause = usePauseJourney();
+  const setActive = useSetJourneyActive();
   const upsert = useUpsertJourney();
+  const permissions = useSupabasePermissions();
+  const canManage = permissions.getPermissionScope('marketing_edit') === 'organization';
 
   const templates = journeys.filter(j => j.is_template);
   const owned = journeys.filter(j => !j.is_template);
@@ -35,13 +38,15 @@ export default function MarketingJourneys() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">أتمتة التسويق</h1>
           <p className="text-sm text-muted-foreground">
-            صمّم رحلات العملاء واحفظها كمسودات. تشغيل الرحلات تلقائيًا غير متاح حاليًا.
+            شغّل متابعة داخلية للعملاء الجدد. الإرسال الخارجي من الرحلات غير متاح حاليًا.
           </p>
         </div>
-        <Button onClick={createBlank} disabled={upsert.isPending} aria-label="إنشاء رحلة جديدة">
-          <Plus className="w-4 h-4 me-2" />
-          رحلة جديدة
-        </Button>
+        {canManage && (
+          <Button onClick={createBlank} disabled={upsert.isPending} aria-label="إنشاء رحلة جديدة">
+            <Plus className="w-4 h-4 me-2" />
+            رحلة جديدة
+          </Button>
+        )}
       </header>
 
       <section aria-labelledby="active-journeys">
@@ -59,30 +64,41 @@ export default function MarketingJourneys() {
           </CardContent></Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {owned.map(j => (
-              <Card key={j.id} className="hover:shadow-md transition cursor-pointer" onClick={() => navigate(`/marketing/journeys/${j.id}`)}>
+            {owned.map(j => {
+              const active = Boolean(j.is_active && j.runtime_enabled_at);
+              return (
+              <Card key={j.id}>
                 <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-base">{j.name}</CardTitle>
-                    {j.is_active ? (
-                      <Button size="sm" variant="outline" disabled={pause.isPending} onClick={event => {
-                        event.stopPropagation();
-                        pause.mutate(j.id);
-                      }}>إيقاف</Button>
-                    ) : <Badge variant="outline">مسودة</Badge>}
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-base">
+                      {canManage ? <Link className="hover:underline" to={`/marketing/journeys/${j.id}`}>{j.name}</Link> : j.name}
+                    </CardTitle>
+                    <Badge variant={active ? 'default' : 'outline'}>
+                      {active ? 'تعمل' : j.runtime_enabled_at ? 'متوقفة' : 'مسودة'}
+                    </Badge>
                   </div>
                   <div className="flex gap-2 mt-2">
                     <Badge variant="outline" className="text-xs">{j.category}</Badge>
                     <Badge variant="secondary" className="text-xs gap-1"><Zap className="w-3 h-3" />{j.trigger_event}</Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div><Users className="w-4 h-4 mx-auto text-muted-foreground" /><div className="font-semibold mt-1">{j.stats?.enrolled ?? 0}</div><div className="text-muted-foreground">مسجل</div></div>
-                  <div><Target className="w-4 h-4 mx-auto text-muted-foreground" /><div className="font-semibold mt-1">{j.stats?.goal_hit ?? 0}</div><div className="text-muted-foreground">هدف</div></div>
-                  <div><Zap className="w-4 h-4 mx-auto text-muted-foreground" /><div className="font-semibold mt-1">{j.stats?.completed ?? 0}</div><div className="text-muted-foreground">مكتمل</div></div>
-                </CardContent>
+                {j.runtime_enabled_at && (
+                  <CardContent className="grid grid-cols-2 gap-2 text-center text-xs">
+                    <div><Users className="w-4 h-4 mx-auto text-muted-foreground" /><div className="font-semibold mt-1">{j.stats?.enrolled ?? 0}</div><div className="text-muted-foreground">مسجل</div></div>
+                    <div><Zap className="w-4 h-4 mx-auto text-muted-foreground" /><div className="font-semibold mt-1">{j.stats?.completed ?? 0}</div><div className="text-muted-foreground">مكتمل</div></div>
+                  </CardContent>
+                )}
+                {canManage && (
+                  <div className="px-6 pb-4 flex justify-end">
+                    <Button size="sm" variant="outline" disabled={setActive.isPending}
+                      onClick={() => setActive.mutate({ id: j.id, enabled: !active })}>
+                      {active ? 'إيقاف' : j.runtime_enabled_at ? 'استئناف' : 'تشغيل'}
+                    </Button>
+                  </div>
+                )}
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -98,9 +114,11 @@ export default function MarketingJourneys() {
               </CardHeader>
               <CardContent className="flex items-center justify-between pt-2">
                 <Badge variant="outline" className="text-xs">{t.trigger_event}</Badge>
-                <Button size="sm" variant="secondary" onClick={() => clone.mutate(t.id)} aria-label={`نسخ قالب ${t.name}`}>
-                  <Copy className="w-3 h-3 me-2" />نسخ
-                </Button>
+                {canManage && (
+                  <Button size="sm" variant="secondary" onClick={() => clone.mutate(t.id)} aria-label={`نسخ قالب ${t.name}`}>
+                    <Copy className="w-3 h-3 me-2" />نسخ
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}

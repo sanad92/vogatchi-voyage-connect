@@ -69,6 +69,8 @@ for (const [url, expected] of [
   ['/about', '/about'],
   ['/contact', '/contact'],
   ['/p/booking-request', '/p/booking-request'],
+  ['/p/agency-a/booking-request', '/p/:companySlug/booking-request'],
+  ['/p/agency-a/pages/about', '/p/:companySlug/pages/:pageSlug'],
   ['/privacy', '/privacy'],
   ['/expenses', '/expenses'],
   ['/expense-management?tab=expenses', '/expense-management'],

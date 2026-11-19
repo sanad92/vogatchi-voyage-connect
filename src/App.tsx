@@ -40,6 +40,8 @@ const PageLoader = () => (
 // Public pages
 const SaaSLanding = lazy(() => import("@/pages/SaaSLanding"));
 const BookingRequest = lazy(() => import("@/pages/BookingRequest"));
+const PublicBookingSite = lazy(() => import("@/pages/PublicBookingSite"));
+const PublicCmsPage = lazy(() => import("@/pages/PublicCmsPage"));
 const PublicCompanyPage = lazy(() => import("@/pages/PublicCompanyPage"));
 const PricingPage = lazy(() => import("@/pages/PricingPage"));
 const PaymentPage = lazy(() => import("@/pages/PaymentPage"));
@@ -156,6 +158,7 @@ const PlatformFinance = lazy(() => import("@/pages/platform-admin/PlatformFinanc
 const PlatformAdminAccounts = lazy(() => import("@/pages/platform-admin/PlatformAdminAccounts"));
 const PlatformAdminPlans = lazy(() => import("@/pages/platform-admin/PlatformAdminPlans"));
 const PlatformAdminAudit = lazy(() => import("@/pages/platform-admin/PlatformAdminAudit"));
+const PlatformMetaDataDeletion = lazy(() => import("@/pages/platform-admin/PlatformMetaDataDeletion"));
 const PlatformEventBus = lazy(() => import("@/pages/platform-admin/PlatformEventBus"));
 const PlatformEventExplorer = lazy(() => import("@/pages/platform-admin/PlatformEventExplorer"));
 const PlatformAdminAnalytics = lazy(() => import("@/pages/platform-admin/PlatformAdminAnalytics"));
@@ -263,6 +266,8 @@ function App() {
                 <Route path="/" element={isPlatformAdminHost() ? <Navigate to="/platform" replace /> : <SaaSLanding />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/booking-request" element={<BookingRequest />} />
+                <Route path="/p/:companySlug/booking-request" element={<PublicBookingSite />} />
+                <Route path="/p/:companySlug/pages/:pageSlug" element={<PublicCmsPage />} />
                 <Route path="/p/booking-request" element={<Navigate to="/booking-request" replace />} />
                 <Route path="/about" element={<PublicCompanyPage page="about" />} />
                 <Route path="/contact" element={<PublicCompanyPage page="contact" />} />
@@ -308,6 +313,7 @@ function App() {
                             <Route path="finance" element={<PlatformFinance />} />
                             <Route path="accounts" element={<PlatformAdminAccounts />} />
                             <Route path="audit" element={<PlatformAdminAudit />} />
+                            <Route path="meta-data-deletion" element={<PlatformMetaDataDeletion />} />
                             <Route path="event-bus" element={<PlatformEventBus />} />
                             <Route path="event-bus/:id" element={<PlatformEventExplorer />} />
                             <Route path="analytics" element={<PlatformAdminAnalytics />} />

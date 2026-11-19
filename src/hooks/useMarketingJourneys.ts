@@ -1,14 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { useOrgId } from '@/hooks/useOrgId';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { toast } from 'sonner';
 
 export interface JourneyStep {
   id: string;
   journey_id: string;
   step_order: number;
-  step_type: 'send_whatsapp' | 'send_email' | 'wait' | 'condition' | 'tag' | 'emit_event' | 'exit';
-  config: Record<string, any>;
+  step_type: 'send_whatsapp' | 'send_email' | 'wait' | 'condition' | 'tag' | 'emit_event' | 'exit' | 'create_follow_up';
+  config: Partial<Record<'notes' | 'subject' | 'body' | 'message' | 'event' | 'tag', string>>;
   delay_minutes: number;
 }
 
@@ -19,10 +21,11 @@ export interface MarketingJourney {
   description: string | null;
   category: string;
   trigger_event: string;
-  enrollment_condition: Record<string, any>;
+  enrollment_condition: Json;
   goal_event: string | null;
   is_active: boolean;
   is_template: boolean;
+  runtime_enabled_at?: string | null;
   stats: { enrolled?: number; completed?: number; goal_hit?: number; exited?: number };
 }
 
@@ -31,7 +34,7 @@ export function useMarketingJourneys() {
   return useQuery({
     queryKey: ['marketing-journeys', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('marketing_journeys')
         .select('*')
         .or(`organization_id.eq.${orgId},is_template.eq.true`)
@@ -44,15 +47,19 @@ export function useMarketingJourneys() {
 }
 
 export function useJourney(journeyId?: string) {
+  const orgId = useOrgId();
   return useQuery({
-    queryKey: ['marketing-journey', journeyId],
-    enabled: !!journeyId,
+    queryKey: ['marketing-journey', journeyId, orgId],
+    enabled: Boolean(journeyId && orgId),
     queryFn: async () => {
-      const [{ data: j, error: journeyError }, { data: steps, error: stepsError }] = await Promise.all([
-        (supabase as any).from('marketing_journeys').select('*').eq('id', journeyId).maybeSingle(),
-        (supabase as any).from('journey_steps').select('*').eq('journey_id', journeyId).order('step_order'),
-      ]);
-      if (journeyError || stepsError) throw journeyError ?? stepsError;
+      const { data: j, error: journeyError } = await supabase
+        .from('marketing_journeys').select('*').eq('id', journeyId)
+        .or(`organization_id.eq.${orgId},and(is_template.eq.true,organization_id.is.null)`).maybeSingle();
+      if (journeyError) throw journeyError;
+      if (!j) return { journey: null, steps: [] };
+      const { data: steps, error: stepsError } = await supabase
+        .from('journey_steps').select('*').eq('journey_id', j.id).order('step_order');
+      if (stepsError) throw stepsError;
       return { journey: j as MarketingJourney | null, steps: (steps ?? []) as JourneyStep[] };
     },
   });
@@ -72,10 +79,8 @@ export function useUpsertJourney() {
         trigger_event: input.trigger_event,
         enrollment_condition: input.enrollment_condition ?? {},
         goal_event: input.goal_event ?? null,
-        is_active: false,
-        is_template: false,
       };
-      const { data, error } = await (supabase as any).from('marketing_journeys').insert(payload).select('id').single();
+      const { data, error } = await supabase.from('marketing_journeys').insert(payload).select('id').single();
       if (error) throw error;
       return data.id as string;
     },
@@ -83,7 +88,7 @@ export function useUpsertJourney() {
       toast.success('تم حفظ الرحلة');
       qc.invalidateQueries({ queryKey: ['marketing-journeys'] });
     },
-    onError: (e: any) => toast.error(e?.message || 'فشل الحفظ'),
+    onError: (e: { message?: string }) => toast.error(e.message || 'فشل الحفظ'),
   });
 }
 
@@ -93,12 +98,13 @@ export function useCloneJourneyTemplate() {
   return useMutation({
     mutationFn: async (templateId: string) => {
       if (!orgId) throw new Error('لا توجد شركة نشطة');
-      const { data, error } = await (supabase as any).rpc('clone_marketing_journey_template', {
+      const { data, error } = await callUntypedRpc<string>('clone_marketing_journey_template', {
         p_template_id: templateId,
         p_org_id: orgId,
       });
       if (error) throw error;
-      return data as string;
+      if (!data) throw new Error('تعذّر نسخ القالب');
+      return data;
     },
     onSuccess: () => {
       toast.success('تم نسخ القالب');
@@ -108,18 +114,29 @@ export function useCloneJourneyTemplate() {
   });
 }
 
-export function usePauseJourney() {
+export function useSetJourneyActive() {
   const qc = useQueryClient();
   const orgId = useOrgId();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from('marketing_journeys')
-        .update({ is_active: false }).eq('id', id).eq('organization_id', orgId).eq('is_template', false)
-        .select('id').single();
+    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
+      if (!orgId) throw new Error('لا توجد شركة نشطة');
+      const { error } = await callUntypedRpc('set_marketing_journey_active', {
+        _journey: id, _organization: orgId, _enabled: enabled,
+      });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['marketing-journeys'] }),
-    onError: () => toast.error('تعذّر إيقاف الرحلة'),
+    onSuccess: async (_result, { id, enabled }) => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['marketing-journeys'] }),
+        qc.invalidateQueries({ queryKey: ['marketing-journey', id] }),
+      ]);
+      toast.success(enabled ? 'تم تشغيل تسجيل العملاء الجدد' : 'تم إيقاف الرحلة');
+    },
+    onError: (error: { code?: string }) => toast.error(
+      error.code === '22023'
+        ? 'التشغيل يدعم إضافة عميل جديد مع متابعة داخلية وخطوات انتظار أو إنهاء.'
+        : 'تعذّر تغيير حالة الرحلة',
+    ),
   });
 }
 
@@ -135,7 +152,7 @@ export function useSaveJourneyDraft() {
       goal_event: string | null;
       steps: Partial<JourneyStep>[];
     }) => {
-      const { error } = await (supabase as any).rpc('save_marketing_journey_draft', {
+      const { error } = await callUntypedRpc('save_marketing_journey_draft', {
         p_journey_id: input.journeyId,
         p_name: input.name,
         p_description: input.description,
@@ -164,42 +181,19 @@ export function useSaveJourneyDraft() {
   });
 }
 
-export function useEnrollInJourney() {
-  return useMutation({
-    mutationFn: async ({ journeyId, customerId, context }: { journeyId: string; customerId: string; context?: any }) => {
-      const { data, error } = await (supabase as any).rpc('enroll_in_journey', {
-        p_journey_id: journeyId,
-        p_customer_id: customerId,
-        p_context: context ?? {},
+export function useJourneyAnalytics(journeyId?: string) {
+  type RuntimeCounts = { total: number; active: number; completed: number; exited: number; failed: number; retrying: number };
+  const orgId = useOrgId();
+  return useQuery({
+    queryKey: ['journey-analytics', journeyId, orgId],
+    enabled: Boolean(journeyId && orgId),
+    queryFn: async () => {
+      const { data, error } = await callUntypedRpc<RuntimeCounts[]>('get_marketing_journey_runtime_counts', {
+        _journey: journeyId, _organization: orgId,
       });
       if (error) throw error;
-      return data as string;
-    },
-    onSuccess: () => toast.success('تم تسجيل العميل في الرحلة'),
-    onError: (e: any) => toast.error(e?.message || 'فشل التسجيل'),
-  });
-}
-
-export function useJourneyAnalytics(journeyId?: string) {
-  return useQuery({
-    queryKey: ['journey-analytics', journeyId],
-    enabled: !!journeyId,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('journey_enrollments')
-        .select('status')
-        .eq('journey_id', journeyId);
-      if (error) throw error;
-      const rows = (data ?? []) as { status: string }[];
-      const by = (s: string) => rows.filter(r => r.status === s).length;
-      return {
-        total: rows.length,
-        active: by('active'),
-        completed: by('completed'),
-        goal_hit: by('goal_hit'),
-        exited: by('exited'),
-        failed: by('failed'),
-      };
+      if (!data?.[0]) throw new Error('حالة التنفيذ غير متاحة');
+      return data[0];
     },
   });
 }
