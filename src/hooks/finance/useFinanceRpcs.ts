@@ -82,10 +82,11 @@ export const useTreasuryAccounts = () => {
     queryKey: ['treasury-accounts', orgId],
     enabled: !!orgId,
     queryFn: async () => {
-      const { data, error } = await sb.from('bank_accounts')
+      if (!orgId) return [];
+      const { data, error } = await supabase.from('bank_accounts')
         .select('*').eq('organization_id', orgId).eq('is_active', true).order('treasury_kind');
       if (error) throw error;
-      return data as any[];
+      return data ?? [];
     },
   });
 };

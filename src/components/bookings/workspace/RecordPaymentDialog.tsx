@@ -1,10 +1,9 @@
 import { useRef, useState } from 'react';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useToast } from '@/hooks/use-toast';
-import { useBankAccounts } from '@/hooks/useBankAccounts';
+import { useTreasuryAccounts } from '@/hooks/finance/useFinanceRpcs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,7 +53,7 @@ export const RecordPaymentDialog = ({
   const orgId = useOrgId();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { bankAccounts } = useBankAccounts();
+  const { data: accounts = [] } = useTreasuryAccounts();
 
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState<string>(outstanding > 0 ? String(outstanding) : '');
@@ -62,10 +61,14 @@ export const RecordPaymentDialog = ({
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
   const [reference, setReference] = useState('');
   const [invoiceId, setInvoiceId] = useState<string>('none');
-  const [accountId, setAccountId] = useState<string>('none');
+  const [accountId, setAccountId] = useState('');
   const [notes, setNotes] = useState('');
   const [exchangeRate, setExchangeRate] = useState('');
   const request = useRef<{ payload: string; id: string } | null>(null);
+  const receiptAccounts = accounts.filter(account =>
+    account.currency === currency && (method === 'cash' ? account.treasury_kind === 'cash' : account.treasury_kind !== 'cash'),
+  );
+  const selectedAccount = receiptAccounts.find(account => account.id === accountId);
 
   const reset = () => {
     setAmount(outstanding > 0 ? String(outstanding) : '');
@@ -73,7 +76,7 @@ export const RecordPaymentDialog = ({
     setPaymentDate(new Date().toISOString().slice(0, 10));
     setReference('');
     setInvoiceId('none');
-    setAccountId('none');
+    setAccountId('');
     setNotes('');
     setExchangeRate('');
     request.current = null;
@@ -83,48 +86,31 @@ export const RecordPaymentDialog = ({
     mutationFn: async () => {
       if (!orgId) throw new Error('لا توجد منظمة نشطة');
       const value = Number(amount);
-      if (!value || value <= 0) throw new Error('أدخل مبلغًا صحيحًا أكبر من صفر');
+      if (!Number.isFinite(value) || value <= 0) throw new Error('أدخل مبلغًا صحيحًا أكبر من صفر');
+      if (!selectedAccount) throw new Error('اختر حساب الاستلام بنفس عملة الدفعة.');
+      const rate = currency === 'EGP' ? 1 : Number(exchangeRate);
+      if (!Number.isFinite(rate) || rate <= 0) throw new Error('أدخل سعر الصرف قبل تسجيل الدفعة');
 
-      if (fixedInvoiceId) {
-        const rate = currency === 'EGP' ? 1 : Number(exchangeRate);
-        if (!Number.isFinite(rate) || rate <= 0) throw new Error('أدخل سعر الصرف قبل تسجيل الدفعة');
-        const payload = {
-          _invoice_id: fixedInvoiceId, _amount: value, _currency: currency, _exchange_rate: rate,
-          _method: method, _treasury_account_id: accountId === 'none' ? null : accountId,
-          _payment_date: paymentDate, _reference: reference || null, _notes: notes || null,
-          _booking_id: bookingId, _customer_id: customerId ?? null,
-        };
-        const fingerprint = JSON.stringify(payload);
-        if (request.current?.payload !== fingerprint) request.current = { payload: fingerprint, id: crypto.randomUUID() };
-        const { data, error } = await callUntypedRpc<string>('record_customer_payment', { ...payload, _client_ref: request.current.id });
-        if (error) throw new Error(error.message);
-        if (!data) throw new Error('تعذر تأكيد تسجيل الدفعة');
-        return;
-      }
-      const { error } = await supabase.from('customer_payments').insert({
-        organization_id: orgId,
-        booking_id: bookingId,
-        customer_id: customerId ?? null,
-        invoice_id: invoiceId === 'none' ? null : invoiceId,
-        treasury_account_id: accountId === 'none' ? null : accountId,
-        amount: value,
-        currency,
-        exchange_rate: 1,
-        amount_base: value,
-        payment_method: method,
-        payment_date: paymentDate,
-        reference_number: reference || null,
-        notes: notes || null,
-        status: 'completed',
-      });
-      if (error) throw error;
+      const payload = {
+        _invoice_id: fixedInvoiceId ?? (invoiceId === 'none' ? null : invoiceId),
+        _amount: value, _currency: currency, _exchange_rate: rate,
+        _method: method, _treasury_account_id: selectedAccount.id,
+        _payment_date: paymentDate, _reference: reference.trim() || null, _notes: notes.trim() || null,
+        _booking_id: bookingId, _customer_id: customerId ?? null,
+      };
+      const fingerprint = JSON.stringify(payload);
+      if (request.current?.payload !== fingerprint) request.current = { payload: fingerprint, id: crypto.randomUUID() };
+      const { data, error } = await callUntypedRpc<string>('record_customer_payment', { ...payload, _client_ref: request.current.id });
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error('تعذر تأكيد تسجيل الدفعة');
     },
     onSuccess: () => {
       toast({ title: 'تم تسجيل الدفعة بنجاح' });
       queryClient.invalidateQueries({ queryKey: ['workspace-payments'] });
-      if (fixedInvoiceId) {
-        void queryClient.invalidateQueries({ queryKey: ['workspace-invoices', bookingId] });
-        void queryClient.invalidateQueries({ queryKey: ['unified-bookings'] });
+      void queryClient.invalidateQueries({ queryKey: ['workspace-invoices', bookingId] });
+      void queryClient.invalidateQueries({ queryKey: ['unified-bookings'] });
+      for (const key of ['treasury-accounts', 'bank-accounts', 'bank-transactions', 'journal-entries']) {
+        void queryClient.invalidateQueries({ queryKey: [key, orgId] });
       }
       queryClient.invalidateQueries({ queryKey: ['booking-financial-summary'] });
       queryClient.invalidateQueries({ queryKey: ['booking-profit-cockpit', bookingId] });
@@ -137,7 +123,7 @@ export const RecordPaymentDialog = ({
   });
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={nextOpen => { if (!save.isPending) setOpen(nextOpen); }}>
       <DialogTrigger asChild>
         {trigger ?? (
           <Button size="sm">
@@ -181,7 +167,7 @@ export const RecordPaymentDialog = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>طريقة الدفع</Label>
-              <Select value={method} onValueChange={setMethod}>
+              <Select value={method} onValueChange={value => { setMethod(value); setAccountId(''); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {PAYMENT_METHODS.map((m) => (
@@ -219,20 +205,20 @@ export const RecordPaymentDialog = ({
             <div className="space-y-2">
               <Label>حساب الاستلام</Label>
               <Select value={accountId} onValueChange={setAccountId}>
-                <SelectTrigger><SelectValue placeholder="بدون" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="اختر حساب الاستلام" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">بدون</SelectItem>
-                  {bankAccounts.map((a) => (
+                  {receiptAccounts.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
                       {a.account_name} ({a.currency})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {receiptAccounts.length === 0 && <p className="text-xs text-muted-foreground">لا يوجد حساب متاح لعملة الدفعة وطريقة الدفع.</p>}
             </div>
           </div>
 
-          {fixedInvoiceId && currency !== 'EGP' && <div className="space-y-2">
+          {currency !== 'EGP' && <div className="space-y-2">
             <Label htmlFor="pay-exchange-rate">سعر الصرف إلى الجنيه</Label>
             <Input id="pay-exchange-rate" type="number" min="0.000001" step="0.000001" value={exchangeRate}
               onChange={(event) => setExchangeRate(event.target.value)} />
@@ -251,8 +237,8 @@ export const RecordPaymentDialog = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+          <Button variant="outline" disabled={save.isPending} onClick={() => setOpen(false)}>إلغاء</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || !selectedAccount || !paymentDate}>
             {save.isPending ? 'جارٍ الحفظ...' : 'حفظ الدفعة'}
           </Button>
         </DialogFooter>

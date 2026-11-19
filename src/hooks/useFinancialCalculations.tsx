@@ -41,7 +41,7 @@ export const useFinancialCalculations = (year?: number) => {
     // فلترة البيانات للسنة المحددة
     const yearlyExpenses = expenseTransactions.filter(t => {
       const date = new Date(t.transaction_date);
-      return date.getFullYear() === currentYear && t.status === 'approved';
+      return date.getFullYear() === currentYear && (t.status === 'approved' || t.status === 'paid');
     });
 
     const yearlySalaries = monthlySalaries.filter(s => {
@@ -120,7 +120,7 @@ export const useFinancialCalculations = (year?: number) => {
     const monthStr = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
 
     const thisMonthExpenses = expenseTransactions
-      .filter(t => t.transaction_date.startsWith(monthStr) && t.status === 'approved')
+      .filter(t => t.transaction_date.startsWith(monthStr) && (t.status === 'approved' || t.status === 'paid'))
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
     const thisMonthSalaries = monthlySalaries

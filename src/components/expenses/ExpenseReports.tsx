@@ -34,7 +34,7 @@ const ExpenseReports = () => {
 
     // حساب إجمالي المصروفات العامة
     const totalOtherExpenses = expenseTransactions
-      .filter(t => t.status === 'approved')
+      .filter(t => (t.status === 'approved' || t.status === 'paid'))
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
     // حساب إجمالي الرواتب
@@ -52,7 +52,7 @@ const ExpenseReports = () => {
     // تحليل حسب الفئة
     const categoryBreakdown = expenseCategories?.map(category => {
       const categoryExpenses = expenseTransactions
-        .filter(t => t.category_id === category.id && t.status === 'approved')
+        .filter(t => t.category_id === category.id && (t.status === 'approved' || t.status === 'paid'))
         .reduce((sum, t) => sum + Number(t.amount), 0);
       
       return {

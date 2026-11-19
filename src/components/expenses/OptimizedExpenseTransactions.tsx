@@ -27,7 +27,8 @@ import {
 } from 'lucide-react';
 import { useExpenseTransactionsOptimized } from '@/hooks/useExpenseTransactionsOptimized';
 import { useExpenseCategories } from '@/hooks/useExpenseCategories';
-import { useBankAccounts } from '@/hooks/useBankAccounts';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { PayExpenseDialog } from './dialogs/PayExpenseDialog';
 import { useDebounce } from '@/hooks/useDebounce';
 import ExpenseTransactionForm from './ExpenseTransactionForm';
 import EgyptianPoundDisplay from '@/components/currency/EgyptianPoundDisplay';
@@ -58,6 +59,7 @@ const OptimizedExpenseTransactions = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [approveRejectDialogOpen, setApproveRejectDialogOpen] = useState(false);
+  const [payExpenseId, setPayExpenseId] = useState<string | null>(null);
 
   // استخدام debounce للبحث لتحسين الأداء
   const debouncedSearch = useDebounce(filters.search, 500);
@@ -86,7 +88,9 @@ const OptimizedExpenseTransactions = () => {
 
   // بيانات مساعدة للفلاتر
   const { expenseCategories: categories } = useExpenseCategories();
-  const { bankAccounts } = useBankAccounts();
+  const { hasPermission } = useSupabasePermissions();
+  const canPayExpense = hasPermission('expenses_approve');
+  const expenseToPay = transactions.find(transaction => transaction.id === payExpenseId);
 
   // معالجة تغيير الفلاتر
   const handleFilterChange = useCallback((key: string, value: string) => {
@@ -204,7 +208,7 @@ const OptimizedExpenseTransactions = () => {
   const stats = useMemo(() => {
     const total = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
     const pending = transactions.filter(t => t.status === 'pending').length;
-    const approved = transactions.filter(t => t.status === 'approved').length;
+    const approved = transactions.filter(t => t.status === 'approved' || t.status === 'paid').length;
     const rejected = transactions.filter(t => t.status === 'rejected').length;
     
     return { total, pending, approved, rejected };
@@ -214,6 +218,7 @@ const OptimizedExpenseTransactions = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'paid':
       case 'approved': return 'bg-green-100 text-green-800 border-green-200';
       case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -224,6 +229,7 @@ const OptimizedExpenseTransactions = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending': return <Clock className="h-4 w-4" />;
+      case 'paid':
       case 'approved': return <CheckCircle className="h-4 w-4" />;
       case 'rejected': return <XCircle className="h-4 w-4" />;
       default: return <AlertCircle className="h-4 w-4" />;
@@ -387,6 +393,7 @@ const OptimizedExpenseTransactions = () => {
                   <SelectItem value="all">جميع الحالات</SelectItem>
                   <SelectItem value="pending">في الانتظار</SelectItem>
                   <SelectItem value="approved">معتمدة</SelectItem>
+                  <SelectItem value="paid">مدفوعة</SelectItem>
                   <SelectItem value="rejected">مرفوضة</SelectItem>
                 </SelectContent>
               </Select>
@@ -479,6 +486,7 @@ const OptimizedExpenseTransactions = () => {
                               {getStatusIcon(transaction.status)}
                               {transaction.status === 'pending' ? 'في الانتظار' :
                                transaction.status === 'approved' ? 'معتمدة' :
+                               transaction.status === 'paid' ? 'مدفوعة' :
                                transaction.status === 'rejected' ? 'مرفوضة' : transaction.status}
                             </Badge>
                           </div>
@@ -538,6 +546,11 @@ const OptimizedExpenseTransactions = () => {
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
+                        {canPayExpense && transaction.status === 'approved' && (
+                          <Button size="sm" onClick={() => setPayExpenseId(transaction.id)}>
+                            صرف المصروف
+                          </Button>
+                        )}
                         {transaction.status === 'pending' && (
                           <Button 
                             size="sm" 
@@ -667,6 +680,8 @@ const OptimizedExpenseTransactions = () => {
         onConfirm={handleConfirmDelete}
         isDeleting={isDeleting}
       />
+
+      {expenseToPay && <PayExpenseDialog key={expenseToPay.id} expense={expenseToPay} onClose={() => setPayExpenseId(null)} />}
 
       <ApproveRejectTransactionDialog
         transaction={selectedTransaction}
