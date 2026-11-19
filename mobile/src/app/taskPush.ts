@@ -4,9 +4,9 @@ import { PushNotifications } from '@capacitor/push-notifications';
 import type { Session } from '@supabase/supabase-js';
 import { runtime } from '../runtime.generated';
 import { erp } from './erp';
+import { taskPushUuid } from './taskPushDetails';
 
 const channelId = 'safar_tasks';
-export const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const supported = runtime.androidPushEnabled && Capacitor.getPlatform() === 'android';
 type PushState = 'idle' | 'pending' | 'active' | 'blocked' | 'error';
 
@@ -14,7 +14,7 @@ function sessionId(session: Session) {
   try {
     const payload = session.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
     const value = JSON.parse(atob(payload)).session_id;
-    return typeof value === 'string' && uuid.test(value) ? value : null;
+    return typeof value === 'string' && taskPushUuid.test(value) ? value : null;
   } catch {
     return null;
   }
@@ -31,7 +31,7 @@ export function useAndroidTaskPush(session: Session | null | undefined, openTask
   useEffect(() => {
     if (!supported) return;
     const readId = (data: Record<string, unknown> | undefined) =>
-      typeof data?.notificationId === 'string' && uuid.test(data.notificationId) ? data.notificationId : null;
+      typeof data?.notificationId === 'string' && taskPushUuid.test(data.notificationId) ? data.notificationId : null;
     const listeners = [
       PushNotifications.addListener('registration', ({ value }) => {
         const active = current.current;
