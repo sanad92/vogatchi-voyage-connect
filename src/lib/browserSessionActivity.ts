@@ -4,17 +4,30 @@ const storagePrefix = 'safarerp.session.activity.';
 const fallbackActivity = new Map<string, string>();
 const activityEvents = ['pointerdown', 'keydown', 'wheel'] as const;
 
-export function getBrowserSessionActivityKey(accessToken: string): string | null {
+interface SessionClaims {
+  session_id?: unknown;
+  amr?: unknown;
+}
+
+function readSessionClaims(accessToken: string): SessionClaims | null {
   try {
     const payload = atob(accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'));
-    const { session_id: id } = JSON.parse(payload);
-    if (typeof id === 'string' && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id)) {
-      return storagePrefix + id;
-    }
+    return JSON.parse(payload);
   } catch {
-    // This identifier only coordinates the browser timer. Auth validates the token separately.
+    // These claims only coordinate the browser timer. Auth validates the token separately.
+    return null;
+  }
+}
+
+function activityKeyForSession(id: unknown): string | null {
+  if (typeof id === 'string' && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id)) {
+    return storagePrefix + id;
   }
   return null;
+}
+
+export function getBrowserSessionActivityKey(accessToken: string): string | null {
+  return activityKeyForSession(readSessionClaims(accessToken)?.session_id);
 }
 
 function readActivity(key: string): string | undefined {
@@ -34,8 +47,25 @@ function writeActivity(key: string, value: string) {
   }
 }
 
-export function startBrowserSessionActivity(key: string) {
-  if (readActivity(key) === undefined) writeActivity(key, String(Date.now()));
+export function startBrowserSessionActivity(accessToken: string): string | null {
+  const claims = readSessionClaims(accessToken);
+  const key = activityKeyForSession(claims?.session_id);
+  if (!key || readActivity(key) !== undefined) return key;
+
+  // A restored session may predate activity tracking. Use the authentication time
+  // for that session so reloading or refreshing its token cannot grant a new hour.
+  let authenticatedAt = 0;
+  if (Array.isArray(claims?.amr)) {
+    for (const entry of claims.amr) {
+      if (typeof entry?.method === 'string' && entry.method !== 'token_refresh'
+          && Number.isSafeInteger(entry.timestamp) && entry.timestamp > 0) {
+        authenticatedAt = Math.max(authenticatedAt, entry.timestamp * 1000);
+      }
+    }
+  }
+  const now = Date.now();
+  writeActivity(key, String(authenticatedAt > 0 ? Math.min(authenticatedAt, now) : now));
+  return key;
 }
 
 export function closeBrowserSessionActivity(key: string) {
