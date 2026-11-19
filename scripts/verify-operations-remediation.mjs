@@ -3,6 +3,10 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { PGlite } from '@electric-sql/pglite';
 import ts from 'typescript';
+import { createElement } from 'react';
+import * as react from 'react';
+import * as jsxRuntime from 'react/jsx-runtime';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const migration = (file) => read(`../supabase/migrations/${file}`);
@@ -160,7 +164,11 @@ const data = {
   bookings: [{ currency: 'EGP', selling_price: 300, cost_price: 50 }, { currency: 'USD', selling_price: 90, cost_price: 20 }],
   customer_payments: [{ currency: 'EGP', amount: 150, status: 'completed' }],
   supplier_payments: [{ currency: 'EGP', amount: 80, status: 'paid' }, { currency: 'EGP', amount: 20, status: 'pending' }, { currency: 'USD', amount: 7, status: 'completed' }],
-  expense_transactions: [{ currency: 'USD', amount: 4, status: 'paid' }],
+  expense_transactions: [
+    { currency: 'USD', amount: 4, status: 'paid' },
+    { currency: 'USD', amount: 9, status: 'approved' },
+    { currency: 'USD', amount: 70, status: 'pending' },
+  ],
   invoices: [{ currency: 'USD', final_amount: 180, total_paid_amount: 45, status: 'sent' }, { currency: 'EGP', final_amount: 900, status: 'draft' }],
 };
 const financialClient = (failedTable) => ({
@@ -194,6 +202,7 @@ const results = await getFinancialSummary(financialClient(), org, '2026-10-01', 
 assert.equal(results.bookings_count, 2);
 assert.deepEqual(results.by_currency.map(({ currency, paid_to_suppliers, current_outstanding_receivables }) =>
   [currency, paid_to_suppliers, current_outstanding_receivables]), [['EGP', 80, 0], ['USD', 7, 135]]);
+assert.equal(results.by_currency.find(group => group.currency === 'USD').recognized_expenses, 13);
 const failure = await getFinancialSummary(financialClient('expense_transactions'), org, '2026-10-01', '2026-10-31');
 assert.ok(failure.error);
 assert.ok(!failure.by_currency);
@@ -204,6 +213,63 @@ assert.equal(getMonitoringReadState('success', 0), 'empty');
 assert.equal(getMonitoringReadState('success', 1), 'ready');
 assert.equal(getMonitoringReadState('error', 0), 'error');
 assert.equal(getMonitoringReadState('error', 5), 'error');
+
+const monitoringSource = ts.transpileModule(read('../src/pages/MonitoringDashboard.tsx'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
+}).outputText;
+const renderMonitoring = (errorsStatus) => {
+  const readStatuses = {
+    'monitoring-errors': { status: errorsStatus, data: errorsStatus === 'error' ? undefined : [] },
+    'monitoring-performance': { status: 'success', data: [] },
+    'monitoring-api': { status: 'success', data: [{ id: 'api-fixture', status_code: 200 }] },
+    'monitoring-audit': { status: 'pending' },
+  };
+  const readFunctions = {};
+  const dbFailure = new Error('Monitoring database is unavailable');
+  const builder = {
+    select: () => builder, eq: () => builder, order: () => builder,
+    limit: async () => ({ data: null, error: dbFailure }),
+  };
+  const box = ({ children }) => createElement('div', null, children);
+  const ui = new Proxy({}, { get: () => box });
+  const exports = {};
+  vm.runInNewContext(monitoringSource, {
+    exports,
+    require(name) {
+      if (name === 'react') return react;
+      if (name === 'react/jsx-runtime') return jsxRuntime;
+      if (name.startsWith('@/components/ui/')) return ui;
+      if (name === 'lucide-react') return ui;
+      if (name === '@tanstack/react-query') return {
+        useQuery: ({ queryKey: [key], queryFn }) => {
+          readFunctions[key] = queryFn;
+          const source = readStatuses[key];
+          assert.ok(source, `Unexpected monitoring source ${key}`);
+          return { ...source, isError: source.status === 'error', isPending: source.status === 'pending' };
+        },
+        useMutation: () => ({}),
+        useQueryClient: () => ({}),
+      };
+      if (name === '@/hooks/useOrgId') return { useOrgId: () => org };
+      if (name === '@/integrations/supabase/client') return { supabase: { from: () => builder } };
+      if (name === '@/lib/monitoringReadState') return { getMonitoringReadState };
+      if (name === 'date-fns') return { format: () => '' };
+      if (name === 'date-fns/locale' || name === 'sonner') return {};
+      throw new Error(`Unexpected monitoring import ${name}`);
+    },
+  });
+  return { html: renderToStaticMarkup(createElement(exports.default)), readFunctions };
+};
+const { html: failedMonitoring, readFunctions: monitoringReads } = renderMonitoring('error');
+for (const readMonitoring of Object.values(monitoringReads)) {
+  await assert.rejects(readMonitoring, /Monitoring database is unavailable/);
+}
+assert.match(failedMonitoring, /تعذّر تحميل المؤشر/);
+assert.match(failedMonitoring, /تعذّر تحميل السجل/);
+assert.match(failedMonitoring, /لا توجد بيانات/);
+assert.match(failedMonitoring, /جارٍ التحميل/);
+assert.doesNotMatch(failedMonitoring, /لا توجد سجلات أخطاء|0<span[^>]*> ms/);
+assert.match(renderMonitoring('success').html, /لا توجد سجلات أخطاء/);
 
 const { bookingTaskDueBucket } = await loadTypeScript('../src/lib/bookingTaskDue.ts');
 const cairoLateEvening = Date.parse('2026-11-19T21:30:00.000Z');

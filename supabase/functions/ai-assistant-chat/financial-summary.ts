@@ -20,8 +20,9 @@ const PAGE_SIZE = 500;
 
 async function readRows(query: Query, source: string) {
   const rows: FinancialRow[] = [];
+  const ordered = query.order("id");
   for (let first = 0; ; first += PAGE_SIZE) {
-    const { data, error } = await query.order("id").range(first, first + PAGE_SIZE - 1);
+    const { data, error } = await ordered.range(first, first + PAGE_SIZE - 1);
     if (error || !data) {
       console.error("AI financial summary query failed", source, error);
       return { source, rows: null };
@@ -53,8 +54,8 @@ export async function getFinancialSummary(supabase: any, orgId: string, from: un
       .gte("payment_date", from).lte("payment_date", to), "التحصيل من العملاء"),
     readRows(fromTable("supplier_payments", "currency, amount").in("status", ["paid", "completed"])
       .gte("payment_date", from).lte("payment_date", to), "مدفوعات الموردين"),
-    readRows(fromTable("expense_transactions", "currency, amount").eq("status", "paid")
-      .gte("payment_date", from).lte("payment_date", to), "المصروفات المسددة"),
+    readRows(fromTable("expense_transactions", "currency, amount").in("status", ["approved", "paid"])
+      .gte("transaction_date", from).lte("transaction_date", to), "المصروفات المعتمدة أو المسددة"),
     readRows(fromTable("invoices", "currency, final_amount, total_paid_amount")
       .not("status", "in", "(draft,cancelled,canceled,void,voided)"), "الفواتير"),
   ]);
@@ -70,7 +71,7 @@ export async function getFinancialSummary(supabase: any, orgId: string, from: un
     supplier_cost: 0,
     collected_from_customers: 0,
     paid_to_suppliers: 0,
-    paid_expenses: 0,
+    recognized_expenses: 0,
     current_outstanding_receivables: 0,
   });
   const totals = new Map<string, ReturnType<typeof emptyTotals>>();
@@ -88,7 +89,7 @@ export async function getFinancialSummary(supabase: any, orgId: string, from: un
   }
   for (const row of customerPayments) forCurrency(row).collected_from_customers += Number(row.amount);
   for (const row of supplierPayments) forCurrency(row).paid_to_suppliers += Number(row.amount);
-  for (const row of expenses) forCurrency(row).paid_expenses += Number(row.amount);
+  for (const row of expenses) forCurrency(row).recognized_expenses += Number(row.amount);
   for (const row of invoices) {
     forCurrency(row).current_outstanding_receivables += Math.max(
       0, Number(row.final_amount ?? 0) - Number(row.total_paid_amount ?? 0),
