@@ -4,7 +4,7 @@ import { requireOrgMembership } from "../_shared/auth.ts";
 
 
 type ConfirmationResult = {
-  email: 'queued' | 'failed' | 'skipped';
+  email: 'queued' | 'sent' | 'failed' | 'skipped';
   whatsapp: 'sent' | 'failed' | 'skipped' | 'pending';
 };
 
@@ -64,7 +64,7 @@ serve(async (req) => {
 
     const { data: booking, error: fetchError } = await anonClient
       .from(tableMap[bookingType])
-      .select('*, customer:customers(id, name, phone, email, organization_id, whatsapp_opt_out)')
+      .select('*, customer:customers(id, name, phone, email, organization_id, archived_at, whatsapp_opt_out), status:booking_statuses(name)')
       .eq('id', bookingId)
       .single();
 
@@ -80,20 +80,26 @@ serve(async (req) => {
     }
 
 
-    const customer = booking.customer?.organization_id === booking.organization_id ? booking.customer : null;
+    const confirmed = booking.status?.name?.trim().toLowerCase() === 'confirmed';
+    const customer = confirmed && booking.customer?.organization_id === booking.organization_id
+      && !booking.customer.archived_at ? booking.customer : null;
     const bookingRef = booking.booking_reference || booking.rental_reference || bookingId.slice(0, 8);
     const customerName = booking.customer_name || customer?.name || 'عميل';
     const results: ConfirmationResult = { email: 'skipped', whatsapp: 'skipped' };
 
     if (customer?.email) {
       try {
-        const amount = booking.total_cost ?? booking.total_rental_cost ?? booking.total_cost_customer;
-        const { error } = await supabase.from('email_queue').insert({
-          email_type: 'booking_confirmation',
-          recipient_email: customer.email,
-          recipient_name: customerName,
-          subject: `تأكيد الحجز - ${bookingRef}`,
-          template_data: {
+        const amount = bookingType === 'hotel' ? booking.total_cost_customer
+          : bookingType === 'car_rental' ? booking.total_rental_cost : booking.total_cost;
+        const { data: state, error } = await supabase.rpc('enqueue_approved_transactional_email', {
+          _org: booking.organization_id,
+          _source: 'booking_confirmation',
+          _key: `${bookingType}:${bookingId}`,
+          _type: 'booking_confirmation',
+          _recipient: customer.email,
+          _name: customerName,
+          _subject: `تأكيد الحجز - ${bookingRef}`,
+          _data: {
             customer_name: customerName,
             booking_reference: bookingRef,
             booking_type: bookingType,
@@ -102,13 +108,11 @@ serve(async (req) => {
             currency: booking.currency,
             hotel_name: booking.hotel_name,
           },
-          organization_id: booking.organization_id,
-          status: 'pending',
         });
         if (error) throw error;
-        results.email = 'queued';
-      } catch (error) {
-        console.error('Booking confirmation email could not be queued', error);
+        results.email = state === 'sent' ? 'sent' : ['pending', 'processing'].includes(state) ? 'queued' : 'failed';
+      } catch {
+        console.error('Booking confirmation email could not be queued');
         results.email = 'failed';
       }
     }
@@ -133,7 +137,7 @@ serve(async (req) => {
       }
     }
 
-    const sent = results.whatsapp === 'sent';
+    const sent = results.email === 'sent' || results.whatsapp === 'sent';
     const failed = results.email === 'failed' || results.whatsapp === 'failed';
     const queued = results.email === 'queued' || results.whatsapp === 'pending';
     const status = failed && (sent || queued) ? 'partial'

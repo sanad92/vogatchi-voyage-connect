@@ -2,6 +2,8 @@
 
 A new database needs objects from Supabase migration history, selected Drizzle migrations, and the reviewed deployment SQL under `scripts/`. Keep the applied migration files and version numbers intact. Use a disposable local database with the Supabase Auth and Storage schemas and synthetic data.
 
+The [restore rehearsal](isolated-database-restore-rehearsal.md) records the CLI's skipped historical filenames and a legacy privileged seed found during the native replay attempt. Account for those historical files and review seed behavior before beginning a fresh replay.
+
 ## Reproduce the dependencies without connecting to a database
 
 From the repository root with dependencies installed, run:

@@ -79,7 +79,7 @@ const RegisterOrganization = () => {
       
       // Trigger welcome email (non-blocking)
       supabase.functions.invoke('send-welcome-email', {
-        body: { organizationName: form.name.trim() },
+        body: { organizationId },
       }).catch(() => {/* non-critical */});
       
       navigate('/dashboard', { replace: true });

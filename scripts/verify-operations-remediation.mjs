@@ -281,7 +281,7 @@ assert.equal(bookingTaskDueBucket(null, cairoLateEvening), 'upcoming');
 const confirmationSource = ts.transpileModule(read('../supabase/functions/send-booking-confirmation/index.ts'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
-async function confirmBooking({ email = true, phone = true, emailError = false, whatsapp, deny = false }) {
+async function confirmBooking({ email = true, phone = true, emailError = false, whatsapp, deny = false, bookingStatus = 'confirmed', queueState = 'pending' }) {
   const calls = [];
   const authHeader = 'Bearer test-user';
   const selectedCustomer = {
@@ -295,18 +295,18 @@ async function confirmBooking({ email = true, phone = true, emailError = false, 
       return bookingQuery;
     },
     single: async () => ({ data: {
-      organization_id: org, customer: selectedCustomer, currency: 'USD', total_cost: 50,
+      organization_id: org, customer: selectedCustomer, currency: 'USD', total_cost: 50, status: { name: bookingStatus },
     }, error: null }),
   };
   const service = {
-    from(table) {
-      assert.equal(table, 'email_queue');
-      return { insert: async (row) => {
-        calls.push('email');
-        assert.equal(row.template_data.amount, 50);
-        assert.equal(row.template_data.currency, 'USD');
-        return { error: emailError ? { message: 'Queue unavailable' } : null };
-      } };
+    rpc: async (fn, args) => {
+      calls.push('email');
+      assert.equal(fn, 'enqueue_approved_transactional_email');
+      assert.equal(args._org, org);
+      assert.equal(args._key, `transport:${journey}`);
+      assert.equal(args._data.amount, 50);
+      assert.equal(args._data.currency, 'USD');
+      return { data: queueState, error: emailError ? { message: 'Queue unavailable' } : null };
     },
   };
   const caller = {
@@ -372,6 +372,13 @@ assert.deepEqual((await confirmBooking({ email: false, whatsapp: {
 assert.deepEqual((await confirmBooking({ whatsapp: {
   data: { success: true, providerMessageId: 'fixture-message' }, error: null,
 } })).body, { success: true, status: 'sent', results: { email: 'queued', whatsapp: 'sent' } });
+assert.deepEqual(await confirmBooking({ bookingStatus: 'cancelled' }), {
+  body: { success: false, status: 'skipped', results: { email: 'skipped', whatsapp: 'skipped' } },
+  status: 200, calls: [],
+});
+assert.deepEqual((await confirmBooking({ phone: false, queueState: 'sent' })).body, {
+  success: true, status: 'sent', results: { email: 'sent', whatsapp: 'skipped' },
+});
 assert.deepEqual(await confirmBooking({ deny: true }), {
   body: { error: 'Forbidden' }, status: 403, calls: [],
 });

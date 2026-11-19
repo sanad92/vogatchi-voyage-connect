@@ -79,6 +79,10 @@ const errorMessages: Record<string, string> = {
   forbidden: 'إدارة التكاملات متاحة لمالك المؤسسة والأدمن المصرّح له.',
   session_required: 'سجّل الدخول مرة أخرى.',
   rate_limited: 'تم الوصول للحد المؤقت للاختبارات. حاول بعد دقيقة.',
+  eta_sample_invalid: 'الصق طلب JSON بفاتورة اختبار واحدة موقّعة من نوع I إصدار 1.0، بحد أقصى 250 كيلوبايت.',
+  eta_sample_id_conflict: 'المرجع الداخلي مستخدم بالفعل لعينة مختلفة في سجل الاختبار.',
+  eta_sample_not_found: 'العينة غير موجودة في سجل المؤسسة.',
+  eta_test_connection_required: 'يلزم اتصال ETA في بيئة الاختبار. تحديث عينة سابقة يتطلب نفس إعداد الاتصال وقت إرسالها.',
 };
 
 async function invoke<T>(body: object): Promise<T> {
@@ -107,6 +111,7 @@ function CompanyApiConnections({ organizationId }: { organizationId: string }) {
   const queryClient = useQueryClient();
   const queryKey = ['company-api-integrations', organizationId];
   const [selected, setSelected] = useState<{ connector: Connector; connection?: Connection; disconnect?: boolean } | null>(null);
+  const [showEtaSamples, setShowEtaSamples] = useState(false);
   const query = useQuery({
     queryKey,
     queryFn: () => invoke<{ connections: Connection[] }>({ action: 'list', organizationId }),
@@ -150,6 +155,9 @@ function CompanyApiConnections({ organizationId }: { organizationId: string }) {
                   {connection && <Button size="sm" variant="outline" onClick={() => setSelected({ connector, connection, disconnect: true })}>
                     <Unplug className="me-2 h-4 w-4" />فصل الاتصال
                   </Button>}
+                  {connector.id === 'eta' && <Button size="sm" variant="outline" onClick={() => setShowEtaSamples(true)}>
+                    سجل عينات الاختبار
+                  </Button>}
                 </div>
               </CardContent>
             </Card>
@@ -173,8 +181,104 @@ function CompanyApiConnections({ organizationId }: { organizationId: string }) {
         ))}
       </div>
       {selected && <ConnectionDialog {...selected} organizationId={organizationId} onClose={() => setSelected(null)} onSaved={refresh} />}
+      {showEtaSamples && <EtaSamplesDialog organizationId={organizationId}
+        connection={query.data?.connections.find(row => row.provider === 'eta')} onClose={() => setShowEtaSamples(false)} />}
     </section>
   );
+}
+
+const etaSampleStatusLabels = {
+  sending: 'جارٍ الإرسال',
+  not_sent: 'لم تُرسل. راجع اتصال الاختبار وحاول مجددًا بنفس الملف.',
+  unknown: 'نتيجة الإرسال غير معلومة. تحقق من بوابة الاختبار قبل إرسال عينة بديلة.',
+  submitted: 'استُلمت وجارٍ التحقق لدى ETA',
+  valid: 'اجتازت التحقق في بيئة الاختبار',
+  invalid: 'لم تجتز التحقق في بيئة الاختبار',
+  rejected: 'رفضتها بيئة الاختبار',
+  cancelled: 'أُلغيت في بيئة الاختبار',
+};
+type EtaSample = {
+  id: string;
+  internal_id: string;
+  status: keyof typeof etaSampleStatusLabels;
+  submission_id: string | null;
+  document_id: string | null;
+  checked_at: string;
+};
+
+function EtaSamplesDialog({ organizationId, connection, onClose }: {
+  organizationId: string;
+  connection?: Connection;
+  onClose: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [lastResult, setLastResult] = useState<EtaSample | null>(null);
+  const canSend = connection?.environment === 'preproduction';
+  const history = useQuery({
+    queryKey: ['eta-sample-history', organizationId],
+    queryFn: () => invoke<{ samples: EtaSample[] }>({ action: 'eta_sample_list', organizationId }),
+    retry: false,
+  });
+
+  const run = async (request: object) => {
+    if (busy) return null;
+    setBusy(true);
+    setError('');
+    setLastResult(null);
+    try {
+      const { sample } = await invoke<{ sample: EtaSample }>({ organizationId, ...request });
+      setLastResult(sample);
+      return sample;
+    } catch (error) {
+      setError(error instanceof Error ? error.message : errorMessages.configuration_unavailable);
+      return null;
+    } finally {
+      await history.refetch();
+      setBusy(false);
+    }
+  };
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!canSend || busy) return;
+    const form = event.currentTarget;
+    const sampleJson = new FormData(form).get('sampleJson');
+    const result = await run({ action: 'eta_sample_submit', expectedRevision: connection.revision, sampleJson });
+    if (result && result.status !== 'not_sent') form.reset();
+  };
+
+  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}>
+    <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>عينات ETA في بيئة الاختبار</DialogTitle>
+        <DialogDescription>استخدم بيانات اختبار فقط. تُرسل فاتورة واحدة موقّعة مسبقًا إلى بيئة الاختبار، ويُحفظ المرجع والحالة في سجل العينات.</DialogDescription>
+      </DialogHeader>
+      {canSend ? <form onSubmit={submit} autoComplete="off" className="space-y-2">
+        <Label htmlFor="eta-signed-test-invoice">طلب فاتورة الاختبار الموقّعة بصيغة JSON</Label>
+        <Textarea id="eta-signed-test-invoice" name="sampleJson" dir="ltr" spellCheck={false} maxLength={250000} required disabled={busy} />
+        <Button type="submit" disabled={busy} size="sm">إرسال عينة الاختبار</Button>
+      </form> : <p className="text-sm text-muted-foreground">أعدّ اتصال ETA في بيئة الاختبار لإرسال عينة.</p>}
+      {lastResult && <p role="status" className="text-sm">{etaSampleStatusLabels[lastResult.status]}</p>}
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold">سجل العينات</h3>
+          <Button size="sm" variant="outline" onClick={() => void history.refetch()} disabled={busy || history.isFetching}>تحديث السجل</Button>
+        </div>
+        {history.isPending && <p role="status" className="text-sm text-muted-foreground">جارٍ تحميل السجل…</p>}
+        {history.error && <p role="alert" className="text-sm text-destructive">{history.error.message}</p>}
+        {history.isSuccess && history.data.samples.length === 0 && <p className="text-sm text-muted-foreground">لا توجد عينات مسجلة.</p>}
+        {history.data?.samples.map(sample => <article key={sample.id} className="space-y-1 rounded-md border p-3 text-sm">
+          <p className="font-medium"><bdi>{sample.internal_id}</bdi> · {etaSampleStatusLabels[sample.status]}</p>
+          {sample.submission_id && <p className="break-all text-muted-foreground">مرجع الإرسال <bdi>{sample.submission_id}</bdi></p>}
+          {sample.document_id && <p className="break-all text-muted-foreground">مرجع المستند <bdi>{sample.document_id}</bdi></p>}
+          {sample.status === 'submitted' && <Button size="sm" variant="outline" disabled={busy || !canSend}
+            onClick={() => void run({ action: 'eta_sample_refresh', sampleId: sample.id })}>تحقق من حالة العينة</Button>}
+        </article>)}
+      </div>
+    </DialogContent>
+  </Dialog>;
 }
 
 function ConnectionDialog({ connector, connection, disconnect, organizationId, onClose, onSaved }: {
