@@ -15,6 +15,7 @@ import {
 import safarMark from '../assets/safar-mark.webp';
 import { endMobileSession, erp, listOrganizations } from './erp';
 import { BookingsScreen, CustomersScreen, OverviewScreen, RequestError } from './Records';
+import { AndroidUpdateNotice } from './AndroidUpdateNotice';
 
 type Section = 'overview' | 'bookings' | 'customers' | 'account';
 type WebPath = '/forgot-password' | '/login';
@@ -132,6 +133,7 @@ export function MobileApp() {
     <main className="login-screen">
       <section className="login-content" aria-labelledby="login-heading">
         <Brand />
+        <AndroidUpdateNotice />
         <div className="login-heading">
           <h1 id="login-heading">تسجيل الدخول</h1>
         </div>
@@ -198,6 +200,7 @@ function WorkspaceContent({ user, notice, signOut, openWeb }: WorkspaceProps) {
       </header>
 
       <main className="content">
+        <AndroidUpdateNotice />
         {notice && <p className="notice" role="status">{notice}</p>}
         {section === 'account' ? (
           <>

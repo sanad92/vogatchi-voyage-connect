@@ -93,6 +93,25 @@ jobs:
             adb logcat -d -b crash
             exit 1
           fi
+
+          # A per-run key verifies upgrades without exposing company credentials to PRs.
+          export SAFAR_ANDROID_KEYSTORE="$RUNNER_TEMP/safar-upgrade-test.p12"
+          export SAFAR_ANDROID_KEY_ALIAS=safar-upgrade-test
+          export SAFAR_ANDROID_KEYSTORE_PASSWORD="$(openssl rand -hex 24)"
+          echo "::add-mask::$SAFAR_ANDROID_KEYSTORE_PASSWORD"
+          keytool -genkeypair -storetype PKCS12 -keyalg RSA -keysize 2048 -validity 365 \
+            -keystore "$SAFAR_ANDROID_KEYSTORE" -alias "$SAFAR_ANDROID_KEY_ALIAS" \
+            -storepass:env SAFAR_ANDROID_KEYSTORE_PASSWORD -dname 'CN=Safar Android Upgrade Test'
+          bash scripts/android-release.sh 3 "$RUNNER_TEMP/safar-version-3.apk"
+          bash scripts/android-release.sh 4 "$RUNNER_TEMP/safar-version-4.apk"
+          adb uninstall com.safarerp.mobile
+          adb install --no-streaming "$RUNNER_TEMP/safar-version-3.apk"
+          adb shell dumpsys package com.safarerp.mobile | grep -E '^[[:space:]]*versionCode=3 '
+          adb install -r --no-streaming "$RUNNER_TEMP/safar-version-4.apk"
+          adb shell dumpsys package com.safarerp.mobile | grep -E '^[[:space:]]*versionCode=4 '
+          adb shell am start -W -n com.safarerp.mobile/.MainActivity > "$launch_log"
+          cat "$launch_log"
+          grep -F 'Status: ok' "$launch_log"
       - uses: actions/upload-artifact@v4
         with:
           name: SafarERP-Android-debug
