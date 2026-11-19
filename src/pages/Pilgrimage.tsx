@@ -688,7 +688,9 @@ const Pilgrimage = () => {
                 <F key={k} label={l}><Input type={kind === 'date' ? 'date' : 'text'} dir={kind === 'ltr' ? 'ltr' : undefined} value={gf[k] ?? ''} onChange={(e) => setGf({ ...gf, [k]: e.target.value })} /></F>
               ))}
               <F label="النوع">
-                <Select disabled={!!programPilgrims.find((person) => person.id === editingPilgrim)?.inventory_booking_id} value={gf.gender || '__none__'} onValueChange={(v) => setGf({ ...gf, gender: v === '__none__' ? null : v })}><SelectTrigger><SelectValue /></SelectTrigger>
+                <Select disabled={programPilgrims.some((person) => person.id === editingPilgrim
+                  && person.inventory_booking_id && !person.manual_allotment_booking)} value={gf.gender || '__none__'}
+                  onValueChange={(v) => setGf({ ...gf, gender: v === '__none__' ? null : v })}><SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="__none__">غير محدد</SelectItem><SelectItem value="male">ذكر</SelectItem><SelectItem value="female">أنثى</SelectItem></SelectContent></Select>
               </F>
               <F label="نوع الغرفة">

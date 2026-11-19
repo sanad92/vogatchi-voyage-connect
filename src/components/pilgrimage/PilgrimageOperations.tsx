@@ -38,6 +38,7 @@ type Passenger = {
   b2b_roster_entry_id?: string | null;
   inventory_booking_id?: string | null;
   unified_booking_id?: string | null;
+  manual_allotment_booking?: boolean;
 };
 type History = {
   id: string;
@@ -49,6 +50,8 @@ type History = {
   cancellation_fee: number;
   refund_id: string | null;
   replacement_id: string | null;
+  replacement_booking_id: string | null;
+  reapplied_amount: number;
   created_at: string;
   request: { target_program_id?: string };
 };
@@ -69,7 +72,7 @@ const ERRORS: Record<string, string> = {
   umrah_unified_cancellation_permission: 'إلغاء حجز مرتبط بفاتورة يحتاج صلاحية الإلغاء ومعالجة المدفوعات.',
   umrah_unified_refund_review_required: 'راجع مستحقات الحجز وصلاحية اعتماد الاسترداد قبل الإلغاء.',
   umrah_unified_refund_fx_review_required: 'راجع سعر صرف الدفعات مع الحسابات قبل تسوية الإلغاء.',
-  umrah_use_booking_financial_operations: 'تعديل السعر أو نقل المسافر هنا يحتاج تسوية على ملف الحجز الموحّد.',
+  umrah_unified_invoice_permission: 'تنفيذ التعديل يحتاج صلاحية إصدار فاتورة الحجز البديل.',
   pilgrimage_operation_denied: 'لا توجد صلاحية لتنفيذ الإجراء على البرنامج.',
   room_capacity_exceeded: 'الغرفة المختارة مكتملة.',
   room_category_conflict: 'رقم الغرفة مسجل لفئة مختلفة.',
@@ -103,15 +106,15 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
     queryKey: ['pilgrimage-operations', orgId, program.id],
     queryFn: async () => {
       const { data, error } = await db.from('pilgrimage_operations')
-        .select('id,action,pilgrim_id,reason,old_price,new_price,cancellation_fee,refund_id,replacement_id,created_at,request')
+        .select('id,action,pilgrim_id,reason,old_price,new_price,cancellation_fee,refund_id,replacement_id,replacement_booking_id,reapplied_amount,created_at,request')
         .eq('organization_id', orgId).eq('program_id', program.id).order('created_at', { ascending: false }).limit(100);
       if (error) throw error;
       return data ?? [];
     },
   });
   const active = passengers.filter((person) => !person.b2b_roster_entry_id && !['cancelled', 'traveled', 'completed'].includes(person.status));
-  const standalone = active.filter((person) => !person.inventory_booking_id);
-  const eligible = action === 'cancel' ? active : standalone;
+  const amendable = active.filter((person) => !person.inventory_booking_id || person.manual_allotment_booking);
+  const eligible = action === 'cancel' ? active : amendable;
   const targets = programs.filter((option) => option.id !== program.id && !option.uses_room_inventory && option.status === 'open'
     && option.program_type === program.program_type && option.currency === program.currency && option.travel_scope === program.travel_scope);
   const destination = action === 'transfer' ? targets.find((option) => option.id === targetId) : program;
@@ -181,8 +184,8 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
         <h2 className="font-semibold">تعديلات وإلغاءات المسافرين</h2>
         {canManage && !['departed', 'completed', 'cancelled'].includes(program.status) && (
           <div className="flex flex-wrap gap-2">
-            {!program.uses_room_inventory && <Button variant="outline" disabled={!standalone.length} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>}
-            {canCancel && !program.uses_room_inventory && <Button variant="outline" disabled={!standalone.length || !targets.length} onClick={() => open('transfer')}>{ACTIONS.transfer}</Button>}
+            {!program.uses_room_inventory && <Button variant="outline" disabled={!amendable.length} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>}
+            {canCancel && !program.uses_room_inventory && <Button variant="outline" disabled={!amendable.length || !targets.length} onClick={() => open('transfer')}>{ACTIONS.transfer}</Button>}
             {canCancel && <Button variant="destructive" disabled={!active.length} onClick={() => open('cancel')}>{ACTIONS.cancel}</Button>}
           </div>
         )}
@@ -198,12 +201,14 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
             <div>
               <p className="font-medium">{ACTIONS[item.action]} · {passengers.find((person) => person.id === item.pilgrim_id)?.full_name || 'مسافر'}</p>
               <p className="text-muted-foreground">{item.reason} · {new Date(item.created_at).toLocaleString('ar-EG')}</p>
-              <p>{item.action === 'room_category' ? `${money(item.old_price, program.currency)} ← ${money(item.new_price, program.currency)}`
-                : `غرامة ${money(item.cancellation_fee, program.currency)}`}</p>
+              {item.action !== 'cancel' && <p>السعر السابق {money(item.old_price, program.currency)} · السعر الجديد {money(item.new_price, program.currency)}</p>}
+              {item.action !== 'room_category' && <p>غرامة {money(item.cancellation_fee, program.currency)}</p>}
+              {item.reapplied_amount > 0 && <p>المبلغ المرحّل للفاتورة الجديدة {money(item.reapplied_amount, program.currency)}</p>}
             </div>
             <div className="flex flex-wrap gap-2">
               {item.refund_id && canViewRefunds && <Button asChild variant="outline" size="sm"><Link to={`/refund-balances?kind=customer&refund=${item.refund_id}&view=all`}>طلب الاسترداد</Link></Button>}
-              {item.replacement_id && item.request.target_program_id && <Button asChild variant="outline" size="sm"><Link to={`/pilgrimage?program=${item.request.target_program_id}&passenger=${item.replacement_id}`}>التسجيل البديل</Link></Button>}
+              {item.replacement_id && <Button asChild variant="outline" size="sm"><Link to={`/pilgrimage?program=${item.request.target_program_id || program.id}&passenger=${item.replacement_id}`}>التسجيل البديل</Link></Button>}
+              {item.replacement_booking_id && <Button asChild variant="outline" size="sm"><Link to={`/bookings/${item.replacement_booking_id}?tab=financials`}>فاتورة الحجز البديل</Link></Button>}
             </div>
           </div>
         ))}
@@ -212,7 +217,7 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
         {action && <DialogContent dir="rtl" className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader><DialogTitle>{ACTIONS[action]}</DialogTitle>
             <DialogDescription>{action === 'transfer'
-              ? 'يُغلق التسجيل القديم ويُنشأ تسجيل جديد. مستحقات القديم تُراجع في المالية، والتسجيل البديل يبدأ من دون دفعة.'
+              ? 'يُحرر مقعد المسافر في البرنامج القديم ويُحجز له مقعد في البرنامج البديل.'
               : action === 'room_category'
                 ? 'تتغير تعرفة المسافر، وتقدر توزعه على مجموعة من الفئة الجديدة من تبويب التسكين.'
                 : 'تتحرر مقاعد المسافرين المختارين ويُسجل أي مبلغ زائد عن الغرامة كطلب استرداد.'}</DialogDescription>
@@ -252,7 +257,10 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
                 <Input className="w-28" id={`operation-fee-${person.id}`} type="number" min={0} max={person.total_price} step="0.01"
                   value={fees[person.id] ?? '0'} onChange={(event) => { setFees({ ...fees, [person.id]: event.target.value }); setApproved(false); }} />
               </div>}
-              {person.unified_booking_id ? <p className="text-muted-foreground">
+              {person.manual_allotment_booking && action !== 'cancel' ? <div className="space-y-1 text-muted-foreground">
+                <p>السعر السابق {money(person.total_price, program.currency)} · سعر التسجيل البديل {money(newPrice, program.currency)}</p>
+                <p>يُسوّى التسجيل الأصلي وتصدر فاتورة للحجز البديل. أي رصيد متاح من التسوية يترحّل للفاتورة الجديدة حتى قيمتها.</p>
+              </div> : person.unified_booking_id ? <p className="text-muted-foreground">
                 يخفض الإلغاء قيمة الحجز بمبلغ {money(Math.max(0, person.total_price - due), program.currency)}. يُخصم المبلغ من المتبقي على الفاتورة ويُسوّى أي مبلغ زائد.
               </p> : <div className="flex flex-wrap gap-x-4 gap-y-1">
                 <span>المبلغ المحصل المتاح {money(paid, program.currency)}</span>
