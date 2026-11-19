@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, FileSpreadsheet, FileText, Plus, Trash2, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
+import { usePermissionCheck } from '@/hooks/usePermissionCheck';
 import { pilgrimageSalesIssues, salesConfirmationRequired } from '@/lib/pilgrimage/operations';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -15,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -58,6 +59,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
   const orgId=useOrgId();
   const {orgRole,currentOrganization}=useOrganization();
   const canManage=['owner','admin','manager'].includes(orgRole||'');
+  const {hasPermission}=usePermissionCheck();
   const {toast}=useToast();
   const qc=useQueryClient();
   const [type,setType]=useState<'hajj'|'umrah'>(initialType);
@@ -65,6 +67,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
   const [createOpen,setCreateOpen]=useState(false);
   const [agencyOpen,setAgencyOpen]=useState(false);
   const [confirmConversionOpen,setConfirmConversionOpen]=useState(false);
+  const [holdManifestOpen,setHoldManifestOpen]=useState(false);
+  const [holdManifest,setHoldManifest]=useState('');
   const [draft,setDraft]=useState<SaleDraft>(()=>fresh(initialType,initialProgram));
   const [agency,setAgency]=useState({name:'',contact_name:'',phone:'',email:''});
   const [line,setLine]=useState({item_kind:'program_seat' as SaleItemKind,description:'',
@@ -89,6 +93,10 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
     ()=>sb.from('pilgrimage_programs').select('id,name,program_type,currency,status,capacity,departure_date,return_date,sales_confirmed_at,price_quad,price_triple,price_double,price_single,uses_room_inventory')
       .eq('organization_id',orgId).order('departure_date',{ascending:false}),canManage);
   const selected=(salesQ.data||[]).find((s:any)=>s.id===saleId)||null;
+  const directBooking=selected?.booked_from_availability===true;
+  const holdTravelers=holdManifest.split(/\r?\n/).map(name=>name.trim()).filter(Boolean);
+  const validHoldTravelers=holdTravelers.length===selected?.party_size
+    && holdTravelers.every(name=>name.length>=3 && name.length<=200);
   const b2bAgreementQ=useQuery({
     queryKey:['pilgrimage-b2b-agreement',orgId,selected?.id],
     enabled:!!orgId&&!!selected?.id&&selected.sale_model==='b2b_group'&&canManage,
@@ -118,7 +126,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
   const conversion=conversionsQ.data?.[0]||null;
   const allocationsQ=useRows('pilgrimage-seat-allocations',orgId,selected?.program_id||null,
     ()=>sb.from('pilgrimage_seat_allocations')
-      .select('id,sale_id,status,seat_count,hold_expires_at,allocated_at,released_at')
+      .select('id,sale_id,status,seat_count,hold_expires_at,allocated_at,released_at,confirmed_sale_id')
       .eq('organization_id',orgId).eq('program_id',selected.program_id),
     !!selected?.program_id);
   const allocations=allocationsQ.data||[];
@@ -160,12 +168,15 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
   const programSaleReady = !!linkedProgram?.sales_confirmed_at && linkedProgram.status === 'open' &&
     pilgrimageSalesIssues(linkedProgram).length === 0;
   const canIssueProgramQuote = !selected?.program_id || programSaleReady;
-  const canExportQuote = !selected?.program_id || selected.status === 'quoted';
+  const canExportQuote = !directBooking && (!selected?.program_id || selected.status === 'quoted');
   const fail=(error:any)=>toast({title:'لم يتم الحفظ',description:({
     pilgrimage_sales_confirmation_required: salesConfirmationRequired,
     umrah_inventory_booking_required: 'الحجز للدفعة دي من تبويب رصيد الدفعة.',
     pilgrimage_quote_dates_changed: 'تواريخ العرض تختلف عن البرنامج المعتمد. أنشئ مسودة بالتواريخ الحالية.',
     pilgrimage_quote_room_price_required: 'يلزم سعر معتمد وسعر بيع موجب لكل فئة غرفة في العرض.',
+    active_unexpired_hold_required: 'الهولد انتهى. راجع التوافر قبل الحجز مرة تانية.',
+    active_hold_required: 'المقاعد لم تعد محجوزة مؤقتًا.',
+    retail_program_tariff_mismatch_or_extra_services: 'سعر البرنامج اتغيّر. راجع نتائج البحث قبل الحجز مرة تانية.',
   } as Record<string, string>)[error?.message] || error?.message || 'راجع البيانات والصلاحيات',variant:'destructive'});
   const refresh=()=>['pilgrimage-sales','pilgrimage-agencies','pilgrimage-sale-items',
     'pilgrimage-sale-costs','pilgrimage-sale-travelers',
@@ -313,6 +324,23 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
         description:'لم تُصدر فاتورة أو تأشيرة أو تصريح تلقائيًا. راجع المستندات والمحاسبة.'});
     },onError:fail,
   });
+  const confirmAvailabilityHold=useMutation({
+    mutationFn:async()=>{
+      if(!orgId||!selected||!directBooking)throw new Error('الحجز المؤقت غير متاح');
+      const {data,error}=await callUntypedRpc<string>('confirm_pilgrimage_availability_hold',{
+        _organization_id:orgId,_sale_id:selected.id,_traveler_names:holdTravelers,
+      });
+      if(error)throw error;
+      if(!data)throw new Error('لم يتم استلام مرجع الحجز');
+      return data;
+    },
+    onSuccess:id=>{
+      setHoldManifestOpen(false);
+      refresh();
+      setSaleId(id);
+      toast({title:'تم تثبيت الحجز وتسجيل المسافرين داخليًا'});
+    },onError:fail,
+  });
   const cloneQuote=useMutation({
     mutationFn:async()=>{
       if(!canManage||selected?.status!=='quoted')throw new Error('يلزم عرض صادر وصلاحية مدير');
@@ -351,7 +379,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
   return <div className="space-y-5">
     <Button variant="ghost" onClick={onBack}><ArrowRight className="h-4 w-4 me-1"/>العودة إلى البرامج</Button>
     <PageHeader title="مبيعات الحج والعمرة"
-      description="بيع مقاعد جماعية، عمرة خاصة FIT ومجموعات شركات السياحة. هذه عروض أسعار وليست حجوزات مؤكدة."
+      description="عروض الأسعار وحجوزات المقاعد الداخلية للعمرة والحج."
       icon={Users}
       actions={canManage&&<Button onClick={()=>{
         setDraft(fresh(type,initialProgram?.program_type===type?initialProgram:null));
@@ -368,7 +396,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
       {visible.map((s:any)=><Card key={s.id}
         className="p-4 space-y-2 cursor-pointer hover:border-primary/40" onClick={()=>setSaleId(s.id)}>
         <div className="flex items-start justify-between gap-2">
-          <strong>{s.name}</strong><Badge variant="outline">{SALE_STATES[s.status as keyof typeof SALE_STATES]}</Badge>
+          <strong>{s.name}</strong><Badge variant="outline">{s.booked_from_availability && s.status !== 'cancelled'
+            ? 'حجز مقاعد' : SALE_STATES[s.status as keyof typeof SALE_STATES]}</Badge>
         </div>
         <p className="text-sm">{SALE_MODELS[s.sale_model as SaleModel]}</p>
         <p className="text-xs text-muted-foreground">{FULFILLMENT[s.fulfillment_role as keyof typeof FULFILLMENT]}</p>
@@ -377,25 +406,28 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
     </div>}
     {selected&&<div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button variant="outline" onClick={()=>setSaleId(null)}><ArrowRight className="h-4 w-4 me-1"/>كل العروض</Button>
+        <Button variant="outline" onClick={()=>setSaleId(null)}><ArrowRight className="h-4 w-4 me-1"/>كل المبيعات</Button>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" disabled={!canExportQuote} onClick={printQuote}><FileText className="h-4 w-4 me-1"/>طباعة العرض</Button>
-          <Button variant="outline" disabled={!canExportQuote} onClick={()=>exportExcel('Pilgrimage quotation',[
+          {!directBooking&&<Button variant="outline" disabled={!canExportQuote} onClick={printQuote}><FileText className="h-4 w-4 me-1"/>طباعة العرض</Button>}
+          {!directBooking&&<Button variant="outline" disabled={!canExportQuote} onClick={()=>exportExcel('Pilgrimage quotation',[
             {name:'Pricing',headers:['Service','Description','Qty','Unit sell','Total'],
               rows:items.map((x:any)=>[x.item_kind,x.description,x.quantity,x.unit_sell,x.line_sell])}
-          ])}><FileSpreadsheet className="h-4 w-4 me-1"/>Excel</Button>
+          ])}><FileSpreadsheet className="h-4 w-4 me-1"/>Excel</Button>}
           {canEdit&&<Button disabled={changeStatus.isPending || !canIssueProgramQuote} onClick={()=>changeStatus.mutate('quoted')}>إصدار عرض السعر</Button>}
-          {canManage&&selected.status==='quoted'&&<Button variant="outline"
+          {!directBooking&&canManage&&selected.status==='quoted'&&<Button variant="outline"
             disabled={cloneQuote.isPending} onClick={()=>cloneQuote.mutate()}>إنشاء نسخة معدلة</Button>}
           {canManage&&selected.status!=='cancelled'&&
             (selected.sale_model!=='b2b_group'||(b2bAgreementQ.isSuccess&&!isB2BInternallyApproved))&&<Button variant="destructive"
-            disabled={changeStatus.isPending} onClick={()=>changeStatus.mutate('cancelled')}>إلغاء العرض</Button>}
+            disabled={changeStatus.isPending || (directBooking && (!allocationsQ.isSuccess || !conversionsQ.isSuccess
+              || allocationIsActive || !!conversion || !!allocation?.confirmed_sale_id))}
+            onClick={()=>changeStatus.mutate('cancelled')}>{directBooking?'إغلاق سجل الحجز':'إلغاء العرض'}</Button>}
         </div>
       </div>
       <Card className="p-4 space-y-2">
         <h3 className="font-semibold">{selected.name}</h3>
         <p className="text-sm">{SALE_MODELS[selected.sale_model as SaleModel]} · {FULFILLMENT[selected.fulfillment_role as keyof typeof FULFILLMENT]}</p>
-        <p className="text-sm">العدد {selected.party_size} · العملة {selected.currency} · الحالة {SALE_STATES[selected.status as keyof typeof SALE_STATES]}</p>
+        <p className="text-sm">العدد {selected.party_size} · العملة {selected.currency}
+          {!directBooking && <> · الحالة {SALE_STATES[selected.status as keyof typeof SALE_STATES]}</>}</p>
         {selected.program_id && !programSaleReady && <p className="text-sm text-muted-foreground">{salesConfirmationRequired}</p>}
         {selected.program_id&&<p className="text-xs text-muted-foreground">
           المتاح داخليًا الآن وفق السعة والتسجيلات والتخصيصات النشطة: {
@@ -407,14 +439,14 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
         </p>}
         {selected.supersedes_sale_id&&<p className="text-xs text-muted-foreground">
           هذه نسخة مراجعة لعرض سابق، مع حفظ العرض الأصلي دون تعديل.</p>}
-        <p className="text-xs text-muted-foreground">العرض لا يخصم مقاعد من السعة ولا ينشئ فاتورة أو عملية تحصيل. إصداره يقفل تعديل الأسعار؛ للتعديل يُنشأ عرض جديد.</p>
+        {!directBooking&&<p className="text-xs text-muted-foreground">العرض لا يخصم مقاعد من السعة ولا ينشئ فاتورة أو عملية تحصيل. إصداره يقفل تعديل الأسعار؛ للتعديل يُنشأ عرض جديد.</p>}
       </Card>
       {selected.program_id && ['group_seat','b2b_group'].includes(selected.sale_model) &&
         <Card className="p-4 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold">التخصيص الداخلي لمقاعد البرنامج</h3>
             <Badge variant="outline">{!allocation?'لم يُحجز':
-              conversion?'تم تسجيل المعتمرين':
+              conversion||allocation.confirmed_sale_id?'تم تسجيل المسافرين':
               allocation.status==='allocated'?'مخصص داخليًا':
               allocation.status==='released'?'تم تحرير المقاعد':
               allocationIsActive?'حجز مؤقت نشط':'انتهت مدة الحجز المؤقت'}</Badge>
@@ -422,12 +454,14 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
           <p className="text-sm text-muted-foreground">
             {allocation?.status==='held' && allocationIsActive
               ? 'ينتهي الحجز المؤقت: '+new Date(allocation.hold_expires_at).toLocaleString('ar-EG')
-              : conversion
+              : conversion || allocation?.confirmed_sale_id
               ? 'نُقلت المقاعد إلى ملفات المعتمرين؛ التسجيل ليس فاتورة أو تأشيرة.'
               : allocation?.status==='allocated'
               ? 'المقاعد مثبتة ضمن السعة الداخلية فقط، بلا تأكيد من أي مورّد.'
               : 'المقاعد غير مخصصة حاليًا.'}
           </p>
+          {allocation?.confirmed_sale_id && <Button variant="outline" size="sm"
+            onClick={()=>setSaleId(allocation.confirmed_sale_id)}>فتح الحجز المؤكد</Button>}
           {conversion && selected.program_type === 'umrah' && <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm"><Link to={`/pilgrimage?program=${selected.program_id}&tab=rooming`}>تسكين المعتمرين</Link></Button>
             <Button asChild variant="outline" size="sm"><Link to={`/pilgrimage?program=${selected.program_id}&tab=operations`}>تعديل أو إلغاء التسجيل</Link></Button>
@@ -437,15 +471,23 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
           </p>}
           {canManage && selected.status==='quoted' && !allocationsQ.error && !conversionsQ.error &&
             <div className="flex flex-wrap gap-2">
-              {!allocationIsActive&&!conversion&&<Button disabled={allocateSeat.isPending || !programSaleReady}
+              {!directBooking&&!allocationIsActive&&!conversion&&<Button disabled={allocateSeat.isPending || !programSaleReady}
                 onClick={()=>allocateSeat.mutate('hold')}>حجز مقاعد مؤقت — ساعتان</Button>}
-              {allocation?.status==='held' && allocationIsActive &&
+              {!directBooking && allocation?.status==='held' && allocationIsActive &&
                 <Button disabled={allocateSeat.isPending || !programSaleReady}
                   onClick={()=>allocateSeat.mutate('allocate')}>تثبيت التخصيص الداخلي</Button>}
+              {directBooking && hasPermission('bookings_create') && hasPermission('customers_view') &&
+                allocation?.status==='held' && allocationIsActive && !conversion &&
+                <Button disabled={allocateSeat.isPending || confirmAvailabilityHold.isPending || !programSaleReady}
+                  onClick={()=>{
+                    const buyer=customers.find((row:any)=>row.id===selected.buyer_customer_id);
+                    setHoldManifest(selected.party_size===1 ? buyer?.name ?? '' : '');
+                    setHoldManifestOpen(true);
+                  }}>تأكيد الحجز وتسجيل المسافرين</Button>}
               {allocationIsActive&&!isB2BInternallyApproved&&<Button variant="outline"
-                disabled={allocateSeat.isPending}
+                disabled={allocateSeat.isPending || confirmAvailabilityHold.isPending}
                 onClick={()=>allocateSeat.mutate('release')}>تحرير المقاعد</Button>}
-              {selected.sale_model==='group_seat' && allocation?.status==='allocated' &&
+              {!directBooking && selected.sale_model==='group_seat' && allocation?.status==='allocated' &&
                 !conversion && <Button disabled={convertRetail.isPending || !programSaleReady}
                   onClick={()=>setConfirmConversionOpen(true)}>
                   تحويل إلى تسجيلات معتمرين
@@ -586,6 +628,25 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
         </div>}
       </Card>
     </div>}
+    <Dialog open={holdManifestOpen} onOpenChange={open=>{if(!confirmAvailabilityHold.isPending)setHoldManifestOpen(open);}}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>تأكيد الحجز المؤقت</DialogTitle>
+          <DialogDescription>أدخل أسماء المسافرين لتسجيلهم على البرنامج.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-1">
+          <Label htmlFor="held-traveler-names">أسماء المسافرين</Label>
+          <Textarea id="held-traveler-names" value={holdManifest}
+            maxLength={selected?.party_size * 201} disabled={confirmAvailabilityHold.isPending}
+            onChange={event=>setHoldManifest(event.target.value)} placeholder="اكتب اسم كل مسافر في سطر" />
+          <p className="text-sm text-muted-foreground">{holdTravelers.length} من {selected?.party_size} · الاسم من 3 إلى 200 حرف</p>
+        </div>
+        <Button disabled={!validHoldTravelers || confirmAvailabilityHold.isPending}
+          onClick={()=>confirmAvailabilityHold.mutate()}>
+          {confirmAvailabilityHold.isPending ? 'جارٍ التأكيد…' : 'تأكيد الحجز وتسجيل المسافرين'}
+        </Button>
+      </DialogContent>
+    </Dialog>
     <Dialog open={createOpen} onOpenChange={setCreateOpen}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>إنشاء عرض بيع الحج أو العمرة</DialogTitle></DialogHeader>

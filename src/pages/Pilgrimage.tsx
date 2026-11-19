@@ -356,9 +356,11 @@ const Pilgrimage = () => {
       next.delete('view');
       return next;
     })}
-    onOpenQuote={id => setParams(current => {
+    onOpenSale={(id, programType) => setParams(current => {
       const next = new URLSearchParams(current);
       next.delete('view');
+      if (programType === 'hajj') next.set('type', 'hajj');
+      else next.delete('type');
       next.set('sale', id);
       return next;
     })} />;

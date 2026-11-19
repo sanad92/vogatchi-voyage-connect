@@ -42,6 +42,8 @@ jobs:
         run: bun src/lib/pilgrimage/operations.test.ts
       - name: Test Group / FIT / B2B quote validators and margin calculation
         run: bun src/lib/pilgrimage/sales.test.ts
+      - name: Test direct search bookings, hold expiry and capacity
+        run: node scripts/verify-pilgrimage-availability-bookings.mjs
       - name: Test B2B installment cents, due dates and totals
         run: bun src/lib/pilgrimage/b2b.test.ts
       - name: Check TypeScript
