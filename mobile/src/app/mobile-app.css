@@ -1,4 +1,4 @@
-:host { display: block; --navy: #11283f; --ink: #15293d; --muted: #526579; --line: #e1e7ee; --gold: #edc680; }
+:root { --navy: #11283f; --ink: #15293d; --muted: #526579; --line: #e1e7ee; --gold: #edc680; }
 .login-screen, .loading-frame { min-height: 100dvh; display: grid; align-items: center; justify-items: center; padding: calc(32px + env(safe-area-inset-top)) 24px calc(32px + env(safe-area-inset-bottom)); }
 .login-screen { background: radial-gradient(ellipse at 48% 0%, #e5edf4 0%, #f7f9fc 63%); }
 .login-content { width: min(100%, 390px); padding-block: 20px; }
@@ -61,7 +61,7 @@
 .status { padding: 4px 7px; border-radius: 7px; background: #edf1f6; color: #354c63; font-size: 11px; }
 .status-ok { background: #e8f4ed; color: #286148; }
 .status-off { background: #faeeeb; color: #923c30; }
-.chevron { font-size: 26px; color: var(--muted); padding-inline-end: 4px; }
+.chevron { width: 19px; color: var(--muted); padding-inline-end: 4px; }
 .search { padding-inline: 12px; display: flex; align-items: center; gap: 4px; margin-block-end: 13px; color: var(--muted); }
 .search input { border: 0; padding-inline-start: 6px; background: transparent; }
 .pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; }
@@ -78,8 +78,8 @@
 .account-actions button { border: 0; min-height: 55px; background: transparent; color: var(--ink); width: 100%; text-align: start; font-weight: 650; display: flex; align-items: center; justify-content: space-between; }
 .account-actions button + button { border-top: 1px solid var(--line); }
 .account-actions .danger { color: #a2352a; }
-.sheet-overlay { position: fixed; inset: 0; z-index: 5; background: #12263866; display: grid; align-items: end; justify-items: center; }
-.sheet { padding: 16px 17px calc(22px + env(safe-area-inset-bottom)); width: min(100%, 680px); border-radius: 20px 20px 0 0; background: #fff; max-height: 85dvh; overflow-y: auto; box-shadow: 0 -6px 32px #14273933; }
+.sheet-overlay { position: fixed; inset: 0; z-index: 5; background: #12263866; }
+.sheet { position: fixed; z-index: 6; bottom: 0; left: 50%; transform: translateX(-50%); padding: 16px 17px calc(22px + env(safe-area-inset-bottom)); width: min(100%, 680px); border-radius: 20px 20px 0 0; background: #fff; max-height: 85dvh; overflow-y: auto; box-shadow: 0 -6px 32px #14273933; }
 .sheet-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .sheet dl { margin-bottom: 0; }
 .sheet dl div { display: flex; justify-content: space-between; gap: 15px; padding-block: 10px; border-bottom: 1px solid var(--line); }

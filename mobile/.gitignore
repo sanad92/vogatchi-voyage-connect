@@ -1,5 +1,4 @@
 node_modules/
-.angular/
 dist/
 src/runtime.generated.ts
 android/local.properties
