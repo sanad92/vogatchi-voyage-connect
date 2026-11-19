@@ -111,6 +111,7 @@ const ROUTE_RULES: PlanFeatureRouteRule[] = [
     paths: [
       '/bank-accounts',
       '/expense-management',
+      '/hr',
       '/employee-records',
       '/employee-commissions',
       '/chart-of-accounts',

@@ -26,25 +26,22 @@ export const useUnifiedUsersQuery = (isOwner: boolean, organizationId: string | 
         const userIds = (membersData || []).map((m: any) => m.user_id);
         if (userIds.length === 0) return [];
 
-        // 2) Fetch profiles only for those users, with their linked employee
-        const { data: profilesData, error: profilesError } = await (supabase
-          .from('profiles')
-          .select(`
-            *,
-            employees!profiles_linked_employee_id_fkey(*)
-          `)
-          .in('id', userIds)
-          .order('created_at', { ascending: false }) as any);
-
-        if (profilesError) {
-          console.error('❌ خطأ في جلب بيانات profiles:', profilesError);
-          throw profilesError;
+        const { data: profilesData, error: profilesError } = await supabase.from('profiles')
+          .select('*').in('id', userIds).order('created_at', { ascending: false });
+        if (profilesError) throw profilesError;
+        const linkedIds = (profilesData ?? []).flatMap(profile => profile.linked_employee_id ? [profile.linked_employee_id] : []);
+        const employees = new Map<string, import('@/integrations/supabase/types').Tables<'employee_directory'>>();
+        if (linkedIds.length) {
+          const { data: records, error } = await supabase.from('employee_directory')
+            .select('*').eq('organization_id', organizationId).in('id', linkedIds);
+          if (error) throw error;
+          for (const employee of records) employees.set(employee.id, employee);
         }
 
         // Merge data — only include the linked employee if it belongs to current org
         const unified = profilesData?.map((profile: any) => {
           const member = membersData?.find((m: any) => m.user_id === profile.id);
-          const emp = profile.employees;
+          const emp = profile.linked_employee_id ? employees.get(profile.linked_employee_id) : undefined;
           const empBelongsToOrg = emp && emp.organization_id === organizationId;
 
           return {
@@ -100,7 +97,7 @@ export const useUnlinkedEmployeesQuery = (isOwner: boolean, organizationId: stri
       try {
         // Only employees of the current organization
         const { data: allEmployees, error: employeesError } = await supabase
-          .from('employees')
+          .from('employee_directory')
           .select('*')
           .eq('organization_id', organizationId)
           .eq('is_active', true)

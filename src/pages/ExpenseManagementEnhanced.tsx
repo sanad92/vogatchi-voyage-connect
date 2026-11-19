@@ -4,23 +4,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
-  Users, 
   Receipt, 
   Home, 
-  Calculator, 
   PieChart, 
   TrendingUp,
   Settings,
   AlertCircle,
-  DollarSign
 } from 'lucide-react';
 import ExpenseOverview from '@/components/expenses/ExpenseOverview';
-import EmployeeManagement from '@/components/expenses/EmployeeManagement';
 import ExpenseTransactions from '@/components/expenses/ExpenseTransactions';
 import RentManagement from '@/components/expenses/RentManagement';
-import SalaryManagementImproved from '@/components/expenses/salary/SalaryManagementImproved';
 import EnhancedExpenseReports from '@/components/expenses/reports/EnhancedExpenseReports';
-import CommissionManagement from '@/components/expenses/CommissionManagement';
 import ExchangeRateManager from '@/components/currency/ExchangeRateManager';
 import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
 
@@ -50,22 +44,10 @@ const ExpenseManagementEnhanced = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="overflow-x-auto">
-          <TabsList className="flex w-max lg:w-full lg:grid lg:grid-cols-8 gap-1">
+          <TabsList className="flex w-max lg:w-full lg:grid lg:grid-cols-5 gap-1">
             <TabsTrigger value="overview" className="flex items-center gap-1.5 whitespace-nowrap px-3">
               <PieChart className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">نظرة عامة</span>
-            </TabsTrigger>
-            <TabsTrigger value="employees" className="flex items-center gap-1.5 whitespace-nowrap px-3">
-              <Users className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">الموظفين</span>
-            </TabsTrigger>
-            <TabsTrigger value="salaries" className="flex items-center gap-1.5 whitespace-nowrap px-3">
-              <Calculator className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">الرواتب</span>
-            </TabsTrigger>
-            <TabsTrigger value="commissions" className="flex items-center gap-1.5 whitespace-nowrap px-3">
-              <DollarSign className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">العمولات</span>
             </TabsTrigger>
             <TabsTrigger value="rent" className="flex items-center gap-1.5 whitespace-nowrap px-3">
               <Home className="h-4 w-4 shrink-0" />
@@ -88,18 +70,6 @@ const ExpenseManagementEnhanced = () => {
 
         <TabsContent value="overview">
           <ExpenseOverview />
-        </TabsContent>
-
-        <TabsContent value="employees">
-          <EmployeeManagement />
-        </TabsContent>
-
-        <TabsContent value="salaries">
-          <SalaryManagementImproved />
-        </TabsContent>
-
-        <TabsContent value="commissions">
-          <CommissionManagement />
         </TabsContent>
 
         <TabsContent value="rent">

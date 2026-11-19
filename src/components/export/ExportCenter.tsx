@@ -19,7 +19,7 @@ const reportConfigs: Record<ReportType, { label: string; icon: any; table: strin
   customers: { label: 'العملاء', icon: Users, table: 'customers' },
   invoices: { label: 'الفواتير', icon: CreditCard, table: 'invoices' },
   suppliers: { label: 'الموردين', icon: Building2, table: 'suppliers' },
-  employees: { label: 'الموظفين', icon: Users, table: 'employees' },
+  employees: { label: 'الموظفين', icon: Users, table: 'employee_directory' },
 };
 
 const ExportCenter = () => {

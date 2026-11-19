@@ -12,6 +12,7 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
+import { useHrAccess } from '@/hooks/useHrAccess';
 import { toast } from 'sonner';
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
 }
 
 const EditMemberDialog = ({ member, onClose }: Props) => {
+  const { canManagePayroll } = useHrAccess();
   const { resetPassword, updateEmployeeData } = useTeamManagement();
   const { employees = [] } = useEmployees();
   const orgId = useOrgId();
@@ -110,7 +112,7 @@ const EditMemberDialog = ({ member, onClose }: Props) => {
     if (!member.linked_employee_id) return;
     await updateEmployeeData.mutateAsync({
       employeeId: member.linked_employee_id,
-      updates: hr,
+      updates: { ...hr, base_salary: canManagePayroll ? hr.base_salary : undefined },
     });
   };
 
@@ -158,10 +160,10 @@ const EditMemberDialog = ({ member, onClose }: Props) => {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  {canManagePayroll && <div>
                     <Label>الراتب</Label>
                     <Input type="number" value={hr.base_salary} onChange={(e) => setHr({ ...hr, base_salary: Number(e.target.value) })} />
-                  </div>
+                  </div>}
                   <div>
                     <Label>تاريخ التوظيف</Label>
                     <Input type="date" value={hr.hire_date} onChange={(e) => setHr({ ...hr, hire_date: e.target.value })} />

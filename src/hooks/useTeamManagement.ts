@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useHrAccess } from '@/hooks/useHrAccess';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrgId } from '@/hooks/useOrgId';
 import { toast } from 'sonner';
 import type { OrgRole } from '@/lib/accessControl';
@@ -96,10 +98,12 @@ export interface ReassignSeatInput {
 
 export const useTeamManagement = () => {
   const orgId = useOrgId();
+  const { user } = useOptimizedAuth();
+  const { canManagePayroll } = useHrAccess();
   const queryClient = useQueryClient();
 
   const { data: members = [], isLoading } = useQuery({
-    queryKey: ['team-members', orgId],
+    queryKey: ['team-members', orgId, user?.id, canManagePayroll],
     queryFn: async (): Promise<TeamMember[]> => {
       if (!orgId) return [];
 
@@ -129,8 +133,9 @@ export const useTeamManagement = () => {
       let employees: EmployeeSummary[] = [];
       if (linkedEmpIds.length) {
         const { data: emps } = await supabase
-          .from('employees')
+          .from('employee_directory')
           .select('id, employee_code, position, department, base_salary, hire_date')
+          .eq('organization_id', orgId)
           .in('id', linkedEmpIds);
         employees = emps || [];
       }
@@ -282,7 +287,8 @@ export const useTeamManagement = () => {
       employeeId: string;
       updates: { position?: string; department?: string; base_salary?: number; hire_date?: string };
     }) => {
-      const { error } = await supabase.from('employees').update(updates).eq('id', employeeId);
+      const { error } = await supabase.from('employees').update(updates)
+        .eq('id', employeeId).eq('organization_id', orgId!).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast.success('تم تحديث بيانات الموظف'); },

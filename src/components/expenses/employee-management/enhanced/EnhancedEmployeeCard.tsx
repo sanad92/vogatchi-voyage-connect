@@ -66,7 +66,8 @@ const EnhancedEmployeeCard = ({ employee, onLinkEmployee }: EnhancedEmployeeCard
   };
 
   const handleSaveEmployee = async (employeeData: any) => {
-    await updateEmployee(employeeData);
+    const result = await updateEmployee(employeeData);
+    if (!result.success) throw new Error(result.error);
   };
 
   const handleToggleStatus = async (employeeId: string, isActive: boolean, reason?: string) => {

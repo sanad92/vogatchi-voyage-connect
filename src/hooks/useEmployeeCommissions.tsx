@@ -92,7 +92,7 @@ export const useEmployeeCommissions = () => {
         .from('employees')
         .update({ commission_rate: settings.commission_rate, commission_type: settings.commission_type, updated_at: new Date().toISOString() })
         .eq('id', employeeId)
-        .select()
+        .select('id')
         .single();
       if (error) throw error;
       return data;

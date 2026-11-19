@@ -64,8 +64,10 @@ function CompanyDataTransfer({ orgId, userId }: { orgId: string; userId: string 
   const loadRecords = async () => {
     const records: Record<string, unknown>[] = [];
     for (let start = 0; ; start += pageSize) {
-      const { data, error } = await supabase.from(table).select('*').eq('organization_id', orgId)
-        .order('id').range(start, start + pageSize - 1);
+      const end = start + pageSize - 1;
+      const { data, error } = table === 'employees'
+        ? await supabase.from('employee_directory').select('*').eq('organization_id', orgId).order('id').range(start, end)
+        : await supabase.from(table).select('*').eq('organization_id', orgId).order('id').range(start, end);
       if (error) throw error;
       records.push(...data);
       if (data.length < pageSize) return records;
