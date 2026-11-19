@@ -74,8 +74,10 @@ Deno.serve(async (req) => {
   let acceptUrl: URL
   try {
     acceptUrl = new URL('/accept-invite', siteUrl)
-    if (acceptUrl.protocol !== 'https:' || acceptUrl.username || acceptUrl.password) {
-      throw new Error('SITE_URL must be an HTTPS URL without credentials')
+    const localDev = acceptUrl.protocol === 'http:' &&
+      ['localhost', '127.0.0.1', '[::1]'].includes(acceptUrl.hostname)
+    if ((acceptUrl.protocol !== 'https:' && !localDev) || acceptUrl.username || acceptUrl.password) {
+      throw new Error('SITE_URL must use HTTPS or a loopback address, without credentials')
     }
     acceptUrl.searchParams.set('token', invite.token)
   } catch {

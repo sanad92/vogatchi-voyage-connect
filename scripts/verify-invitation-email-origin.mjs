@@ -79,9 +79,14 @@ const defaultSite = await sendInvitation(undefined);
 assert.equal(defaultSite.status, 200);
 assert.ok(defaultSite.messages[0].html.includes(`href="https://safarerp.com/accept-invite?token=${token}"`));
 
-for (const invalid of ['staging.example', 'http://staging.example', 'https://user:secret@staging.example']) {
+for (const origin of ['https://safarerp.com', 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://[::1]:5173']) {
+  const configured = await sendInvitation(origin + '/');
+  assert.equal(configured.status, 200);
+  assert.ok(configured.messages[0].html.includes(`href="${origin}/accept-invite?token=${token}"`));
+}
+for (const invalid of ['staging.example', 'http://staging.example', 'http://localhost.example', 'https://user:secret@staging.example']) {
   const rejected = await sendInvitation(invalid);
   assert.equal(rejected.status, 500);
   assert.equal(rejected.messages.length, 0);
 }
-console.log('Staff invitation links follow the server-configured HTTPS origin and use the production default when unset.');
+console.log('Staff invitation links follow the server-configured HTTPS or loopback origin and use the production default when unset.');
