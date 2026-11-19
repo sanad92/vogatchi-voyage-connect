@@ -64,7 +64,7 @@ const TeamManagement = () => {
               <CardTitle className="text-base">أعضاء المؤسسة</CardTitle>
             </CardHeader>
             <CardContent>
-              <TeamMembersTable currentUserId={user?.id} canManage={canManage} />
+              <TeamMembersTable currentUserId={user?.id} canManage={canManage} focusedMemberId={params.get('member') ?? undefined} />
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,8 +1,10 @@
+import SalaryPaymentDialog from './SalaryPaymentDialog';
+import { useOrgId } from '@/hooks/useOrgId';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, Trash2, DollarSign, Calendar, User, Loader2 } from 'lucide-react';
+import { Trash2, DollarSign, Calendar, User, Loader2 } from 'lucide-react';
 import { useSalariesImproved } from '@/hooks/useSalariesImproved';
 import EgyptianPoundDisplay from '@/components/currency/EgyptianPoundDisplay';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -19,19 +21,11 @@ const SalaryManagementList = () => {
     getSalaryStatistics
   } = useSalariesImproved();
 
-  const [selectedSalary, setSelectedSalary] = useState<string | null>(null);
-
-  const handleStatusUpdate = async (salaryId: string, status: 'pending' | 'paid' | 'cancelled') => {
-    try {
-      await updateSalaryStatus({
-        salary_id: salaryId,
-        status,
-        payment_date: status === 'paid' ? new Date().toISOString().split('T')[0] : undefined
-      });
-    } catch (error) {
-      console.error('خطأ في تحديث حالة الراتب:', error);
-    }
-  };
+  const orgId = useOrgId();
+  const [selection, setSelection] = useState<{ orgId: string | null; salaryId: string } | null>(null);
+  const selectedSalary = selection?.orgId === orgId
+    ? monthlySalaries?.find(salary => salary.id === selection?.salaryId)
+    : undefined;
 
   const handleDeleteSalary = async (salaryId: string) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الراتب؟ لا يمكن التراجع عن هذا الإجراء.')) {
@@ -218,14 +212,14 @@ const SalaryManagementList = () => {
                         {salary.status === 'pending' && (
                           <Button
                             size="sm"
-                            onClick={() => handleStatusUpdate(salary.id, 'paid')}
+                            onClick={() => setSelection({ orgId, salaryId: salary.id })}
                             disabled={isUpdating}
                             className="bg-green-600 hover:bg-green-700"
                           >
                             {isUpdating ? (
                               <Loader2 className="h-3 w-3 animate-spin" />
                             ) : (
-                              'دفع'
+                              'تسجيل الصرف'
                             )}
                           </Button>
                         )}
@@ -259,6 +253,14 @@ const SalaryManagementList = () => {
           )}
         </CardContent>
       </Card>
+      {selectedSalary?.status === 'pending' && <SalaryPaymentDialog
+        key={selectedSalary.id}
+        salary={selectedSalary}
+        employeeName={selectedSalary.employee?.full_name}
+        busy={isUpdating}
+        onClose={() => setSelection(null)}
+        onSave={updateSalaryStatus}
+      />}
     </div>
   );
 };

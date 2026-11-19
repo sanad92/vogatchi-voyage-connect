@@ -13,7 +13,7 @@ export const useEmployees = (includeInactive = false) => {
   const { user } = useOptimizedAuth();
   const { canManagePayroll, canManageCommissions, canViewFiles } = useHrAccess();
 
-  const { data: employees, isLoading: employeesLoading, error } = useQuery({
+  const { data: employees, isLoading: employeesLoading, error, refetch: refetchEmployees } = useQuery({
     queryKey: ['employees', orgId, user?.id, includeInactive, canViewFiles, canManagePayroll, canManageCommissions],
     queryFn: async () => {
       const query = supabase.from('employee_directory').select('*').eq('organization_id', orgId!);
@@ -83,7 +83,7 @@ export const useEmployees = (includeInactive = false) => {
   });
 
   return {
-    employees, employeesLoading, employeesError: error,
+    employees, employeesLoading, employeesError: error, refetchEmployees,
     addEmployee: addEmployeeMutation.mutate, addEmployeeAsync: addEmployeeMutation.mutateAsync,
     isAddingEmployee: addEmployeeMutation.isPending, addEmployeeError: addEmployeeMutation.error,
   };

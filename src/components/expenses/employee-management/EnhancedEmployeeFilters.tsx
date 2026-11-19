@@ -41,18 +41,19 @@ const EnhancedEmployeeFilters = ({
       <div className="flex flex-col sm:flex-row gap-4">
         {/* شريط البحث */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            aria-label="البحث عن موظف"
             placeholder="البحث عن موظف (الاسم، رقم الموظف، المنصب)..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10"
+            className="ps-10"
           />
         </div>
 
         {/* فلتر الحالة */}
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-          <SelectTrigger className="w-full sm:w-48">
+          <SelectTrigger aria-label="حالة ملف الموظف" className="w-full sm:w-48">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -79,11 +80,11 @@ const EnhancedEmployeeFilters = ({
 
         {/* فلتر الربط */}
         <Select value={linkedFilter} onValueChange={onLinkedFilterChange}>
-          <SelectTrigger className="w-full sm:w-48">
+          <SelectTrigger aria-label="حالة حساب الدخول" className="w-full sm:w-48">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">جميع الموظفين</SelectItem>
+            <SelectItem value="all">كل حالات الحساب</SelectItem>
             <SelectItem value="linked">مرتبطين بمستخدمين</SelectItem>
             <SelectItem value="unlinked">غير مرتبطين</SelectItem>
           </SelectContent>

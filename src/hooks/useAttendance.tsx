@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrgId } from '@/hooks/useOrgId';
 import type { TablesInsert } from '@/integrations/supabase/types';
 
@@ -7,10 +8,11 @@ type AttendanceInput = Omit<TablesInsert<'employee_attendance'>, 'organization_i
 
 export function useAttendance(date?: string) {
   const orgId = useOrgId();
+  const { user } = useOptimizedAuth();
   const queryClient = useQueryClient();
   const query = useQuery({
-    queryKey: ['employee-attendance', orgId, date],
-    enabled: Boolean(orgId && date),
+    queryKey: ['employee-attendance', orgId, user?.id, date],
+    enabled: Boolean(orgId && user?.id && date),
     queryFn: async () => {
       const { data, error } = await supabase.from('employee_attendance').select('*, employee:employees!employee_attendance_organization_id_employee_id_fkey(full_name)')
         .eq('organization_id', orgId!).eq('attendance_date', date!);
@@ -27,6 +29,21 @@ export function useAttendance(date?: string) {
         { onConflict: 'organization_id,employee_id,attendance_date' },
       ).select('id').single();
       if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['employee-attendance', orgId] }),
+  });
+
+  const register = useMutation({
+    mutationFn: async ({ employeeIds, date, status }: {
+      employeeIds: string[]; date: string; status: 'present' | 'absent';
+    }) => {
+      if (!orgId || !employeeIds.length) throw new Error('اختر موظفًا للتسجيل');
+      const { data, error } = await supabase.from('employee_attendance').upsert(
+        employeeIds.map(employee_id => ({ employee_id, organization_id: orgId, attendance_date: date, status })),
+        { onConflict: 'organization_id,employee_id,attendance_date', ignoreDuplicates: true },
+      ).select('employee_id');
+      if (error) throw error;
+      return data.length;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['employee-attendance', orgId] }),
   });
@@ -56,7 +73,8 @@ export function useAttendance(date?: string) {
     attendanceError: query.error,
     retryAttendance: query.refetch,
     saveAttendance: save.mutateAsync,
-    isSavingAttendance: save.isPending,
+    registerAttendance: register.mutateAsync,
+    isSavingAttendance: save.isPending || register.isPending,
     getAttendanceSummary,
   };
 }
