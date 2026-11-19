@@ -10,7 +10,7 @@ import { useParentBookingLink } from "@/contexts/ParentBookingContext";
 
 interface UseHotelBookingSubmissionProps {
   booking?: HotelBooking | null;
-  onSuccess: (saved?: { id: string }) => void;
+  onSuccess: (saved?: { id: string; parentId?: string | null }) => void;
 }
 
 export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookingSubmissionProps) => {
@@ -90,6 +90,7 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
       if (parentBookingId) submitData.booking_id = parentBookingId;
 
       let bookingId = booking?.id;
+      let savedParentId = parentBookingId;
 
       if (booking) {
         const { error } = await supabase
@@ -103,10 +104,11 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
         const { data: inserted, error } = await supabase
           .from('hotel_bookings')
           .insert(submitData)
-          .select('id')
+          .select('id, booking_id')
           .single();
         if (error) throw error;
         bookingId = inserted.id;
+        savedParentId = inserted.booking_id ?? savedParentId;
         toast.success('تم إنشاء الحجز بنجاح');
       }
 
@@ -127,7 +129,7 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
 
       await syncParent();
 
-      onSuccess(bookingId ? { id: bookingId } : undefined);
+      onSuccess(bookingId ? { id: bookingId, parentId: savedParentId } : undefined);
     } catch (error: any) {
       console.error('Error saving booking:', error);
       toast.error(error?.message || 'حدث خطأ في حفظ الحجز');

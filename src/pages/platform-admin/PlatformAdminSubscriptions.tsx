@@ -90,20 +90,20 @@ const PlatformAdminSubscriptions = () => {
 
   const extendSub = useMutation({
     mutationFn: async ({ subId, days }: { subId: string; days: number }) => {
-      const sub = subscriptions?.find(s => s.id === subId);
-      const base = sub?.expires_at ? new Date(sub.expires_at) : new Date();
-      const newExpiry = new Date(base.getTime() + days * 86400000);
-      const { error } = await supabase.from('subscriptions').update({
-        expires_at: newExpiry.toISOString(),
-        status: 'active',
-      }).eq('id', subId);
+      const { data, error } = await supabase.rpc('platform_extend_subscription', {
+        p_subscription_id: subId,
+        p_days: days,
+      });
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (expiresAt) => {
       qc.invalidateQueries({ queryKey: ['platform-admin-subscriptions'] });
       qc.invalidateQueries({ queryKey: ['platform-overview'] });
       qc.invalidateQueries({ queryKey: ['platform-billing-followup'] });
-      toast.success('تم تمديد الاشتراك بنجاح');
+      qc.invalidateQueries({ queryKey: ['subscription-status'] });
+      qc.invalidateQueries({ queryKey: ['my-subscription-full'] });
+      toast.success(`تم تمديد الاشتراك حتى ${new Date(expiresAt).toLocaleDateString('ar-EG')}`);
     },
     onError: () => toast.error('فشل في تمديد الاشتراك'),
   });
@@ -322,6 +322,7 @@ const PlatformAdminSubscriptions = () => {
                               />
                             )}
                             <Button size="sm" variant="outline" className="h-7 text-xs"
+                              disabled={extendSub.isPending}
                               onClick={() => extendSub.mutate({ subId: sub.id, days: 30 })}>
                               <CalendarPlus className="h-3 w-3 ml-1" /> +30 يوم
                             </Button>

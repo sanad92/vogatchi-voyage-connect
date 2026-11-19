@@ -1,24 +1,29 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { supabaseForUser, unauthenticated, failure, rows } from "../supabase";
+import { organizationInput, scopedOrganization, failure, rows } from "../supabase";
 
 export default defineTool({
   name: "search_customers",
   title: "Search customers",
-  description: "Search the travel agency's customers by name, email, or phone.",
+  description: "Find customer records in one organization by name, email, or phone fragment.",
   inputSchema: {
-    query: z.string().trim().describe("Name, email, or phone fragment to search for."),
+    organization_id: organizationInput,
+    query: z.string().trim().min(2).max(120).describe("Name, email, or phone fragment to search for."),
     limit: z.number().int().describe("Maximum number of customers to return (default 20).").optional(),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ query, limit }, ctx) => {
-    if (!ctx.isAuthenticated()) return unauthenticated();
+  handler: async ({ organization_id, query, limit }, ctx) => {
+    const scope = await scopedOrganization(ctx, organization_id);
+    if (scope.error) return scope.error;
+    const { supabase, organizationId } = scope;
     const take = Math.min(Math.max(limit ?? 20, 1), 50);
-    const supabase = supabaseForUser(ctx);
-    const like = `%${query.replace(/[%,]/g, "")}%`;
+    const term = query.replace(/[^\p{L}\p{M}\p{N}\s@.+-]/gu, "").trim();
+    if (term.length < 2) return failure("Enter at least two search characters.");
+    const like = `%${term}%`;
     const { data, error } = await supabase
       .from("customers")
-      .select("id, name, email, phone, nationality, total_bookings, total_spent, last_booking_date")
+      .select("id, name, last_booking_date")
+      .eq("organization_id", organizationId)
       .or(`name.ilike.${like},email.ilike.${like},phone.ilike.${like}`)
       .order("last_booking_date", { ascending: false, nullsFirst: false })
       .limit(take);

@@ -75,11 +75,23 @@ export const useTransportBookings = () => {
 
       // Trigger confirmation notification
       try {
-        await supabase.functions.invoke('send-booking-confirmation', {
-          body: { bookingId: data.id, bookingType: 'transport' }
-        });
+        const { data: confirmation, error: confirmationError } = await supabase.functions.invoke(
+          'send-booking-confirmation',
+          { body: { bookingId: data.id, bookingType: 'transport' } },
+        );
+        if (confirmationError || !confirmation?.status || confirmation.status === 'failed') {
+          throw confirmationError ?? new Error('Booking confirmation was unsuccessful');
+        }
+        if (confirmation.status === 'partial') {
+          toast({ title: 'تأكيد الحجز', description: 'تعذّر التأكيد بإحدى طرق الإرسال. راجع حالة إشعارات الحجز.' });
+        } else if (confirmation.status === 'pending') {
+          toast({ title: 'تأكيد الحجز', description: 'رسالة التأكيد قيد المعالجة.' });
+        } else if (confirmation.status === 'skipped') {
+          toast({ title: 'تأكيد الحجز', description: 'لا توجد وسيلة اتصال متاحة لإرسال التأكيد.' });
+        }
       } catch (e) {
         console.warn('Confirmation send failed (non-blocking):', e);
+        toast({ title: 'تأكيد الحجز', description: 'تم حفظ الحجز وتعذّر إرسال التأكيد.' });
       }
 
       return data;

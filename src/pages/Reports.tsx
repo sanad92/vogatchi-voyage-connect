@@ -1,316 +1,128 @@
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { BarChart3 } from 'lucide-react';
+import { useOrgId } from '@/hooks/useOrgId';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { bookingReportCells, bookingReportColumns, bookingServiceLabels, loadBookingReportRows } from '@/lib/reportRows';
+import PageHeader from '@/components/layout/PageHeader';
+import ReportDownloadButtons from '@/components/export/ReportDownloadButtons';
+import SmartAlerts from '@/components/reports/SmartAlerts';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  FileText, 
-  TrendingUp, 
-  Users, 
-  DollarSign, 
-  BarChart3, 
-  Bell, 
-  Calendar,
-  Download,
-  Settings,
-  RefreshCw
-} from "lucide-react";
-import ReportsOverview from "@/components/reports/ReportsOverview";
-import AdvancedFilters from "@/components/reports/AdvancedFilters";
-import InteractiveCharts from "@/components/reports/InteractiveCharts";
-import ReportExporter from "@/components/reports/ReportExporter";
-import FinancialReports from "@/components/reports/FinancialReports";
-import PerformanceMetrics from "@/components/reports/PerformanceMetrics";
-import AdvancedAnalytics from "@/components/reports/AdvancedAnalytics";
-import PeriodComparison from "@/components/reports/PeriodComparison";
-import SmartAlerts from "@/components/reports/SmartAlerts";
-import { DateRange } from "react-day-picker";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+const statuses = { draft: 'مسودة', pending: 'معلق', processing: 'قيد المعالجة', confirmed: 'مؤكد', cancelled: 'ملغي', completed: 'مكتمل', paid: 'مدفوع' };
+const pageSize = 25;
 
-interface ReportFilters {
-  dateRange?: DateRange;
-  customerName?: string;
-  serviceType?: string;
-  status?: string;
-  supplier?: string;
-  minAmount?: number;
-  maxAmount?: number;
-}
-
-const Reports = () => {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [filters, setFilters] = useState<ReportFilters>({});
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [dateRange] = useState({
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    to: new Date()
+export default function Reports() {
+  usePageTitle('التقارير');
+  const orgId = useOrgId();
+  const { currentOrganization } = useOrganization();
+  const { hasPermission, getPermissionScope } = useSupabasePermissions();
+  const today = new Date().toISOString().slice(0, 10);
+  const [start, setStart] = useState(`${today.slice(0, 7)}-01`);
+  const [end, setEnd] = useState(today);
+  const [service, setService] = useState('all');
+  const [status, setStatus] = useState('all');
+  const [currencyInput, setCurrencyInput] = useState('');
+  const [page, setPage] = useState(1);
+  const currency = currencyInput.trim().toUpperCase() || 'all';
+  const invalid = !start || !end || start > end || (currency !== 'all' && !/^[A-Z]{3}$/.test(currency));
+  const permitted = hasPermission('bookings_view') && getPermissionScope('bookings_view') === 'organization';
+  const scope = { start, end, service, status, currency };
+  const { data, isFetching, isError, refetch } = useQuery({
+    queryKey: ['booking-report', orgId, scope],
+    enabled: Boolean(orgId && permitted && !invalid),
+    queryFn: () => loadBookingReportRows(orgId!, scope),
   });
-
-  // جلب البيانات الحقيقية من قاعدة البيانات
-  const { data: hotelBookings, refetch: refetchBookings } = useQuery({
-    queryKey: ['reports-hotel-bookings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('hotel_bookings')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
-  const { data: customers } = useQuery({
-    queryKey: ['reports-customers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
-  // حساب البيانات المالية من البيانات الحقيقية
-  const calculateFinancialData = () => {
-    if (!hotelBookings) return null;
-
-    const totalRevenue = hotelBookings.reduce((sum, booking) => 
-      sum + (booking.total_cost_customer || 0), 0
-    );
-    
-    const totalProfit = hotelBookings.reduce((sum, booking) => 
-      sum + (booking.total_profit || 0), 0
-    );
-
-    const totalExpenses = totalRevenue - totalProfit;
-    const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-
-    return {
-      revenue: totalRevenue,
-      profit: totalProfit,
-      expenses: totalExpenses,
-      profitMargin: profitMargin,
-      monthlyData: [], // يمكن حسابها لاحقاً حسب الحاجة
-      serviceBreakdown: [
-        { name: 'حجوزات الفنادق', value: totalRevenue, color: '#0088FE' }
-      ]
-    };
+  const rows = data ?? [];
+  const count = rows.length;
+  const displayedPage = Math.min(page, Math.ceil(count / pageSize)) || 1;
+  const update = (setter: (value: string) => void, value: string) => {
+    setter(value);
+    setPage(1);
   };
-
-  const financialData = calculateFinancialData();
-
-  const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
-    console.log(`Exporting report as ${format}`);
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await refetchBookings();
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  const handleFiltersChange = (newFilters: any) => {
-    setFilters(newFilters);
-  };
+  const scopeLines = [
+    currentOrganization?.name ?? '',
+    `تاريخ الإنشاء (UTC): ${start} – ${end}`,
+    `الخدمة: ${bookingServiceLabels[service] ?? 'كل الخدمات'}`,
+    `الحالة: ${statuses[status as keyof typeof statuses] ?? 'كل الحالات'}`,
+    `العملة: ${currency === 'all' ? 'كل العملات' : currency}`,
+  ];
 
   return (
-    <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">النظام المتقدم للتقارير والتحليلات</h1>
-          <p className="text-muted-foreground mt-1">
-            لوحة تحكم شاملة للتقارير المالية وتحليل الأداء
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">
-            البيانات الحقيقية
-          </Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 ml-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            تحديث
-          </Button>
-          <Button size="sm">
-            <Settings className="h-4 w-4 ml-2" />
-            <span className="hidden sm:inline">إعدادات التقارير</span>
-          </Button>
-        </div>
-      </div>
+    <main className="space-y-6 p-4 md:p-6" dir="rtl">
+      <PageHeader icon={BarChart3} title="التقارير" />
+      <nav aria-label="التقارير المتخصصة" className="flex flex-wrap gap-3">
+        {hasPermission('financial_view') && <Button asChild variant="outline"><Link to="/income-statement">قائمة الدخل</Link></Button>}
+        <Button asChild variant="outline"><Link to="/reports/business-health">صحة الأعمال</Link></Button>
+        <Button asChild variant="outline"><Link to="/reports/lead-cycle-time">زمن دورة العملاء المحتملين</Link></Button>
+        <Button asChild variant="outline"><Link to="/sop/compliance">التزام إجراءات التشغيل</Link></Button>
+        {hasPermission('reports_export') && <Button asChild variant="outline"><Link to="/export-center">مركز التصدير</Link></Button>}
+      </nav>
 
-      {/* فلاتر التقارير المتقدمة */}
-      <AdvancedFilters onFiltersChange={handleFiltersChange} />
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <div className="bg-card rounded-lg shadow-sm border p-2 overflow-x-auto">
-          <TabsList className="flex w-max lg:w-full lg:grid lg:grid-cols-8 gap-1">
-            <TabsTrigger value="overview" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
-              <BarChart3 className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">نظرة عامة</span>
-            </TabsTrigger>
-            <TabsTrigger value="charts" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
-              <TrendingUp className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">رسوم بيانية</span>
-            </TabsTrigger>
-            <TabsTrigger value="export" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
-              <Download className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">تصدير</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
-              <BarChart3 className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">تحليلات متقدمة</span>
-            </TabsTrigger>
-            <TabsTrigger value="comparison" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
-              <Calendar className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">مقارنة الفترات</span>
-            </TabsTrigger>
-            <TabsTrigger value="alerts" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
-              <Bell className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">التنبيهات</span>
-            </TabsTrigger>
-            <TabsTrigger value="financial" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
-              <DollarSign className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">التقارير المالية</span>
-            </TabsTrigger>
-            <TabsTrigger value="performance" className="flex items-center gap-1.5 text-xs lg:text-sm whitespace-nowrap px-3">
-              <FileText className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">الأداء</span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        <div className="min-h-[600px]">
-          <TabsContent value="overview" className="space-y-6">
-            <ReportsOverview dateRange={dateRange} />
-          </TabsContent>
-
-          <TabsContent value="charts" className="space-y-6">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <InteractiveCharts 
-                data={hotelBookings || []}
-                title="الأداء المالي"
-                period="البيانات الحقيقية"
-              />
-              {financialData && (
-                <InteractiveCharts 
-                  data={financialData.serviceBreakdown}
-                  title="توزيع الخدمات"
-                  period="البيانات الحقيقية"
-                />
-              )}
+      {orgId && permitted && <Card>
+        <CardHeader><CardTitle>الحجوزات المنشأة خلال الفترة</CardTitle></CardHeader>
+        <CardContent className="space-y-5">
+          <p className="text-sm text-muted-foreground">{currentOrganization?.name} · تُحسب أيام الإنشاء بتوقيت UTC</p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="space-y-1"><Label htmlFor="report-start">من</Label><Input id="report-start" type="date" value={start} max={end} onChange={(event) => update(setStart, event.target.value)} /></div>
+            <div className="space-y-1"><Label htmlFor="report-end">إلى</Label><Input id="report-end" type="date" value={end} min={start} onChange={(event) => update(setEnd, event.target.value)} /></div>
+            <div className="space-y-1">
+              <Label htmlFor="report-service">نوع الخدمة</Label>
+              <Select value={service} onValueChange={(value) => update(setService, value)}>
+                <SelectTrigger id="report-service"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="all">كل الخدمات</SelectItem>
+                  {Object.entries(bookingServiceLabels).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-          </TabsContent>
+            <div className="space-y-1">
+              <Label htmlFor="report-status">حالة الحجز</Label>
+              <Select value={status} onValueChange={(value) => update(setStatus, value)}>
+                <SelectTrigger id="report-status"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="all">كل الحالات</SelectItem>
+                  {Object.entries(statuses).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1"><Label htmlFor="report-currency">رمز العملة</Label><Input id="report-currency" dir="ltr" maxLength={3} placeholder="EGP" value={currencyInput} onChange={(event) => update(setCurrencyInput, event.target.value)} /></div>
+          </div>
 
-          <TabsContent value="export" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <ReportExporter />
+          {invalid ? <p role="alert" className="text-destructive">اختر تاريخي بداية ونهاية بالترتيب. استخدم رمز عملة من ثلاثة أحرف أو اترك العملة فارغة.</p>
+            : isError ? <div className="space-y-2"><p role="alert" className="text-destructive">تعذر تحميل تقرير الحجوزات.</p><Button variant="outline" onClick={() => void refetch()}>إعادة المحاولة</Button></div>
+            : isFetching ? <p role="status">جارٍ تحميل تقرير الحجوزات…</p>
+            : count === 0 ? <p>لا توجد حجوزات مطابقة للفلاتر.</p>
+            : <>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="font-medium">الحجوزات المطابقة {count}</p>
+                {hasPermission('reports_export') && <ReportDownloadButtons
+                  key={JSON.stringify([orgId, scope])}
+                  title="تقرير الحجوزات" scope={scopeLines} columns={bookingReportColumns}
+                  loadRows={async () => rows.map(bookingReportCells)}
+                />}
               </div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>إحصائيات النظام</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="p-3 border rounded-lg">
-                      <div className="font-medium">إجمالي الحجوزات</div>
-                      <div className="text-2xl font-bold text-primary">
-                        {hotelBookings?.length || 0}
-                      </div>
-                    </div>
-                    <div className="p-3 border rounded-lg">
-                      <div className="font-medium">إجمالي العملاء</div>
-                      <div className="text-2xl font-bold text-primary">
-                        {customers?.length || 0}
-                      </div>
-                    </div>
-                    <div className="p-3 border rounded-lg">
-                      <div className="font-medium">الإيرادات الإجمالية</div>
-                      <div className="text-2xl font-bold text-primary">
-                        {financialData?.revenue.toLocaleString() || 0} ج.م
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-4">
-            <AdvancedAnalytics />
-          </TabsContent>
-
-          <TabsContent value="comparison" className="space-y-4">
-            <PeriodComparison />
-          </TabsContent>
-
-          <TabsContent value="alerts" className="space-y-4">
-            <SmartAlerts />
-          </TabsContent>
-
-          <TabsContent value="financial" className="space-y-4">
-            {financialData && (
-              <FinancialReports data={financialData} period="البيانات الحقيقية" />
-            )}
-          </TabsContent>
-
-          <TabsContent value="performance" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <PerformanceMetrics />
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    إحصائيات العمليات الحقيقية
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-primary">
-                        {hotelBookings?.length || 0}
-                      </div>
-                      <div className="text-sm text-muted-foreground">إجمالي الحجوزات</div>
-                    </div>
-                    <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-primary">
-                        {customers?.length || 0}
-                      </div>
-                      <div className="text-sm text-muted-foreground">إجمالي العملاء</div>
-                    </div>
-                    <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-primary">
-                        {financialData?.revenue.toLocaleString() || 0}
-                      </div>
-                      <div className="text-sm text-muted-foreground">الإيرادات (ج.م)</div>
-                    </div>
-                    <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-primary">
-                        {financialData?.profitMargin.toFixed(1) || 0}%
-                      </div>
-                      <div className="text-sm text-muted-foreground">هامش الربح</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </div>
-      </Tabs>
-    </div>
+              <Table>
+                <TableHeader><TableRow>{bookingReportColumns.map((column) => <TableHead key={column}>{column}</TableHead>)}</TableRow></TableHeader>
+                <TableBody>{rows.slice((displayedPage - 1) * pageSize, displayedPage * pageSize).map((booking) =>
+                  <TableRow key={booking.id}>{bookingReportCells(booking).map((cell, index) => <TableCell key={index}>{cell ?? '—'}</TableCell>)}</TableRow>,
+                )}</TableBody>
+              </Table>
+              {count > pageSize && <div className="flex items-center justify-between gap-2">
+                <Button variant="outline" disabled={displayedPage <= 1} onClick={() => setPage(displayedPage - 1)}>السابق</Button>
+                <span>{displayedPage} / {Math.ceil(count / pageSize)}</span>
+                <Button variant="outline" disabled={displayedPage * pageSize >= count} onClick={() => setPage(displayedPage + 1)}>التالي</Button>
+              </div>}
+            </>}
+        </CardContent>
+      </Card>}
+      {orgId && hasPermission('reports_advanced') && <SmartAlerts key={orgId} />}
+    </main>
   );
-};
-
-export default Reports;
+}

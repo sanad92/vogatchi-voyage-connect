@@ -149,17 +149,17 @@ export const WhatsAppCRMPanel: React.FC<Props> = ({ conversationId, conversation
       {/* Quick create actions */}
       <div className="grid grid-cols-2 gap-2">
         <Button asChild size="sm" variant="outline">
-          <Link to={`/new-quote?customer=${customerId}`}>
+          <Link to={`/quotes/new?customer_id=${customerId}`}>
             <FileText className="h-3.5 w-3.5 me-1" /> عرض سعر
           </Link>
         </Button>
         <Button asChild size="sm" variant="outline">
-          <Link to={`/new-hotel-booking?customer=${customerId}`}>
+          <Link to={`/bookings/new?type=hotel&customer_id=${customerId}`}>
             <Building2 className="h-3.5 w-3.5 me-1" /> حجز فندق
           </Link>
         </Button>
         <Button asChild size="sm" variant="outline">
-          <Link to={`/new-flight-booking?customer=${customerId}`}>
+          <Link to={`/bookings/new?type=flight&customer_id=${customerId}`}>
             <Plane className="h-3.5 w-3.5 me-1" /> حجز طيران
           </Link>
         </Button>

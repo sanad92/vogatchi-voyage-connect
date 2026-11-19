@@ -196,7 +196,9 @@ export default function UmrahDepartureInventory({
           {program.uses_room_inventory ? 'إضافة غرف أو ضبط السعر الخاص' : 'إعداد رصيد الغرف'}
         </Button>}
       </div>
-      {!program.uses_room_inventory && <p className="text-sm text-muted-foreground">أدخل عدد الغرف المتعاقد عليها لكل مدينة وفئة قبل بدء الحجز على الرصيد.</p>}
+      {program.uses_room_inventory
+        ? <p className="text-sm text-muted-foreground">الحجز المباشر يثبت مقاعد الطيران والتسكين من هذا الرصيد.</p>
+        : <p className="text-sm text-muted-foreground">أدخل عدد الغرف المتعاقد عليها لكل مدينة وفئة قبل بدء الحجز على الرصيد.</p>}
       {stock.isLoading && <p className="text-sm">جارٍ تحميل رصيد الغرف…</p>}
       {stock.isError && <Button variant="outline" onClick={() => stock.refetch()}>تعذر تحميل رصيد الغرف. إعادة المحاولة</Button>}
       {!!stock.data?.length && <div className="overflow-x-auto"><table className="w-full text-start text-sm">

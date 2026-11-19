@@ -10,6 +10,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+const DEFAULT_SITE_URL = 'https://safarerp.com';
 
 function b64UrlDecode(input: string): Uint8Array {
   const pad = 4 - (input.length % 4);
@@ -78,25 +79,18 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
+    const site = new URL(Deno.env.get('SITE_URL')?.trim() || DEFAULT_SITE_URL);
+    if (site.protocol !== 'https:' || site.username || site.password) throw new Error('Invalid SITE_URL');
+    const statusUrl = new URL('/data-deletion', site);
     const confirmationCode = crypto.randomUUID();
-
-    // Log the request; actual deletion is processed asynchronously per-org by staff.
-    await admin.from("whatsapp_connection_events").insert({
-      organization_id: null,
-      event_type: "meta_data_deletion_request",
-      payload: { meta_user_id: data.user_id, confirmation_code: confirmationCode, received_at: new Date().toISOString() },
+    const { error } = await admin.rpc('record_meta_deletion_request', {
+      _meta_user_id: String(data.user_id),
+      _confirmation_code: confirmationCode,
     });
+    if (error) throw new Error('Could not record deletion request');
+    statusUrl.searchParams.set('code', confirmationCode);
 
-    // Best-effort: null out access_token for any settings row linked to this meta user
-    await admin
-      .from("whatsapp_settings")
-      .update({ access_token: null, is_active: false, onboarding_status: "disconnected", disconnected_at: new Date().toISOString() })
-      .eq("meta_user_id", data.user_id);
-
-    const origin = new URL(req.url).origin;
-    const statusUrl = `${origin.replace("/functions/v1/whatsapp-data-deletion", "")}/data-deletion?code=${confirmationCode}`;
-
-    return new Response(JSON.stringify({ url: statusUrl, confirmation_code: confirmationCode }), {
+    return new Response(JSON.stringify({ url: statusUrl.href, confirmation_code: confirmationCode }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

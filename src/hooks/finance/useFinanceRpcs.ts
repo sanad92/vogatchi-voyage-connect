@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { toast } from '@/hooks/use-toast';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
 
 const sb = supabase as any;
 
@@ -126,18 +128,18 @@ export const useRecordCustomerPayment = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (args: {
-      invoice_id?: string | null; amount: number; currency?: string; exchange_rate?: number;
-      method?: string; treasury_account_id?: string | null; payment_date?: string;
+      invoice_id: string | null; amount: number; currency?: string; exchange_rate?: number;
+      method?: string; treasury_account_id: string; payment_date?: string;
       reference?: string | null; notes?: string | null; client_ref?: string | null;
       booking_id?: string | null; customer_id?: string | null;
     }) => {
       const { data, error } = await sb.rpc('record_customer_payment', {
-        _invoice_id: args.invoice_id ?? null,
+        _invoice_id: args.invoice_id,
         _amount: args.amount,
         _currency: args.currency ?? 'EGP',
         _exchange_rate: args.exchange_rate ?? 1,
         _method: args.method ?? 'cash',
-        _treasury_account_id: args.treasury_account_id ?? null,
+        _treasury_account_id: args.treasury_account_id,
         _payment_date: args.payment_date ?? new Date().toISOString().slice(0, 10),
         _reference: args.reference ?? null,
         _notes: args.notes ?? null,
@@ -175,24 +177,37 @@ export const useApproveSupplierPO = () => {
 
 export const useRecordSupplierPayment = () => {
   const qc = useQueryClient();
+  const requests = useRef(new Map<string, { payload: string; id: string }>());
   return useMutation({
     mutationFn: async (args: {
       po_id: string; amount: number; currency?: string; exchange_rate?: number;
       method?: string; treasury_account_id?: string | null; payment_date?: string;
       reference?: string | null; notes?: string | null;
     }) => {
-      const { data, error } = await sb.rpc('record_supplier_payment', {
+      const payload = {
         _po_id: args.po_id, _amount: args.amount,
         _currency: args.currency ?? 'EGP', _exchange_rate: args.exchange_rate ?? 1,
         _method: args.method ?? 'bank_transfer',
         _treasury_account_id: args.treasury_account_id ?? null,
         _payment_date: args.payment_date ?? new Date().toISOString().slice(0, 10),
         _reference: args.reference ?? null, _notes: args.notes ?? null,
+      };
+      const fingerprint = JSON.stringify(payload);
+      const prior = requests.current.get(args.po_id);
+      const request = prior?.payload === fingerprint ? prior : { payload: fingerprint, id: crypto.randomUUID() };
+      requests.current.set(args.po_id, request);
+      const { data, error } = await callUntypedRpc<string>('record_supplier_payout', {
+        ...payload, _request_id: request.id,
       });
       if (error) throw error;
-      return data as string;
+      if (!data) throw new Error('تعذر تأكيد صرف أمر الدفع');
+      return data;
     },
-    onSuccess: () => { qc.invalidateQueries(); toast({ title: 'تم تسجيل دفعة المورد' }); },
+    onSuccess: (_, { po_id }) => {
+      requests.current.delete(po_id);
+      qc.invalidateQueries();
+      toast({ title: 'تم تسجيل دفعة المورد' });
+    },
     onError: (e: any) => toast({ title: 'فشل', description: e.message, variant: 'destructive' }),
   });
 };

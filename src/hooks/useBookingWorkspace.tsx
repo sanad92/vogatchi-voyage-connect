@@ -4,6 +4,8 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useOptimizedAuth } from './useOptimizedAuth';
+import { useOrgId } from './useOrgId';
+import { isRecordId } from './useCustomerContext';
 import { useUpdateOpsTask } from './useOpsCommandCenter';
 
 /**
@@ -84,15 +86,17 @@ const anyClient = supabase as any;
 export const useBookingWorkspace = (bookingId: string | undefined) => {
   const qc = useQueryClient();
   const { user } = useOptimizedAuth();
+  const orgId = useOrgId();
 
   // 1. Core booking
   const bookingQ = useQuery({
-    queryKey: ['workspace-booking', bookingId],
-    enabled: !!bookingId,
+    queryKey: ['workspace-booking', bookingId, orgId],
+    enabled: Boolean(orgId && isRecordId(bookingId)),
     queryFn: async () => {
       const { data, error } = await anyClient
         .from('bookings')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('id', bookingId)
         .maybeSingle();
       if (error) throw error;
@@ -124,6 +128,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
       const { data, error } = await anyClient
         .from('customers')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('id', customerId)
         .maybeSingle();
       if (error) throw error;
@@ -139,6 +144,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
       const { data, error } = await anyClient
         .from('suppliers')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('id', supplierId)
         .maybeSingle();
       if (error) throw error;
@@ -149,7 +155,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
   // 4. Itinerary — hotel / flight / transport / car (linked by booking_id when present)
   const itineraryQ = useQuery({
     queryKey: ['workspace-itinerary', bookingId],
-    enabled: !!bookingId,
+    enabled: !!booking,
     queryFn: async () => {
       const [hotel, flight, transport, car] = await Promise.all([
         anyClient.from('booking_hotel_details').select('*').eq('booking_id', bookingId).maybeSingle(),
@@ -169,11 +175,12 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
   // 5. Invoices + payments
   const invoicesQ = useQuery({
     queryKey: ['workspace-invoices', bookingId],
-    enabled: !!bookingId,
+    enabled: !!booking,
     queryFn: async () => {
       const { data, error } = await anyClient
         .from('invoices')
         .select('*, invoice_items(*)')
+        .eq('organization_id', orgId)
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -183,13 +190,14 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
 
   const paymentsQ = useQuery({
     queryKey: ['workspace-payments', bookingId, customerId],
-    enabled: !!bookingId,
+    enabled: !!booking,
     queryFn: async () => {
       // payment_transactions is subscription/Paymob-only (no booking_id/customer_id),
       // so booking payments come from customer_payments.
       const customerPays = await anyClient
         .from('customer_payments')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: false });
       const rows = ((customerPays.data ?? []) as any[]).map((p) => ({ ...p, source: 'customer_payment' }));
@@ -208,6 +216,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
       const { data } = await anyClient
         .from('whatsapp_conversations')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('customer_id', customerId)
         .order('last_message_at', { ascending: false })
         .limit(1)
@@ -224,6 +233,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
       const { data } = await anyClient
         .from('customer_notes')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -233,11 +243,12 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
 
   const tasksQ = useQuery({
     queryKey: ['workspace-tasks', bookingId],
-    enabled: !!bookingId,
+    enabled: !!booking,
     queryFn: async () => {
       const { data, error } = await anyClient
         .from('booking_tasks')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('booking_id', bookingId)
         .order('due_at', { ascending: true, nullsFirst: false });
       if (error) throw error;
@@ -247,11 +258,12 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
 
   const timelineQ = useQuery({
     queryKey: ['workspace-timeline', bookingId],
-    enabled: !!bookingId,
+    enabled: !!booking,
     queryFn: async () => {
       const { data, error } = await anyClient
         .from('booking_timeline_events')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('booking_id', bookingId)
         .order('occurred_at', { ascending: false })
         .limit(200);
@@ -262,7 +274,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
 
   // 8. Realtime: tasks + timeline
   useEffect(() => {
-    if (!bookingId) return;
+    if (!bookingId || !booking) return;
     const ch = supabase
       .channel(`workspace-${bookingId}`)
       .on(
@@ -284,7 +296,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [bookingId, qc]);
+  }, [bookingId, booking?.id, orgId, qc]);
 
   // 9. Mutations
   const setStage = useMutation({

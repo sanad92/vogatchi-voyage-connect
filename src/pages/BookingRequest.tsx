@@ -9,9 +9,6 @@ const BookingRequest = () => {
       <main className="flex-1 container mx-auto px-4 py-10">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold mb-2 text-center">طلب عرض سعر</h1>
-          <p className="text-muted-foreground text-center mb-8">
-            أرسل تفاصيل رحلتك وسنعود إليك بأفضل عرض خلال 24 ساعة
-          </p>
           <BookingRequestForm />
         </div>
       </main>

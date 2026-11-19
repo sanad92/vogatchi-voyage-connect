@@ -32,7 +32,7 @@ function sanitizeTemplateData(raw: unknown): Record<string, any> {
 const plainSubject = (v: unknown) => String(v ?? "").replace(/[\r\n]+/g, " ").slice(0, 200);
 
 // Types a signed-in member may trigger. Subscription notices are platform-only (service role).
-const MEMBER_EMAIL_TYPES = new Set(["welcome", "booking_confirmation", "invoice", "booking_notification", "travel_reminder"]);
+const MEMBER_EMAIL_TYPES = new Set(["welcome", "customer_registered", "booking_confirmation", "invoice", "booking_notification", "travel_reminder"]);
 const MEMBER_SEND_ROLES = new Set(["owner", "admin", "manager"]);
 
 // Email templates
@@ -72,6 +72,15 @@ function getEmailHtml(type: string, rawData: Record<string, any>): { subject: st
         `),
       };
 
+    case "customer_registered":
+      return {
+        subject: "مرحبًا بك",
+        html: wrapper("مرحبًا بك", `
+          <p>أهلًا ${data.customer_name || "بك"}، تم تسجيل بياناتك لدينا.</p>
+          <p>شكرًا لاختيارك خدماتنا.</p>
+        `),
+      };
+
     case "booking_confirmation":
       return {
         subject: `تأكيد الحجز رقم ${data.booking_reference || ""}`,
@@ -82,7 +91,7 @@ function getEmailHtml(type: string, rawData: Record<string, any>): { subject: st
             <tr><td style="padding:10px;border-bottom:1px solid #e5e7eb;color:#6b7280;">رقم الحجز</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;font-weight:bold;">${data.booking_reference || "-"}</td></tr>
             <tr><td style="padding:10px;border-bottom:1px solid #e5e7eb;color:#6b7280;">نوع الحجز</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;font-weight:bold;">${data.booking_type || "-"}</td></tr>
             <tr><td style="padding:10px;border-bottom:1px solid #e5e7eb;color:#6b7280;">التاريخ</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;font-weight:bold;">${data.date || "-"}</td></tr>
-            <tr><td style="padding:10px;border-bottom:1px solid #e5e7eb;color:#6b7280;">المبلغ</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;font-weight:bold;">${data.amount || "-"} ج.م</td></tr>
+            <tr><td style="padding:10px;border-bottom:1px solid #e5e7eb;color:#6b7280;">المبلغ</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;font-weight:bold;">${data.amount ?? "-"}${data.amount != null && data.currency ? ` ${data.currency}` : ""}</td></tr>
             ${data.hotel_name ? `<tr><td style="padding:10px;border-bottom:1px solid #e5e7eb;color:#6b7280;">الفندق</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;font-weight:bold;">${data.hotel_name}</td></tr>` : ""}
             ${data.destination ? `<tr><td style="padding:10px;border-bottom:1px solid #e5e7eb;color:#6b7280;">الوجهة</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;font-weight:bold;">${data.destination}</td></tr>` : ""}
           </table>

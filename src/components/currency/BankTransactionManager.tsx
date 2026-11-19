@@ -12,7 +12,7 @@ import { CURRENCY_SYMBOLS } from '@/types/currency';
 import { useToast } from '@/hooks/use-toast';
 
 const BankTransactionManager = () => {
-  const { bankAccounts, transactions, addTransaction } = useBankAccounts();
+  const { bankAccounts, transactions, addTransaction, isAddingTransaction } = useBankAccounts();
   const { toast } = useToast();
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [newTransaction, setNewTransaction] = useState({
@@ -25,7 +25,8 @@ const BankTransactionManager = () => {
   });
 
   const handleAddTransaction = async () => {
-    if (!newTransaction.bank_account_id || !newTransaction.amount || !newTransaction.description) {
+    if (!newTransaction.bank_account_id || !Number.isFinite(newTransaction.amount) || newTransaction.amount <= 0
+      || !newTransaction.transaction_date || !newTransaction.description.trim()) {
       toast({
         title: "خطأ في البيانات",
         description: "يرجى ملء جميع الحقول المطلوبة",
@@ -34,7 +35,13 @@ const BankTransactionManager = () => {
       return;
     }
 
-    addTransaction(newTransaction);
+    try {
+      await addTransaction(newTransaction);
+    } catch (error) {
+      const details = error && typeof error === 'object' && 'message' in error ? String(error.message) : undefined;
+      toast({ title: 'تعذّر تسجيل الحركة البنكية', description: details, variant: 'destructive' });
+      return;
+    }
 
     setNewTransaction({
       bank_account_id: '',
@@ -130,7 +137,7 @@ const BankTransactionManager = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleAddTransaction}>إضافة المعاملة</Button>
+              <Button onClick={handleAddTransaction} disabled={isAddingTransaction}>إضافة المعاملة</Button>
               <Button variant="outline" onClick={() => setShowAddTransaction(false)}>إلغاء</Button>
             </div>
           </CardContent>

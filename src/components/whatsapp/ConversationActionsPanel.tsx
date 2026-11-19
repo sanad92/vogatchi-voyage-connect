@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,7 +34,6 @@ export const ConversationActionsPanel = ({ conversation }: Props) => {
   const orgId = useOrgId();
   const queryClient = useQueryClient();
   const customerId: string | undefined = conversation?.customer_id;
-  const phone: string | undefined = conversation?.phone_number;
   const pinnedBookingId: string | undefined = conversation?.pinned_booking_id;
 
   // Recent bookings for this customer
@@ -104,15 +102,7 @@ export const ConversationActionsPanel = ({ conversation }: Props) => {
     },
   });
 
-  const prefill = useMemo(() => {
-    const params = new URLSearchParams();
-    if (customerId) params.set('customer_id', customerId);
-    if (phone) params.set('phone', phone);
-    if (conversation?.id) params.set('conversation_id', conversation.id);
-    return params.toString();
-  }, [customerId, phone, conversation?.id]);
-
-  const q = prefill ? `?${prefill}` : '';
+  const q = customerId ? `?${new URLSearchParams({ customer_id: customerId })}` : '';
 
   return (
     <div className="p-3 space-y-4">
@@ -171,7 +161,7 @@ export const ConversationActionsPanel = ({ conversation }: Props) => {
               variant="outline"
               className="w-full"
               onClick={() =>
-                navigate(`/customers/new?${new URLSearchParams({ phone: phone || '' }).toString()}`)
+                navigate('/customers/new')
               }
             >
               <UserPlus className="h-4 w-4 me-2" /> إنشاء عميل جديد

@@ -68,12 +68,7 @@ export const useCustomerForm = ({
 
       // Fire automation trigger for new customers
       if (!isEditMode && result?.id) {
-        executeTrigger('customer_registered', {
-          customerId: result.id,
-          customerName: cleanedData.name,
-          customerEmail: cleanedData.email,
-          customerPhone: cleanedData.phone,
-        });
+        void executeTrigger(result.id);
       }
 
       // إعادة تعيين النموذج في حالة الإضافة فقط

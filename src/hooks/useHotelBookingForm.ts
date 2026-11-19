@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 interface UseHotelBookingFormProps {
   booking?: HotelBooking | null;
-  onSuccess: () => void;
+  onSuccess: (saved?: { id: string; parentId?: string | null }) => void;
 }
 
 export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormProps) => {

@@ -227,6 +227,9 @@ function SupplierAllotments() {
                   onSuccess: () => { setBookingReference(""); setQuantity(1); },
                 });
               }}>
+                <p className="text-sm text-muted-foreground">
+                  آخر يوم لتخصيص حجز جديد هو {selectedAllotment.release_days ?? 0} يوم قبل تاريخ بدء خدمته.
+                </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label htmlFor="allotment-booking-reference">رقم الحجز</Label>

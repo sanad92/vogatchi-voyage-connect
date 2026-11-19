@@ -9,13 +9,13 @@ export interface InvoiceFilters {
   bookingType?: string;
   dateFrom?: string;
   dateTo?: string;
-  customerId?: string;
+  customerId?: string | null;
 }
 
 export const useInvoicesData = (filters?: InvoiceFilters) => {
   return useQuery({
     queryKey: ['invoices', filters],
-    enabled: filters?.organizationId !== null,
+    enabled: filters?.organizationId !== null && filters?.customerId !== null,
     queryFn: async () => {
       let query = supabase
         .from('invoices')

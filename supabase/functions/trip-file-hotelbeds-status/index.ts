@@ -19,6 +19,7 @@ import {
   parseHotelbedsBookingObservation,
 } from '../_shared/trip-file-hotelbeds.ts';
 import { compareHotelbedsStayDates } from '../_shared/trip-file-hotelbeds-detail.ts';
+import { readBoundedJsonBody } from '../_shared/trip-file-bounded-json.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -26,6 +27,7 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Cache-Control': 'no-store',
 };
+const HOTELBEDS_RESPONSE_MAX_BYTES = 128 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const json = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -179,24 +181,13 @@ Deno.serve(async (request) => {
       redirect: 'error',
       signal: AbortSignal.timeout(8000),
     });
-    const statedSize = Number(response.headers.get('content-length') || '0');
-    if (!response.ok || (statedSize && statedSize > 131_072) ||
-      !(response.headers.get('content-type') || '').includes('json')) {
-      return json({
-        state: 'provider_unavailable',
-        externalProviderVerification: 'not_performed',
-        amendmentExecutionVerified: false,
-      }, 502);
+    const statedSize = Number(response.headers.get('content-length') ?? 0);
+    if (!response.ok || statedSize > HOTELBEDS_RESPONSE_MAX_BYTES ||
+      !(response.headers.get('content-type') ?? '').toLowerCase().includes('json')) {
+      await response.body?.cancel().catch(() => undefined);
+      throw new Error('invalid_hotelbeds_response');
     }
-    const raw = await response.text();
-    if (raw.length > 131_072) {
-      return json({
-        state: 'provider_unavailable',
-        externalProviderVerification: 'not_performed',
-        amendmentExecutionVerified: false,
-      }, 502);
-    }
-    const providerResponse = JSON.parse(raw);
+    const providerResponse = await readBoundedJsonBody(response.body, HOTELBEDS_RESPONSE_MAX_BYTES);
     const observation = parseHotelbedsBookingObservation(
       providerResponse, a.service_reference,
     );

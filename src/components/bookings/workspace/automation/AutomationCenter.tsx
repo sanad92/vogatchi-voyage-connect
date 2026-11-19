@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { useBookingAutomation, STEP_LABELS, type AutomationStep } from '@/hooks/useBookingAutomation';
 
 interface Props {
@@ -28,6 +29,8 @@ const statusBadge = (s: string) => {
 export const AutomationCenter = ({ bookingId }: Props) => {
   const { run, steps, completed, failed, pending, isLoading, runAll, retryStep } = useBookingAutomation(bookingId);
 
+  const { hasPermission, getPermissionScope } = useSupabasePermissions();
+  const mayRun = hasPermission('bookings_view') && hasPermission('bookings_edit') && getPermissionScope('bookings_edit') === 'organization';
   const totalSteps = steps.length || 6;
   const score = run?.completion_score ?? Math.round((completed / totalSteps) * 100);
 
@@ -41,7 +44,7 @@ export const AutomationCenter = ({ bookingId }: Props) => {
               الفواتير، أوامر دفع الموردين، الفاوتشر، والاقتراحات المرتبطة بهذا الحجز
             </p>
           </div>
-          <Button size="sm" onClick={() => runAll.mutate()} disabled={runAll.isPending || !bookingId}>
+          <Button size="sm" onClick={() => runAll.mutate()} disabled={runAll.isPending || !bookingId || !mayRun}>
             <Play className="h-4 w-4 ml-1" /> تشغيل الأتمتة
           </Button>
         </CardHeader>
@@ -64,7 +67,7 @@ export const AutomationCenter = ({ bookingId }: Props) => {
           {!isLoading && steps.length === 0 && (
             <div className="text-center py-8 border rounded-md">
               <p className="text-sm text-muted-foreground mb-3">لم يتم تشغيل الأتمتة بعد لهذا الحجز</p>
-              <Button size="sm" variant="outline" onClick={() => runAll.mutate()} disabled={runAll.isPending}>
+              <Button size="sm" variant="outline" onClick={() => runAll.mutate()} disabled={runAll.isPending || !mayRun}>
                 <Play className="h-4 w-4 ml-1" /> تشغيل الآن
               </Button>
             </div>
@@ -96,7 +99,7 @@ export const AutomationCenter = ({ bookingId }: Props) => {
                       size="sm"
                       variant="outline"
                       onClick={() => retryStep.mutate(s.id)}
-                      disabled={retryStep.isPending}
+                      disabled={retryStep.isPending || !mayRun}
                     >
                       <RefreshCw className="h-3 w-3 ml-1" /> إعادة
                     </Button>

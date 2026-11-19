@@ -22,6 +22,9 @@ assert.match(edge, /HOTELBEDS_VERIFY_ENABLED/, 'feature disabled without explici
 assert.match(edge, /HOTELBEDS_VERIFY_PRODUCTION_ACK/, 'production gate must be explicit');
 assert.match(edge, /redirect:\s*'error'/, 'never follow supplier HTTP redirects');
 assert.match(edge, /method:\s*'GET'/, 'outbound supplier request must be read-only');
+assert.match(edge, /readBoundedJsonBody\(response\.body, HOTELBEDS_RESPONSE_MAX_BYTES\)/,
+  'response size is enforced while streaming regardless of Content-Length');
+assert.doesNotMatch(edge, /response\.(text|json|arrayBuffer)\(/, 'never buffer an unchecked provider response');
 assert.doesNotMatch(edge, /fetch\(.*req\.url/, 'do not let a user choose a supplier URL');
 assert.doesNotMatch(edge, /SUPABASE_SERVICE_ROLE_KEY/, 'this endpoint must not bypass RLS');
 assert.doesNotMatch(edge, /\.insert\(|\.update\(|\.delete\(|\.upsert\(/,

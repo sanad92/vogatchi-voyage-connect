@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useDocuments } from '@/hooks/useDocuments';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -266,7 +267,10 @@ const Documents = () => {
                     <div className="flex items-center gap-2">
                       {doc.sent_via_email && <Badge variant="secondary" className="text-xs gap-1"><Mail className="h-3 w-3" />إيميل</Badge>}
                       {doc.sent_via_whatsapp && <Badge variant="secondary" className="text-xs gap-1"><MessageSquare className="h-3 w-3" />واتساب</Badge>}
-                      {doc.file_path && (
+                      {doc.document_type === 'voucher' && (doc.booking_id
+                        ? <Button asChild variant="outline" size="sm"><Link to={`/bookings/${doc.booking_id}/workspace?tab=documents`}>مستندات الحجز</Link></Button>
+                        : <Badge variant="secondary">فاوتشر مؤرشف بلا حجز مرتبط</Badge>)}
+                      {doc.document_type !== 'voucher' && doc.file_path && (
                         <Button variant="outline" size="sm" onClick={() => downloadDocument(doc.file_path!, `${doc.document_number}.pdf`)} className="gap-1">
                           <Download className="h-3 w-3" />
                           تحميل
@@ -299,7 +303,6 @@ const Documents = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="invoice">فاتورة</SelectItem>
-                    <SelectItem value="voucher">إيصال حجز</SelectItem>
                     <SelectItem value="receipt">إيصال دفع</SelectItem>
                   </SelectContent>
                 </Select>
@@ -329,22 +332,7 @@ const Documents = () => {
               </div>
             </div>
 
-            {form.documentType === 'voucher' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label>الوجهة</Label>
-                  <Input value={form.destination || ''} onChange={e => setForm(p => ({ ...p, destination: e.target.value }))} />
-                </div>
-                <div>
-                  <Label>تاريخ السفر</Label>
-                  <Input type="date" value={form.travelDate || ''} onChange={e => setForm(p => ({ ...p, travelDate: e.target.value }))} />
-                </div>
-                <div>
-                  <Label>الفندق</Label>
-                  <Input value={form.hotelName || ''} onChange={e => setForm(p => ({ ...p, hotelName: e.target.value }))} />
-                </div>
-              </div>
-            )}
+            <p className="text-sm text-muted-foreground">يصدر فاوتشر الحجز من تبويب المستندات داخل الحجز المؤكد.</p>
 
             {/* Items */}
             <div>

@@ -2,7 +2,7 @@
 import React from 'react';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import DataImportExport from '@/components/admin/DataImportExport';
-import EnhancedReportExporter from '@/components/admin/EnhancedReportExporter';
+import ExportCenter from '@/components/export/ExportCenter';
 import OpenHotelBookingImport from '@/components/admin/OpenHotelBookingImport';
 import OpeningPartyBalancePreview from '@/components/admin/OpeningPartyBalancePreview';
 
@@ -34,7 +34,7 @@ const AdminImportExport = () => {
             <OpenHotelBookingImport />
             <OpeningPartyBalancePreview />
           </div>
-          <EnhancedReportExporter />
+          <ExportCenter />
         </div>
       </div>
     </div>

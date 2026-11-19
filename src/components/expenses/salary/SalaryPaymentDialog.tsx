@@ -23,7 +23,7 @@ interface Props {
     status: 'paid';
     payment_date: string;
     payment_method: PaymentMethod;
-    bank_account_id?: string;
+    bank_account_id: string;
   }) => Promise<unknown>;
 }
 
@@ -34,20 +34,20 @@ export default function SalaryPaymentDialog({ salary, employeeName, busy, onClos
   const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   const [method, setMethod] = useState<PaymentMethod | ''>('');
   const [accountId, setAccountId] = useState('');
-  const transfer = method === 'bank_transfer';
+  const treasuryKind = method === 'cash' ? 'cash' : 'bank';
 
   const accounts = useQuery({
-    queryKey: ['salary-payment-accounts', orgId, user?.id, currency],
-    enabled: Boolean(transfer && orgId && user?.id),
+    queryKey: ['salary-payment-accounts', orgId, user?.id, currency, treasuryKind],
+    enabled: Boolean(method && orgId && user?.id),
     queryFn: async () => {
       const { data, error } = await supabase.from('bank_accounts').select('id, account_name, currency')
-        .eq('organization_id', orgId!).eq('is_active', true).eq('treasury_kind', 'bank').order('account_name');
+        .eq('organization_id', orgId!).eq('is_active', true).eq('treasury_kind', treasuryKind).order('account_name');
       if (error) throw error;
       return data.filter(account => (account.currency || 'EGP') === currency);
     },
   });
   const validAccount = accounts.data?.some(account => account.id === accountId);
-  const valid = Boolean(orgId && date && method && (!transfer || (validAccount && !accounts.isError)));
+  const valid = Boolean(orgId && date && method && validAccount && !accounts.isError);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -55,7 +55,7 @@ export default function SalaryPaymentDialog({ salary, employeeName, busy, onClos
     try {
       await onSave({
         salary_id: salary.id, status: 'paid', payment_date: date,
-        payment_method: method, bank_account_id: transfer ? accountId : undefined,
+        payment_method: method, bank_account_id: accountId,
       });
       onClose();
     } catch {
@@ -90,8 +90,8 @@ export default function SalaryPaymentDialog({ salary, employeeName, busy, onClos
             </Select>
           </div>
         </div>
-        {transfer && <div className="space-y-1.5">
-          <Label htmlFor="salary-payment-account">حساب الخزينة</Label>
+        {method && <div className="space-y-1.5">
+          <Label htmlFor="salary-payment-account">{method === 'cash' ? 'الخزنة النقدية' : 'الحساب البنكي'}</Label>
           <Select value={accountId} onValueChange={setAccountId} disabled={busy || !accounts.data?.length || accounts.isError}>
             <SelectTrigger id="salary-payment-account"><SelectValue placeholder="اختر الحساب" /></SelectTrigger>
             <SelectContent>{accounts.data?.map(account =>

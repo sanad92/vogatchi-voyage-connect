@@ -11,8 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Save } from 'lucide-react';
 import {
   useJourney,
-  useUpsertJourney,
-  useSaveJourneySteps,
+  useSaveJourneyDraft,
   useJourneyAnalytics,
   type JourneyStep,
 } from '@/hooks/useMarketingJourneys';
@@ -29,10 +28,10 @@ const STEP_TYPES: { value: JourneyStep['step_type']; label: string }[] = [
 export default function JourneyEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data, isLoading } = useJourney(id);
+  const journeyQuery = useJourney(id);
+  const { data, isLoading } = journeyQuery;
   const analytics = useJourneyAnalytics(id);
-  const upsert = useUpsertJourney();
-  const saveSteps = useSaveJourneySteps();
+  const saveDraft = useSaveJourneyDraft();
 
   const [meta, setMeta] = useState({ name: '', description: '', trigger_event: 'customer.created', goal_event: '', category: 'custom' });
   const [steps, setSteps] = useState<Partial<JourneyStep>[]>([]);
@@ -65,13 +64,20 @@ export default function JourneyEditor() {
     setSteps(next);
   };
 
-  const saveAll = async () => {
-    if (!id) return;
-    await upsert.mutateAsync({ id, ...meta, goal_event: meta.goal_event || null });
-    await saveSteps.mutateAsync({ journeyId: id, steps });
+  const saveAll = () => {
+    if (!id || !data?.journey || data.journey.is_template) return;
+    saveDraft.mutate({ journeyId: id, ...meta, goal_event: meta.goal_event || null, steps });
   };
 
   if (isLoading) return <div className="p-8 text-muted-foreground">جارٍ التحميل...</div>;
+  if (journeyQuery.isError || !data?.journey) {
+    return (
+      <div className="p-8 space-y-3">
+        <p role="alert">تعذّر تحميل الرحلة وخطواتها.</p>
+        <Button variant="outline" onClick={() => void journeyQuery.refetch()}>إعادة المحاولة</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-8 space-y-6">
@@ -85,7 +91,7 @@ export default function JourneyEditor() {
             <p className="text-xs text-muted-foreground">تصميم خطوات الأتمتة</p>
           </div>
         </div>
-        <Button onClick={saveAll} disabled={saveSteps.isPending || upsert.isPending}>
+        <Button onClick={saveAll} disabled={saveDraft.isPending || data.journey.is_template || !meta.name.trim() || !meta.trigger_event.trim()}>
           <Save className="w-4 h-4 me-2" />حفظ
         </Button>
       </header>

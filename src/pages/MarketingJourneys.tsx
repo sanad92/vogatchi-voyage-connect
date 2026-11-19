@@ -2,32 +2,31 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Plus, Copy, Zap, Target, Users } from 'lucide-react';
 import {
   useMarketingJourneys,
   useCloneJourneyTemplate,
-  useToggleJourney,
+  usePauseJourney,
   useUpsertJourney,
 } from '@/hooks/useMarketingJourneys';
 
 export default function MarketingJourneys() {
   const navigate = useNavigate();
-  const { data: journeys = [], isLoading } = useMarketingJourneys();
+  const journeysQuery = useMarketingJourneys();
+  const { data: journeys = [], isLoading } = journeysQuery;
   const clone = useCloneJourneyTemplate();
-  const toggle = useToggleJourney();
+  const pause = usePauseJourney();
   const upsert = useUpsertJourney();
 
   const templates = journeys.filter(j => j.is_template);
   const owned = journeys.filter(j => !j.is_template);
 
-  const createBlank = async () => {
-    const id = await upsert.mutateAsync({
+  const createBlank = () => {
+    upsert.mutate({
       name: 'رحلة جديدة',
       category: 'custom',
       trigger_event: 'customer.created',
-    });
-    navigate(`/marketing/journeys/${id}`);
+    }, { onSuccess: id => navigate(`/marketing/journeys/${id}`) });
   };
 
   return (
@@ -36,10 +35,10 @@ export default function MarketingJourneys() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">أتمتة التسويق</h1>
           <p className="text-sm text-muted-foreground">
-            رحلات آلية للعملاء عبر واتساب والبريد — من الترحيب حتى الولاء
+            صمّم رحلات العملاء واحفظها كمسودات. تشغيل الرحلات تلقائيًا غير متاح حاليًا.
           </p>
         </div>
-        <Button onClick={createBlank} aria-label="إنشاء رحلة جديدة">
+        <Button onClick={createBlank} disabled={upsert.isPending} aria-label="إنشاء رحلة جديدة">
           <Plus className="w-4 h-4 me-2" />
           رحلة جديدة
         </Button>
@@ -49,6 +48,11 @@ export default function MarketingJourneys() {
         <h2 id="active-journeys" className="text-lg font-semibold mb-4">رحلاتك</h2>
         {isLoading ? (
           <p className="text-muted-foreground text-sm">جارٍ التحميل...</p>
+        ) : journeysQuery.isError ? (
+          <div className="space-y-2">
+            <p role="alert">تعذّر تحميل الرحلات.</p>
+            <Button variant="outline" onClick={() => void journeysQuery.refetch()}>إعادة المحاولة</Button>
+          </div>
         ) : owned.length === 0 ? (
           <Card><CardContent className="p-8 text-center text-muted-foreground">
             لا توجد رحلات بعد — انسخ قالبًا من الأسفل أو أنشئ رحلة جديدة
@@ -60,12 +64,12 @@ export default function MarketingJourneys() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-base">{j.name}</CardTitle>
-                    <Switch
-                      checked={j.is_active}
-                      onClick={e => e.stopPropagation()}
-                      onCheckedChange={v => toggle.mutate({ id: j.id, is_active: v })}
-                      aria-label={j.is_active ? 'إيقاف' : 'تفعيل'}
-                    />
+                    {j.is_active ? (
+                      <Button size="sm" variant="outline" disabled={pause.isPending} onClick={event => {
+                        event.stopPropagation();
+                        pause.mutate(j.id);
+                      }}>إيقاف</Button>
+                    ) : <Badge variant="outline">مسودة</Badge>}
                   </div>
                   <div className="flex gap-2 mt-2">
                     <Badge variant="outline" className="text-xs">{j.category}</Badge>

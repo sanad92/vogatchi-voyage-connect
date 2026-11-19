@@ -182,6 +182,9 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
     <div className="space-y-4">
       <Card className="space-y-3 p-4">
         <h2 className="font-semibold">تعديلات وإلغاءات المسافرين</h2>
+        {program.uses_room_inventory && (
+          <p className="text-sm text-muted-foreground">الإجراء المتاح على رصيد الغرف هو الإلغاء، حسب حالة الدفعة وصلاحياتك.</p>
+        )}
         {canManage && !['departed', 'completed', 'cancelled'].includes(program.status) && (
           <div className="flex flex-wrap gap-2">
             {!program.uses_room_inventory && <Button variant="outline" disabled={!amendable.length} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>}

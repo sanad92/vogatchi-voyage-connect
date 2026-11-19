@@ -1,21 +1,41 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
+
+const confirmationFormat = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
 const DataDeletion: React.FC = () => {
   const [params] = useSearchParams();
   const code = params.get('code');
+  const validCode = Boolean(code && confirmationFormat.test(code));
+  const confirmation = useQuery({
+    queryKey: ['meta-deletion-confirmation', code],
+    enabled: validCode,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await callUntypedRpc<boolean>('verify_meta_deletion_confirmation', { _confirmation_code: code });
+      if (error) throw error;
+      return data === true;
+    },
+  });
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <div className="max-w-3xl mx-auto px-6 py-12" dir="rtl">
         <h1 className="text-3xl font-bold mb-4">طلب حذف البيانات</h1>
 
-        {code && (
+        {code && confirmation.isSuccess && confirmation.data ? (
           <div className="mb-6 rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-            تم استلام طلب الحذف الخاص بك. رمز التأكيد:
+            تم تسجيل طلب حذف البيانات. احتفظ بالرمز للاستفسار عن المعالجة.
             <div className="mt-2 font-mono text-xs bg-white p-2 rounded border">{code}</div>
-            سنقوم بمعالجة الطلب خلال 30 يومًا كحد أقصى.
           </div>
+        ) : code && (
+          <p className="mb-6 text-sm" role={confirmation.isError ? 'alert' : 'status'}>
+            {confirmation.isLoading ? 'جارٍ التحقق من الطلب…' : confirmation.isError
+              ? 'تعذّر التحقق من طلب الحذف حاليًا. حاول مرة أخرى أو تواصل معنا بالبريد.'
+              : 'رمز طلب الحذف غير صالح أو غير مسجّل.'}
+          </p>
         )}
 
         <section className="space-y-4 text-sm leading-7">
@@ -32,7 +52,7 @@ const DataDeletion: React.FC = () => {
               مع ذكر معرّف المنظمة ورقم WhatsApp Business. سنؤكد الحذف خلال 7 أيام عمل.
             </li>
             <li>
-              <strong>عبر Meta:</strong> إذا كنت وصلت لهذه الصفحة عبر إعدادات تطبيقات Meta، فطلبك مسجّل تلقائيًا برمز التأكيد أعلاه.
+              <strong>عبر Meta:</strong> استخدم الرابط الذي يقدمه Meta للتحقق من تسجيل طلبك.
             </li>
           </ol>
 
