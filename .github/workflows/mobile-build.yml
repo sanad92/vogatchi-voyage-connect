@@ -1,0 +1,64 @@
+name: Mobile build
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - 'src/lib/browserSessionActivity.ts'
+      - 'src/lib/bookingStatus.ts'
+      - 'src/lib/customerDisplayName.ts'
+      - 'src/lib/authErrorMessage.ts'
+      - 'src/integrations/supabase/types.ts'
+      - '.github/workflows/mobile-build.yml'
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - run: npm ci
+      - run: npm run check
+      - run: npm run android:debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SafarERP-Android-debug
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+  ios:
+    runs-on: macos-26
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npm run native:sync
+      - run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/safar-ios" \
+            CODE_SIGNING_ALLOWED=NO build
+          ditto -c -k --keepParent "$RUNNER_TEMP/safar-ios/Build/Products/Debug-iphonesimulator/App.app" "$RUNNER_TEMP/SafarERP-iOS-simulator.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SafarERP-iOS-simulator
+          path: ${{ runner.temp }}/SafarERP-iOS-simulator.zip
