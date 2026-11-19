@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrgId } from '@/hooks/useOrgId';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Home, XCircle, Loader2, CreditCard } from 'lucide-react';
@@ -10,7 +13,7 @@ import { CheckCircle2, Home, XCircle, Loader2, CreditCard } from 'lucide-react';
  *   ?success=true&txn_response_code=APPROVED&order=...&amount_cents=...
  *   ?success=false&txn_response_code=DECLINED&...
  */
-const PaymentSuccess = () => {
+const LegacyPaymentResult = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -117,6 +120,63 @@ const PaymentSuccess = () => {
       </div>
     </div>
   );
+};
+
+const FlashTestPaymentResult = ({ checkoutId }: { checkoutId: string }) => {
+  const navigate = useNavigate();
+  const orgId = useOrgId();
+  const { user } = useOptimizedAuth();
+  const validId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(checkoutId);
+  const result = useQuery({
+    queryKey: ['paymob-flash-test-result', orgId, user?.id, checkoutId],
+    enabled: validId && !!orgId && !!user?.id,
+    queryFn: async () => {
+      if (!orgId || !user?.id) return null;
+      const { data, error } = await supabase.from('payment_checkout_sessions')
+        .select('status,amount_cents,provider_transaction_id,expires_at')
+        .eq('id', checkoutId).eq('organization_id', orgId).eq('created_by', user.id)
+        .eq('merchant_order_id', `paymob_flash_test_${checkoutId}`)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: ({ state }) => {
+      const checkout = state.data;
+      return checkout?.status === 'pending' && Date.parse(checkout.expires_at) > Date.now() ? 2500 : false;
+    },
+  });
+
+  const confirmed = result.data?.status === 'paid';
+  const pending = result.data?.status === 'pending' && Date.parse(result.data.expires_at) > Date.now();
+  const title = confirmed ? 'تم تأكيد دفعة الاختبار'
+    : result.isLoading || pending ? 'بانتظار تأكيد Paymob'
+    : result.data ? 'لم تكتمل دفعة الاختبار' : 'تعذّر التحقق من دفعة الاختبار';
+
+  return (
+    <div className="px-4 py-8" dir="rtl">
+      <Card className="mx-auto max-w-md">
+        <CardHeader><CardTitle>{title}</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          {confirmed && <p className="text-sm">
+            {(Number(result.data?.amount_cents) / 100).toLocaleString('ar-EG')} ج.م
+            {result.data?.provider_transaction_id && <> · {result.data.provider_transaction_id}</>}
+          </p>}
+          <p className="text-sm text-muted-foreground">دفعة تجريبية لمراجعة ربط Paymob.</p>
+          <div className="flex flex-wrap gap-2">
+            {!confirmed && validId && orgId && user && <Button variant="outline" onClick={() => void result.refetch()} disabled={result.isFetching}>تحديث الحالة</Button>}
+            <Button onClick={() => navigate('/pricing')}>العودة للخطط</Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+const PaymentSuccess = () => {
+  const [params] = useSearchParams();
+  return params.get('paymob_mode') === 'flash_test'
+    ? <FlashTestPaymentResult checkoutId={params.get('checkout') ?? ''} />
+    : <LegacyPaymentResult />;
 };
 
 export default PaymentSuccess;

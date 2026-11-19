@@ -184,9 +184,9 @@ const PaymentPage = () => {
 
       if (error) throw error;
 
-      if (data?.iframe_url) {
-        // Redirect to Paymob payment iframe
-        window.location.href = data.iframe_url;
+      const checkoutUrl = data?.checkout_url || data?.iframe_url;
+      if (checkoutUrl) {
+        window.location.assign(checkoutUrl);
       } else {
         throw new Error('لم يتم استلام رابط الدفع');
       }

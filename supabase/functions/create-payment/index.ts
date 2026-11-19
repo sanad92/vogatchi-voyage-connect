@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { rateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
+import { createFlashTestIntention, flashTestConfig, flashTestReference, FLASH_TEST_REFERENCE_PREFIX, isFlashTestBackend } from "../_shared/paymob-flash-test.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -115,7 +116,9 @@ async function getPaymentKey(
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  if (request.method === "GET") return Response.json({ discounts: true }, { headers: corsHeaders });
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const flashTestBackend = isFlashTestBackend(supabaseUrl);
+  if (request.method === "GET") return Response.json({ discounts: !flashTestBackend }, { headers: corsHeaders });
   if (request.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
@@ -198,18 +201,6 @@ Deno.serve(async (request) => {
       throw new Error("Invalid server-side subscription price");
     }
 
-    const apiKey = Deno.env.get("PAYMOB_API_KEY");
-    const integrationIdRaw = Deno.env.get("PAYMOB_INTEGRATION_ID");
-    const iframeId = Deno.env.get("PAYMOB_IFRAME_ID");
-    const integrationId = Number(integrationIdRaw);
-    if (!apiKey || !iframeId || !Number.isSafeInteger(integrationId) || integrationId<=0) {
-      console.error("Paymob subscription checkout is not configured");
-      return new Response(JSON.stringify({ error: "بوابة الدفع غير مهيأة حاليًا" }), {
-        status: 503,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const { data: profile } = await admin
       .from("profiles")
       .select("full_name,phone")
@@ -248,6 +239,65 @@ Deno.serve(async (request) => {
     const amountCents = preparedCheckout ? Number(preparedCheckout.amount_cents) : planAmountCents;
     if (!Number.isSafeInteger(amountCents) || amountCents < 100) {
       throw new Error("Invalid prepared checkout amount");
+    }
+
+    if (flashTestBackend) {
+      const headers = { ...corsHeaders, "Cache-Control": "no-store" };
+      if (Deno.env.get("PAYMOB_FLASH_TEST_ENABLED") !== "true" ||
+          Deno.env.get("PAYMOB_FLASH_TEST_ORGANIZATION_ID") !== body.organization_id) {
+        return Response.json({ error: "دفع Paymob التجريبي غير متاح لهذه المؤسسة" }, { status: 503, headers });
+      }
+      const config = flashTestConfig(
+        Deno.env.get("PAYMOB_FLASH_TEST_SECRET_KEY"), Deno.env.get("PAYMOB_FLASH_TEST_PUBLIC_KEY"),
+        Deno.env.get("PAYMOB_FLASH_TEST_RETURN_ORIGIN"), supabaseUrl,
+      );
+      if (!config || !Deno.env.get("PAYMOB_FLASH_TEST_HMAC")) {
+        return Response.json({ error: "إعدادات دفع Paymob التجريبية غير مكتملة" }, { status: 503, headers });
+      }
+      if (request.headers.get("Origin") !== config.returnOrigin) {
+        return Response.json({ error: "دفع Paymob التجريبي متاح من موقع الاختبار" }, { status: 403, headers });
+      }
+      if (!preparedCheckout || preparedCheckout.created_by !== user.id ||
+          preparedCheckout.merchant_order_id.startsWith(FLASH_TEST_REFERENCE_PREFIX)) {
+        return Response.json({ error: "ابدأ جلسة دفع تجريبية جديدة" }, { status: 409, headers });
+      }
+
+      const reference = flashTestReference(preparedCheckout.id);
+      const { data: reservation, error: reservationError } = await admin.from("payment_checkout_sessions")
+        .update({ merchant_order_id: reference, updated_at: new Date().toISOString() })
+        .eq("id", preparedCheckout.id).eq("merchant_order_id", preparedCheckout.merchant_order_id)
+        .eq("status", "pending").is("paymob_order_id", null).select("id").maybeSingle();
+      if (reservationError) throw reservationError;
+      if (!reservation) {
+        return Response.json({ error: "الجلسة التجريبية قيد المعالجة. ابدأ جلسة جديدة إذا لزم الأمر" }, { status: 409, headers });
+      }
+
+      const itemName = `Safar ERP (Test) – ${plan.name_ar || plan.name} (${body.billing_cycle})`;
+      const result = await createFlashTestIntention(config, {
+        id: reservation.id, amount: amountCents, itemName, billing: billingData, expiresAt: preparedCheckout.expires_at,
+      });
+      const { data: saved, error: saveError } = await admin.from("payment_checkout_sessions")
+        .update({ paymob_order_id: result.orderId, updated_at: new Date().toISOString() })
+        .eq("id", reservation.id).eq("merchant_order_id", reference)
+        .eq("status", "pending").is("paymob_order_id", null).select("id").maybeSingle();
+      if (saveError || !saved) throw new Error("Test checkout order could not be saved");
+      return Response.json({ success: true, checkout_url: result.checkoutUrl, checkout_id: saved.id, test: true }, { headers });
+    }
+
+    if (preparedCheckout?.merchant_order_id.startsWith(FLASH_TEST_REFERENCE_PREFIX)) {
+      return Response.json({ error: "جلسة الاختبار لا تدعم الدفع العادي" }, { status: 409, headers: corsHeaders });
+    }
+
+    const apiKey = Deno.env.get("PAYMOB_API_KEY");
+    const integrationIdRaw = Deno.env.get("PAYMOB_INTEGRATION_ID");
+    const iframeId = Deno.env.get("PAYMOB_IFRAME_ID");
+    const integrationId = Number(integrationIdRaw);
+    if (!apiKey || !iframeId || !Number.isSafeInteger(integrationId) || integrationId<=0) {
+      console.error("Paymob subscription checkout is not configured");
+      return new Response(JSON.stringify({ error: "بوابة الدفع غير مهيأة حاليًا" }), {
+        status: 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const attempt = crypto.randomUUID().slice(0, 8);

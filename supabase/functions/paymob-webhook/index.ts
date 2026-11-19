@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { crypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
-import { encodeHex } from "https://deno.land/std@0.208.0/encoding/hex.ts";
+import { FLASH_TEST_REFERENCE_PREFIX } from "../_shared/paymob-flash-test.ts";
+import { verifyPaymobHmac } from "../_shared/paymob-signature.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,43 +8,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const HMAC_FIELDS = [
-  "amount_cents", "created_at", "currency", "error_occured",
-  "has_parent_transaction", "id", "integration_id", "is_3d_secure",
-  "is_auth", "is_capture", "is_refunded", "is_standalone_payment",
-  "is_voided", "order.id", "owner", "pending", "source_data.pan",
-  "source_data.sub_type", "source_data.type", "success",
-];
-
 type TransactionStatus = "success" | "voided" | "refunded" | "pending" | "failed";
-
-function getNestedValue(value: Record<string, unknown>, path: string): string {
-  let current: unknown = value;
-  for (const part of path.split(".")) {
-    if (!current || typeof current !== "object") return "";
-    current = (current as Record<string, unknown>)[part];
-  }
-  return String(current ?? "");
-}
-
-async function verifyHmac(
-  payload: Record<string, unknown>,
-  receivedHmac: string,
-  hmacSecret: string,
-): Promise<boolean> {
-  if (!/^[0-9a-f]{128}$/i.test(receivedHmac)) return false;
-  const concatenated = HMAC_FIELDS.map((field) => getNestedValue(payload, field)).join("");
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(hmacSecret),
-    { name: "HMAC", hash: "SHA-512" },
-    false,
-    ["sign"],
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(concatenated));
-  return encodeHex(new Uint8Array(signature)) === receivedHmac.toLowerCase();
-}
 
 function parseTransactionStatus(transaction: Record<string, any>): {
   status: TransactionStatus;
@@ -96,7 +60,7 @@ Deno.serve(async (request) => {
     }
 
     const receivedHmac = new URL(request.url).searchParams.get("hmac") || "";
-    const hmacValid = await verifyHmac(transaction, receivedHmac, hmacSecret);
+    const hmacValid = await verifyPaymobHmac(transaction, receivedHmac, hmacSecret);
     const { status, errorMessage } = parseTransactionStatus(transaction);
     if (!hmacValid) {
       console.warn("Paymob webhook rejected: invalid HMAC");
@@ -113,6 +77,10 @@ Deno.serve(async (request) => {
     const providerTransactionId = String(transaction.id);
     const paymobOrderId = String(transaction.order.id);
     const merchantOrderId = String(transaction.order.merchant_order_id || "");
+
+    if (merchantOrderId.startsWith(FLASH_TEST_REFERENCE_PREFIX)) {
+      return Response.json({ error: "Use the Flash test webhook" }, { status: 400, headers: corsHeaders });
+    }
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
