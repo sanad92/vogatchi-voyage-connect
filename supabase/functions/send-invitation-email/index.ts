@@ -7,7 +7,7 @@ import { OrganizationInviteEmail } from '../_shared/email-templates/organization
 
 const SENDER_DOMAIN = 'notify.safarerp.com'
 const FROM = 'SafarERP <noreply@safarerp.com>'
-const APP_URL = 'https://safarerp.com'
+const DEFAULT_SITE_URL = 'https://safarerp.com'
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const ROLE_LABELS: Record<string, string> = { admin: 'مدير', manager: 'مشرف', agent: 'موظف', viewer: 'مشاهد' }
 
@@ -69,10 +69,22 @@ Deno.serve(async (req) => {
   ])
   const organizationName = org?.name ?? 'SafarERP'
   const inviterName = inviter?.full_name?.trim() || inviter?.email || 'مدير المؤسسة'
-  const acceptUrl = `${APP_URL}/accept-invite?token=${invite.token}`
+  // Keep links on the trusted frontend for this deployment.
+  const siteUrl = Deno.env.get('SITE_URL')?.trim() ?? DEFAULT_SITE_URL
+  let acceptUrl: URL
+  try {
+    acceptUrl = new URL('/accept-invite', siteUrl)
+    if (acceptUrl.protocol !== 'https:' || acceptUrl.username || acceptUrl.password) {
+      throw new Error('SITE_URL must be an HTTPS URL without credentials')
+    }
+    acceptUrl.searchParams.set('token', invite.token)
+  } catch {
+    console.error('Invalid SITE_URL for staff invitation emails')
+    return json({ error: 'تعذر إرسال بريد الدعوة' }, 500)
+  }
 
   const html = '<!DOCTYPE html>' + renderToStaticMarkup(React.createElement(OrganizationInviteEmail, {
-    inviterName, organizationName, roleLabel: ROLE_LABELS[invite.role] ?? 'موظف', acceptUrl,
+    inviterName, organizationName, roleLabel: ROLE_LABELS[invite.role] ?? 'موظف', acceptUrl: acceptUrl.href,
   }))
   const text = htmlToText(html)
   const apiKey = Deno.env.get('LOVABLE_API_KEY')
