@@ -1,5 +1,11 @@
 /** English translations keyed by the Arabic source string. Missing keys fall back to Arabic. */
 export const EN_DICTIONARY: Record<string, string> = {
+  "مقدم العميل": "Customer advance",
+  "سداد الفاتورة": "Applied to invoice",
+  "دفعة مقدمة بدون تخصيص لفاتورة": "Customer advance without an invoice",
+  "اختر فاتورة أو دفعة مقدمة.": "Select an invoice or a customer advance.",
+  "اختر فاتورة أو دفعة مقدمة": "Select an invoice or a customer advance",
+  "تخصيص الدفعة": "Payment allocation",
   "دفعات تحتاج مراجعة": "Payments to review",
   "طابق الدفعة مع الإيصال أو كشف الحساب قبل اعتماد أي تسوية.": "Compare each payment with its receipt or bank statement before approving an adjustment.",
   "تعذّر تحميل الدفعات للمراجعة": "Could not load payments for review",
