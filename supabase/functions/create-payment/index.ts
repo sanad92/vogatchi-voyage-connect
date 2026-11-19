@@ -32,65 +32,32 @@ function sanitizeString(value: unknown, maxLength = 200): string {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
 
-async function getAuthToken(apiKey: string): Promise<string> {
-  const response = await fetch(`${PAYMOB_BASE}/auth/tokens`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ api_key: apiKey }),
-  });
-  if (!response.ok) {
-    console.error("Paymob auth failed", response.status, (await response.text()).slice(0, 500));
-    throw new Error("Paymob authentication failed");
-  }
-  return (await response.json()).token;
-}
+const PAYMOB_CARD_INTEGRATION_FALLBACK = 6017673;
 
-async function createOrder(
-  authToken: string,
+async function createIntention(
+  secretKey: string,
   amountCents: number,
-  merchantOrderId: string,
+  specialReference: string,
   itemName: string,
-): Promise<number> {
-  const response = await fetch(`${PAYMOB_BASE}/ecommerce/orders`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      auth_token: authToken,
-      delivery_needed: false,
-      amount_cents: amountCents,
-      currency: "EGP",
-      merchant_order_id: merchantOrderId,
-      items: [{ name: itemName, amount_cents: amountCents, quantity: 1, description: itemName }],
-    }),
-  });
-  if (!response.ok) {
-    console.error("Paymob order failed", response.status, (await response.text()).slice(0, 500));
-    throw new Error("Paymob order creation failed");
-  }
-  return (await response.json()).id;
-}
-
-async function getPaymentKey(
-  authToken: string,
-  orderId: number,
-  amountCents: number,
-  integrationId: number,
+  integrationIds: number[],
   billingData: BillingData,
   expirationSeconds: number,
-): Promise<string> {
-  const response = await fetch(`${PAYMOB_BASE}/acceptance/payment_keys`, {
+): Promise<{ clientSecret: string; orderId: number }> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const siteUrl = Deno.env.get("SITE_URL") || "https://safarerp.com";
+  const response = await fetch("https://accept.paymob.com/v1/intention/", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: `Token ${secretKey}` },
     body: JSON.stringify({
-      auth_token: authToken,
-      amount_cents: amountCents,
-      expiration: expirationSeconds,
-      order_id: orderId,
+      amount: amountCents,
+      currency: "EGP",
+      payment_methods: integrationIds,
+      items: [{ name: itemName.slice(0, 50), amount: amountCents, description: itemName.slice(0, 255), quantity: 1 }],
       billing_data: {
         first_name: sanitizeString(billingData.first_name) || "N/A",
         last_name: sanitizeString(billingData.last_name) || "N/A",
         email: sanitizeString(billingData.email, 255),
-        phone_number: sanitizeString(billingData.phone_number, 20) || "01000000000",
+        phone_number: sanitizeString(billingData.phone_number, 20) || "+201000000000",
         city: sanitizeString(billingData.city) || "Cairo",
         country: "EG",
         street: "N/A",
@@ -98,19 +65,24 @@ async function getPaymentKey(
         floor: "N/A",
         apartment: "N/A",
         state: "N/A",
-        zip_code: "N/A",
-        shipping_method: "N/A",
-        postal_code: "N/A",
       },
-      currency: "EGP",
-      integration_id: integrationId,
+      special_reference: specialReference,
+      expiration: expirationSeconds,
+      notification_url: `${supabaseUrl}/functions/v1/paymob-webhook`,
+      redirection_url: `${siteUrl}/payment-success`,
     }),
   });
+  const text = await response.text();
   if (!response.ok) {
-    console.error("Paymob payment key failed", response.status, (await response.text()).slice(0, 500));
-    throw new Error("Paymob payment-key creation failed");
+    console.error("Paymob intention failed", response.status, text.slice(0, 500));
+    throw new Error("Paymob intention creation failed");
   }
-  return (await response.json()).token;
+  const data = JSON.parse(text);
+  const orderId = Number(data.intention_order_id);
+  if (!data.client_secret || !Number.isSafeInteger(orderId) || orderId <= 0) {
+    throw new Error("Invalid Paymob intention response");
+  }
+  return { clientSecret: data.client_secret, orderId };
 }
 
 Deno.serve(async (request) => {
@@ -198,11 +170,14 @@ Deno.serve(async (request) => {
       throw new Error("Invalid server-side subscription price");
     }
 
-    const apiKey = Deno.env.get("PAYMOB_API_KEY");
-    const integrationIdRaw = Deno.env.get("PAYMOB_INTEGRATION_ID");
-    const iframeId = Deno.env.get("PAYMOB_IFRAME_ID");
-    const integrationId = Number(integrationIdRaw);
-    if (!apiKey || !iframeId || !Number.isSafeInteger(integrationId) || integrationId<=0) {
+    const secretKey = Deno.env.get("PAYMOB_SECRET_KEY");
+    const publicKey = Deno.env.get("PAYMOB_PUBLIC_KEY");
+    const integrationIds = [
+      Deno.env.get("PAYMOB_INTEGRATION_ID"),
+      Deno.env.get("PAYMOB_WALLET_INTEGRATION_ID"),
+    ].map(Number).filter((id) => Number.isSafeInteger(id) && id > 0);
+    if (integrationIds.length === 0) integrationIds.push(PAYMOB_CARD_INTEGRATION_FALLBACK);
+    if (!secretKey || !publicKey) {
       console.error("Paymob subscription checkout is not configured");
       return new Response(JSON.stringify({ error: "بوابة الدفع غير مهيأة حاليًا" }), {
         status: 503,
@@ -251,23 +226,30 @@ Deno.serve(async (request) => {
     }
 
     const attempt = crypto.randomUUID().slice(0, 8);
-    const merchantOrderId = preparedCheckout?.merchant_order_id ||
-      `org_${body.organization_id}_plan_${plan.id}_${body.billing_cycle}_${attempt}`;
-    const itemName = `Vogantra ${plan.name_ar || plan.name} - ${body.billing_cycle === "yearly" ? "yearly" : "monthly"}`;
+    // Paymob requires a unique special_reference per intention, so retries get a fresh reference.
+    const merchantOrderId = preparedCheckout && !preparedCheckout.paymob_order_id
+      ? preparedCheckout.merchant_order_id
+      : `org_${body.organization_id}_plan_${plan.id}_${body.billing_cycle}_${attempt}`;
+    const itemName = `SafarERP ${plan.name_ar || plan.name} - ${body.billing_cycle === "yearly" ? "yearly" : "monthly"}`;
 
-    const authToken = await getAuthToken(apiKey);
-    const orderId = preparedCheckout?.paymob_order_id
-      ? Number(preparedCheckout.paymob_order_id)
-      : await createOrder(authToken, amountCents, merchantOrderId, itemName);
-    if (!Number.isSafeInteger(orderId) || orderId <= 0) throw new Error("Invalid Paymob order");
-    const checkoutResult = preparedCheckout?.paymob_order_id
-      ? { data: preparedCheckout, error: null }
-      : preparedCheckout
+    const expirationSeconds = preparedCheckout
+      ? Math.min(3600, Math.floor((Date.parse(preparedCheckout.expires_at) - Date.now()) / 1000))
+      : 3600;
+    if (expirationSeconds < 1) throw new Error("Checkout expired");
+
+    const { clientSecret, orderId } = await createIntention(
+      secretKey, amountCents, merchantOrderId, itemName, integrationIds, billingData, expirationSeconds,
+    );
+
+    const checkoutResult = preparedCheckout
       ? await admin
         .from("payment_checkout_sessions")
-        .update({ paymob_order_id: String(orderId), updated_at: new Date().toISOString() })
+        .update({
+          paymob_order_id: String(orderId),
+          merchant_order_id: merchantOrderId,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", preparedCheckout.id)
-        .is("paymob_order_id", null)
         .eq("status", "pending")
         .select("id")
         .single()
@@ -291,12 +273,7 @@ Deno.serve(async (request) => {
       throw new Error("Checkout session could not be saved");
     }
 
-    const expirationSeconds = preparedCheckout
-      ? Math.min(3600, Math.floor((Date.parse(preparedCheckout.expires_at) - Date.now()) / 1000))
-      : 3600;
-    if (expirationSeconds < 1) throw new Error("Checkout expired");
-    const paymentKey = await getPaymentKey(authToken, orderId, amountCents, integrationId, billingData, expirationSeconds);
-    const iframeUrl = `https://accept.paymob.com/api/acceptance/iframes/${encodeURIComponent(iframeId)}?payment_token=${encodeURIComponent(paymentKey)}`;
+    const iframeUrl = `https://accept.paymob.com/unifiedcheckout/?publicKey=${encodeURIComponent(publicKey)}&clientSecret=${encodeURIComponent(clientSecret)}`;
 
     return new Response(JSON.stringify({
       success: true,
