@@ -19,6 +19,22 @@ Verify the normal entry point for the assigned user role. When relevant, check o
 
 Separate observed behavior, passing local tests, and production evidence. Treat a visible setup screen, a matching source commit, a provider test, and a signed mobile release as different milestones.
 
+## Checks by specialty
+
+Choose the checks relevant to the task. A passing repository check is evidence about the tested behavior. It does not establish that a named agent, a live provider, or an end-to-end user journey was tested.
+
+| Area | Practical verification |
+| --- | --- |
+| Sales, quotes, and bookings | Trace customer, terms, dates, and pricing into the booking and its normal entry point. Start with `node scripts/verify-atomic-quote-ui.mjs` or `node scripts/verify-trip-file-integrated.mjs` as applicable. |
+| Treasury, accounting, and finance review | Calculate expected amounts before the test and compare invoice, ledger, cash or bank, and wallet effects. Use the local `verify-payment-acceptance.mjs`, `verify-treasury-transfers.mjs`, and `verify-financial-formulas.mjs` checks under `scripts/` as applicable. |
+| Hajj and Umrah | Exercise the inventory mode in scope with known seat and room counts. Use `node scripts/verify-pilgrimage-availability-bookings.mjs` and the separate rooming or concurrency fixtures when relevant. |
+| Identity, organization, and HR | Verify allowed and denied actions with isolated roles and organizations. Start with `node scripts/verify-tenant-isolation.mjs` or `node scripts/verify-organization-roles-and-hr.mjs`. Authenticated staging acceptance requires test accounts with the relevant roles. |
+| Messaging, providers, and billing | Use isolated fixtures from `scripts/` such as `verify-business-email.mjs`, `verify-whatsapp-queue.mjs`, `test-company-api-connections.mjs`, or `verify-platform-paymob-actions.mjs`. Mark provider delivery, callbacks, or e-invoice acceptance as separately verified only after the applicable test environment confirms them. |
+| Frontend, documents, reports, and QA | Use an affected route and realistic fixtures in Arabic and English. Check loading and error states, the rendered output and totals, and that private fields stay scoped to the intended role. Navigation regression checks are in `scripts/verify-module-navigation.mjs`. |
+| Mobile and release | Verify the current Git ref and build for the target runtime. Distinguish a web build, simulator, signed app, device installation or upgrade, and actual push delivery. Check build infrastructure, credentials, and device access before promising acceptance. |
+
+For a new or unproven assignment, record the expected result, the evidence the agent returns, and any missing environment or access. Match the review to the risk and keep tests scoped to the work.
+
 ## Release context
 
 The baseline discussed on 2026-11-19 is a dependable first release for travel agencies. Priority workstreams are reliable financial posting and reporting, tenant access and onboarding, complete booking and communication handoffs, and repeatable build and release checks. Consult the current issue or requested outcome before selecting work. Existing work can be found in [open pull requests](https://github.com/sanad92/vogatchi-voyage-connect/pulls), including the scopes for [bank reconciliation checks](https://github.com/sanad92/vogatchi-voyage-connect/pull/121), [collection allocation](https://github.com/sanad92/vogatchi-voyage-connect/pull/122), [staff invitation links](https://github.com/sanad92/vogatchi-voyage-connect/pull/123), and the [mobile workstream](https://github.com/sanad92/vogatchi-voyage-connect/pull/111). Check their current states before reporting or starting duplicate work. Preserve explicitly deferred items in the current plan.
