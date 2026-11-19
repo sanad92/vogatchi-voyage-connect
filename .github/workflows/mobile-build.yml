@@ -46,6 +46,47 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run android:debug
+      - name: Verify APK signature
+        run: |
+          apk="android/app/build/outputs/apk/debug/app-debug.apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
+      - name: Install and launch APK on Android 16
+        run: |
+          set -euo pipefail
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          sdk_tools="$ANDROID_HOME/cmdline-tools/latest/bin"
+          system_image="system-images;android-36;google_apis;x86_64"
+          apk="android/app/build/outputs/apk/debug/app-debug.apk"
+
+          sudo chown "$USER" /dev/kvm
+          "$sdk_tools/sdkmanager" --sdk_root="$ANDROID_HOME" 'emulator' "$system_image"
+          printf 'no\n' | "$sdk_tools/avdmanager" create avd --name safar_android_36 --package "$system_image"
+
+          emulator_log="$RUNNER_TEMP/safar-emulator.log"
+          "$ANDROID_HOME/emulator/emulator" -avd safar_android_36 -port 5554 \
+            -no-window -no-audio -no-boot-anim -no-snapshot -gpu software >"$emulator_log" 2>&1 &
+          emulator_pid=$!
+          trap 'kill "$emulator_pid" 2>/dev/null || true' EXIT
+          export ANDROID_SERIAL=emulator-5554
+
+          if ! timeout 5m bash -e -c '
+            adb wait-for-device
+            until [ "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 2; done
+          '; then
+            tail -n 120 "$emulator_log"
+            exit 1
+          fi
+
+          adb shell input keyevent 82
+          adb install --no-streaming "$apk"
+          launch_log="$RUNNER_TEMP/safar-launch.log"
+          adb shell am start -W -n com.safarerp.mobile/.MainActivity | tee "$launch_log"
+          grep -F 'Status: ok' "$launch_log"
+          sleep 2
+          if ! adb shell pidof com.safarerp.mobile; then
+            adb logcat -d -b crash
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: SafarERP-Android-debug
