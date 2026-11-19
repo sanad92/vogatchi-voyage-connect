@@ -1,5 +1,14 @@
 /** English translations keyed by the Arabic source string. Missing keys fall back to Arabic. */
 export const EN_DICTIONARY: Record<string, string> = {
+  "دفعات تحتاج مراجعة": "Payments to review",
+  "طابق الدفعة مع الإيصال أو كشف الحساب قبل اعتماد أي تسوية.": "Compare each payment with its receipt or bank statement before approving an adjustment.",
+  "تعذّر تحميل الدفعات للمراجعة": "Could not load payments for review",
+  "لا توجد دفعات تحتاج مراجعة في هذه الصفحة.": "There are no payments to review on this page.",
+  "مرجع الدفعة": "Payment reference",
+  "الحجز / الفاتورة": "Booking / invoice",
+  "سبب المراجعة": "Reason for review",
+  "حساب الاستلام غير محدد": "Receiving account missing",
+  "الإيداع يحتاج مطابقة": "Deposit needs verification",
   "جرد الخزنة": "Cash count",
   "تسجيل جرد": "Record a count",
   "تسجيل جرد الخزنة": "Record cash count",
