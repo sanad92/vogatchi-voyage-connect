@@ -23,8 +23,8 @@ export const FinancialsTab = ({ workspace }: Props) => {
     const remaining = Number(invoice.remaining_amount ?? (
       Number(invoice.final_amount ?? invoice.total_amount ?? 0) - Number(invoice.total_paid_amount ?? 0)
     ));
-    const status = String(invoice.status ?? '').toLowerCase();
-    if (['draft', 'void', 'cancelled', 'canceled'].includes(status) || remaining <= 0
+    const status = String(invoice.status ?? 'draft').toLowerCase();
+    if (['draft', 'void', 'cancelled', 'canceled', 'paid'].includes(status) || remaining <= 0
       || (invoice.currency ?? 'EGP') !== f.currency || !Number.isFinite(remaining)) return [];
     return [{ id: String(invoice.id), invoice_number: String(invoice.invoice_number ?? ''), remaining }];
   });
