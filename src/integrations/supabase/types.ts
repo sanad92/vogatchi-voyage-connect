@@ -8470,6 +8470,12 @@ export type Database = {
           },
         ]
       }
+      mobile_push_devices: {
+        Row: { token: string; user_id: string; auth_session_id: string; registered_at: string }
+        Insert: { token: string; user_id: string; auth_session_id?: string; registered_at?: string }
+        Update: { token?: string; user_id?: string; auth_session_id?: string; registered_at?: string }
+        Relationships: []
+      }
       notifications: {
         Row: {
           action_url: string | null

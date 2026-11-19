@@ -25,9 +25,18 @@ if (androidUpdateManifestUrl && (androidUpdateManifestUrl.protocol !== 'https:' 
   androidUpdateManifestUrl.username || androidUpdateManifestUrl.password)) {
   throw new Error('Use an HTTPS Android update manifest URL without embedded credentials.');
 }
+const firebaseAndroid = await readFile(new URL('../android/app/google-services.json', import.meta.url), 'utf8')
+  .then(JSON.parse).catch(error => {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  });
+if (firebaseAndroid && !firebaseAndroid.client?.some(
+  client => client.client_info?.android_client_info?.package_name === 'com.safarerp.mobile',
+)) throw new Error('The Firebase Android configuration must include com.safarerp.mobile.');
 await writeFile(new URL('../src/runtime.generated.ts', import.meta.url),
   'export const runtime = ' + JSON.stringify({
     supabaseUrl: url.origin,
     supabaseKey: key,
     androidUpdateManifestUrl: androidUpdateManifestUrl?.href ?? null,
+    androidPushEnabled: Boolean(firebaseAndroid),
   }, null, 2) + ';\n');

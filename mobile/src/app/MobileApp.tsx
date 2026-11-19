@@ -16,6 +16,8 @@ import safarMark from '../assets/safar-mark.webp';
 import { endMobileSession, erp, listOrganizations } from './erp';
 import { BookingsScreen, CustomersScreen, OverviewScreen, RequestError } from './Records';
 import { AndroidUpdateNotice } from './AndroidUpdateNotice';
+import { useAndroidTaskPush } from './taskPush';
+import { TaskPushSheet } from './TaskPushSheet';
 
 type Section = 'overview' | 'bookings' | 'customers' | 'account';
 type WebPath = '/forgot-password' | '/login';
@@ -43,6 +45,10 @@ export function MobileApp() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [taskNoticeId, setTaskNoticeId] = useState<string | null>(null);
+  const openTask = useCallback((id: string) => setTaskNoticeId(id), []);
+  const push = useAndroidTaskPush(session, openTask);
+  const detachTaskPush = push.detach;
   const signingOut = useRef(false);
   const sessionKey = session && getBrowserSessionActivityKey(session.access_token);
 
@@ -68,13 +74,15 @@ export function MobileApp() {
     setError('');
     setNotice(idle ? 'انتهت الجلسة بسبب عدم الاستخدام. سجّل الدخول للمتابعة.' : '');
     if (sessionKey) closeBrowserSessionActivity(sessionKey);
+    setTaskNoticeId(null);
     setSession(null);
 
+    await detachTaskPush();
     const ended = await endMobileSession();
     if (!idle && !ended) setNotice('تم إغلاق الحساب على هذا الجهاز.');
     signingOut.current = false;
     setBusy(false);
-  }, [sessionKey]);
+  }, [sessionKey, detachTaskPush]);
 
   useEffect(() => {
     if (!sessionKey) return;
@@ -125,6 +133,7 @@ export function MobileApp() {
   if (session) {
     return (
       <Workspace key={sessionKey || session.user.id} user={session.user} notice={notice}
+        push={push} taskNoticeId={taskNoticeId} closeTask={() => setTaskNoticeId(null)} openTask={openTask}
         signOut={() => void signOut(false)} openWeb={() => void openWeb('/login')} />
     );
   }
@@ -158,6 +167,10 @@ interface WorkspaceProps {
   notice: string;
   signOut: () => void;
   openWeb: () => void;
+  push: ReturnType<typeof useAndroidTaskPush>;
+  taskNoticeId: string | null;
+  closeTask: () => void;
+  openTask: (id: string) => void;
 }
 
 function Workspace(props: WorkspaceProps) {
@@ -165,7 +178,7 @@ function Workspace(props: WorkspaceProps) {
   return <QueryClientProvider client={queryClient}><WorkspaceContent {...props} /></QueryClientProvider>;
 }
 
-function WorkspaceContent({ user, notice, signOut, openWeb }: WorkspaceProps) {
+function WorkspaceContent({ user, notice, signOut, openWeb, push, taskNoticeId, closeTask, openTask }: WorkspaceProps) {
   const [section, setSection] = useState<Section>('overview');
   const [selectedOrganizationId, setOrganizationId] = useState('');
   const memberships = useQuery({
@@ -201,6 +214,15 @@ function WorkspaceContent({ user, notice, signOut, openWeb }: WorkspaceProps) {
 
       <main className="content">
         <AndroidUpdateNotice />
+        {push.messageId && (
+          <aside className="notice" aria-label="مهمة جديدة">
+            <p>تم إسناد مهمة إليك.</p>
+            <button type="button" className="link-button" onClick={() => {
+              if (push.messageId) openTask(push.messageId);
+              push.dismiss();
+            }}>فتح المهمة</button>
+          </aside>
+        )}
         {notice && <p className="notice" role="status">{notice}</p>}
         {section === 'account' ? (
           <>
@@ -213,9 +235,17 @@ function WorkspaceContent({ user, notice, signOut, openWeb }: WorkspaceProps) {
               </div>
             </section>
             <section className="panel account-actions" aria-label="خيارات الحساب">
+              {push.supported && (
+                <button type="button" onClick={push.enable} disabled={push.state === 'pending' || push.state === 'active'}>
+                  <span>{push.state === 'active' ? 'إشعارات المهام مفعّلة' :
+                    push.state === 'pending' ? 'جارٍ تفعيل الإشعارات…' : 'تفعيل إشعارات المهام'}</span>
+                </button>
+              )}
               <button type="button" onClick={openWeb}><span>فتح نسخة الويب</span><ExternalLink aria-hidden="true" /></button>
               <button type="button" className="danger" onClick={signOut}>تسجيل الخروج</button>
             </section>
+            {push.state === 'blocked' && <p className="notice" role="status">اسمح لإشعارات Safar ERP من إعدادات أندرويد.</p>}
+            {push.state === 'error' && <p className="notice error" role="alert">تعذّر تفعيل إشعارات المهام. حاول مرة أخرى.</p>}
           </>
         ) : memberships.isPending ? (
           <p className="panel state" role="status">جارٍ تحميل مؤسساتك…</p>
@@ -244,6 +274,7 @@ function WorkspaceContent({ user, notice, signOut, openWeb }: WorkspaceProps) {
           </button>
         ))}
       </nav>
+      {taskNoticeId && <TaskPushSheet id={taskNoticeId} userId={user.id} close={closeTask} />}
     </div>
   );
 }
