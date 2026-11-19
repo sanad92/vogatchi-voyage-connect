@@ -55,6 +55,10 @@ jobs:
           set -euo pipefail
           export PATH="$ANDROID_HOME/platform-tools:$PATH"
           sdk_tools="$ANDROID_HOME/cmdline-tools/latest/bin"
+          export ANDROID_USER_HOME="$RUNNER_TEMP/safar-android-user"
+          export ANDROID_EMULATOR_HOME="$ANDROID_USER_HOME"
+          export ANDROID_AVD_HOME="$ANDROID_USER_HOME/avd"
+          mkdir -p "$ANDROID_AVD_HOME"
           system_image="system-images;android-36;google_apis;x86_64"
           apk="android/app/build/outputs/apk/debug/app-debug.apk"
 
@@ -62,6 +66,8 @@ jobs:
           "$sdk_tools/sdkmanager" --sdk_root="$ANDROID_HOME" 'emulator' "$system_image"
           printf 'no\n' | "$sdk_tools/avdmanager" create avd --name safar_android_36 --package "$system_image"
 
+          "$ANDROID_HOME/emulator/emulator" -list-avds | grep -Fx safar_android_36
+          adb start-server
           emulator_log="$RUNNER_TEMP/safar-emulator.log"
           "$ANDROID_HOME/emulator/emulator" -avd safar_android_36 -port 5554 \
             -no-window -no-audio -no-boot-anim -no-snapshot -gpu software >"$emulator_log" 2>&1 &
