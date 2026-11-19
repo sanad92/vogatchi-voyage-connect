@@ -18,6 +18,7 @@ const ViewExpenseTransactionDialog = ({ transaction, open, onOpenChange }: ViewE
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending': return <Badge className="bg-yellow-100 text-yellow-800">في الانتظار</Badge>;
+      case 'paid': return <Badge className="bg-green-100 text-green-800">مدفوعة</Badge>;
       case 'approved': return <Badge className="bg-green-100 text-green-800">معتمدة</Badge>;
       case 'rejected': return <Badge className="bg-red-100 text-red-800">مرفوضة</Badge>;
       default: return <Badge variant="secondary">{status}</Badge>;

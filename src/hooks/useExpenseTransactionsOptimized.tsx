@@ -96,7 +96,7 @@ export const useExpenseTransactionsOptimized = (
     return {
       totalTransactions: transactions.length,
       pendingTransactions: transactions.filter(t => t.status === 'pending').length,
-      approvedTransactions: transactions.filter(t => t.status === 'approved').length,
+      approvedTransactions: transactions.filter(t => t.status === 'approved' || t.status === 'paid').length,
       rejectedTransactions: transactions.filter(t => t.status === 'rejected').length,
       totalAmountThisMonth: transactions.filter(t => { const d = new Date(t.transaction_date); return d.getMonth() === currentMonth && d.getFullYear() === currentYear; }).reduce((sum, t) => sum + t.amount, 0),
       pendingAmount: transactions.filter(t => t.status === 'pending').reduce((sum, t) => sum + t.amount, 0)

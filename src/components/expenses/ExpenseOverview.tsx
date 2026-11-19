@@ -61,7 +61,7 @@ const ExpenseOverview = () => {
     // المصروفات العامة (المعتمدة فقط)
     if (expenseTransactions) {
       for (const transaction of expenseTransactions) {
-        if (transaction.status !== 'approved') continue;
+        if (transaction.status !== 'approved' && transaction.status !== 'paid') continue;
         const transactionDate = new Date(transaction.transaction_date);
         if (!inRange(transactionDate)) continue;
         if (transaction.currency && transaction.currency !== 'EGP') {

@@ -1,5 +1,18 @@
 /** English translations keyed by the Arabic source string. Missing keys fall back to Arabic. */
 export const EN_DICTIONARY: Record<string, string> = {
+  "اختر حساب الاستلام": "Select the receiving account",
+  "اختر حساب الاستلام بنفس عملة الدفعة.": "Select a receiving account in the payment currency.",
+  "لا يوجد حساب متاح لعملة الدفعة وطريقة الدفع.": "No account is available for this currency and payment method.",
+  "صرف المصروف": "Pay expense",
+  "حساب الصرف": "Pay from",
+  "اختر حساب الصرف": "Select the payment account",
+  "اختر حساب الصرف وتاريخ السداد.": "Select the payment account and date.",
+  "رصيد الخزنة غير كافٍ.": "The cash account has insufficient funds.",
+  "تعذّر تأكيد صرف المصروف.": "Could not confirm the expense payment.",
+  "تم تسجيل صرف المصروف": "Expense payment recorded",
+  "تعذّر صرف المصروف": "Could not pay expense",
+  "لا يوجد حساب متاح لعملة المصروف وطريقة الدفع.": "No account is available for the expense currency and payment method.",
+  "مدفوعة": "Paid",
   "تم تأكيد الحجز من حصة البرنامج وتسجيل المسافرين": "Booking confirmed against the program allotment and travelers registered",
   "ابحث في رصيد مقاعد برامجك واحجز من حصة البرنامج.": "Search your programs for available seats and book against their allotment.",
   "فئة الغرفة تحدد سعر الفرد. التسكين من صفحة البرنامج.": "The room category determines the price per person. Assign rooms from the program page.",

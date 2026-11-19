@@ -74,7 +74,7 @@ export const useFinancialReportsImproved = (startDate?: string, endDate?: string
       let query = supabase
         .from('expense_transactions')
         .select(`amount, currency, transaction_date, category:expense_categories(name, name_ar)`)
-        .eq('status', 'approved');
+        .in('status', ['approved', 'paid']);
 
       if (startDate) query = query.gte('transaction_date', startDate);
       if (endDate) query = query.lte('transaction_date', endDate);
