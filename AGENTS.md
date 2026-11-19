@@ -10,3 +10,10 @@
 - Privileged RPC denial predicates coalesce missing organization roles to an empty value, and membership identity is immutable. Why: SQL NULL must deny access, and memberships must never move between tenants or users.
 - Staff invitation emails are rendered and queued by the send-invitation-email function after the invitation RPC; the database never builds or queues email. Why: keeps email sending convertible to managed delivery.
 - Subscription checkout uses Paymob Unified Checkout (Intention API with secret key, card + wallet integration IDs from secrets); the legacy iframe flow is retired. Why: Paymob no longer supports the legacy flow and it breaks 3DS.
+
+## Development agent workflow
+
+- The main Codex agent leads the task and owns the final diff, verification, and report. For cross-module work, or changes to bookings, money flows, tenant access, or authentication, delegate any independent work to the relevant project subagents as part of the task. Handle small, localized changes directly. Subagents carry out their assignments without delegating again.
+- Route UI and client changes to `safar_frontend`, and server, data, and permissions changes to `safar_backend`. Give implementers clear acceptance criteria and non-overlapping file ownership when they edit in parallel. Keep dependent edits sequential and check the combined diff before verification.
+- Use `safar_qa` for independent verification of behavior-changing diffs. Also use `safar_finance_review` when changes affect prices, invoices, collections, supplier payments, refunds, balances, or accounting. These reviewers report findings and evidence. The lead assigns any fixes and reruns the affected checks.
+- Give each reviewer the relevant diff, expected behavior, and available test environment. Use the repository's existing checks and fixtures. Include the roles and organization boundaries involved, the checks actually run, and any checks still pending in the final report. If delegation is unavailable, carry out the applicable checks directly and record that in the report.
