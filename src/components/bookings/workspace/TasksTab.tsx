@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Check, ListChecks, StickyNote, Plus, AlertTriangle, Clock, Calendar, CheckCircle2 } from 'lucide-react';
+import { Check, ListChecks, StickyNote, Plus, AlertTriangle, Clock, Calendar, CheckCircle2, type LucideIcon } from 'lucide-react';
 import type { Workspace } from './types';
 import { isBookingTaskCompleted, isBookingTaskOpen, type BookingTask } from '@/hooks/useBookingWorkspace';
+import { useOrgMembers } from '@/hooks/useOrgMembers';
 
 interface Props {
   workspace: Workspace;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 type Bucket = 'overdue' | 'today' | 'upcoming' | 'completed';
+type CustomerNote = { id: string; content?: string; note?: string; created_at: string };
 
 const priorityTone: Record<string, string> = {
   urgent: 'bg-destructive text-destructive-foreground',
@@ -23,7 +25,7 @@ const priorityTone: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
 };
 
-const bucketMeta: Record<Bucket, { label: string; icon: any; toneClass: string }> = {
+const bucketMeta: Record<Bucket, { label: string; icon: LucideIcon; toneClass: string }> = {
   overdue: { label: 'متأخرة', icon: AlertTriangle, toneClass: 'text-destructive' },
   today: { label: 'اليوم', icon: Clock, toneClass: 'text-amber-600' },
   upcoming: { label: 'قادمة', icon: Calendar, toneClass: 'text-primary' },
@@ -35,10 +37,14 @@ export const TasksTab = ({ workspace, highlightedTaskId }: Props) => {
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<BookingTask['priority']>('normal');
   const [dueAt, setDueAt] = useState('');
+  const [assigneeId, setAssigneeId] = useState('unassigned');
   const [saving, setSaving] = useState(false);
+  const { members, isLoading: membersLoading, isError: membersError } = useOrgMembers(workspace.booking?.organization_id ?? null);
+  const assignee = members.find(member => member.user_id === assigneeId);
+  const assigneeUnavailable = assigneeId !== 'unassigned' && !assignee;
 
   const submit = async () => {
-    if (!title.trim()) return;
+    if (!title.trim() || saving || assigneeUnavailable) return;
     setSaving(true);
     try {
       await workspace.addTask({
@@ -46,11 +52,15 @@ export const TasksTab = ({ workspace, highlightedTaskId }: Props) => {
         description: description.trim() || null,
         priority,
         due_at: dueAt ? new Date(dueAt).toISOString() : null,
+        assignee_id: assignee?.user_id ?? null,
       });
       setTitle('');
       setDescription('');
       setDueAt('');
       setPriority('normal');
+      setAssigneeId('unassigned');
+    } catch {
+      // The workspace reports the save error. Keep the draft available for retry.
     } finally {
       setSaving(false);
     }
@@ -102,10 +112,25 @@ export const TasksTab = ({ workspace, highlightedTaskId }: Props) => {
                   </SelectContent>
                 </Select>
                 <Input type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} className="w-52 h-9" />
-                <Button size="sm" onClick={submit} disabled={!title.trim() || saving}>
+                <Select value={assigneeUnavailable ? '' : assigneeId} onValueChange={setAssigneeId} disabled={membersLoading || saving}>
+                  <SelectTrigger aria-label="إسناد المهمة إلى موظف" className="w-52 h-9">
+                    <SelectValue placeholder="اختر الموظف" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">بدون إسناد</SelectItem>
+                    {members.map(member => (
+                      <SelectItem key={member.user_id} value={member.user_id}>
+                        {member.profile?.full_name?.trim() || member.profile?.email || 'موظف'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" onClick={submit} disabled={!title.trim() || saving || assigneeUnavailable}>
                   <Plus className="h-4 w-4 ml-1" /> إضافة
                 </Button>
               </div>
+              {membersError && <p role="status" className="text-sm text-muted-foreground">تعذّر تحميل موظفي المؤسسة.</p>}
+              {assigneeUnavailable && <p role="status" className="text-sm text-muted-foreground">اختر موظفًا متاحًا أو احفظ المهمة بدون إسناد.</p>}
             </div>
           </CardContent>
         </Card>
@@ -132,7 +157,7 @@ export const TasksTab = ({ workspace, highlightedTaskId }: Props) => {
             <p className="text-sm text-muted-foreground">لا توجد ملاحظات.</p>
           ) : (
             <div className="space-y-2">
-              {workspace.notes.slice(0, 20).map((n: any) => (
+              {workspace.notes.slice(0, 20).map((n: CustomerNote) => (
                 <div key={n.id} className="rounded-md border p-2 text-sm">
                   <p>{n.content || n.note}</p>
                   <p className="text-xs text-muted-foreground mt-1">

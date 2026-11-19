@@ -19,12 +19,13 @@ export interface OrgMember {
   } | null;
 }
 
-export const useOrgMembers = () => {
-  const orgId = useOrgId();
+export const useOrgMembers = (organizationId?: string | null) => {
+  const activeOrgId = useOrgId();
+  const orgId = organizationId === undefined ? activeOrgId : organizationId;
   const { user } = useOptimizedAuth();
   const queryClient = useQueryClient();
 
-  const { data: members = [], isLoading } = useQuery({
+  const { data: members = [], isLoading, isError } = useQuery({
     queryKey: ['org-members', orgId],
     queryFn: async () => {
       if (!orgId) return [];
@@ -100,6 +101,7 @@ export const useOrgMembers = () => {
   return {
     members,
     isLoading,
+    isError,
     updateRole,
     removeMember,
     currentUserRole: currentUserMembership?.role || null,

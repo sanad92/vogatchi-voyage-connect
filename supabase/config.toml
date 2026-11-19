@@ -7,6 +7,8 @@ project_id = "gvozalurfthzxpuasplo"
     verify_jwt = true
   [functions.create-payment]
     verify_jwt = true
+  [functions.mobile-task-push]
+    verify_jwt = false
   [functions.paymob-webhook]
     verify_jwt = false
   [functions.platform-paymob-operations]

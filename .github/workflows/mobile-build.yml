@@ -1,0 +1,142 @@
+name: Mobile build
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - 'src/lib/browserSessionActivity.ts'
+      - 'src/lib/bookingStatus.ts'
+      - 'src/lib/customerDisplayName.ts'
+      - 'src/lib/authErrorMessage.ts'
+      - 'src/integrations/supabase/types.ts'
+      - '.github/workflows/mobile-build.yml'
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Android SDK 36
+        run: |
+          sdk="$RUNNER_TEMP/safar-android-sdk"
+          cli="$RUNNER_TEMP/android-cli.zip"
+          mkdir -p "$sdk/cmdline-tools"
+          curl --fail --location --retry 3 -o "$cli" https://dl.google.com/android/repository/commandlinetools-linux-15859902_latest.zip
+          printf '4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583  %s\n' "$cli" | sha256sum -c -
+          unzip -q "$cli" -d "$sdk/cmdline-tools"
+          mv "$sdk/cmdline-tools/cmdline-tools" "$sdk/cmdline-tools/latest"
+          sdkmanager="$sdk/cmdline-tools/latest/bin/sdkmanager"
+          printf 'y\n%.0s' {1..20} | "$sdkmanager" --sdk_root="$sdk" --licenses >/dev/null
+          "$sdkmanager" --sdk_root="$sdk" 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$sdk" "$sdk" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npm run check
+      - run: npm run android:debug
+      - name: Verify APK signature
+        run: |
+          apk="android/app/build/outputs/apk/debug/app-debug.apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
+      - name: Install and launch APK on Android 16
+        run: |
+          set -euo pipefail
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          sdk_tools="$ANDROID_HOME/cmdline-tools/latest/bin"
+          export ANDROID_USER_HOME="$RUNNER_TEMP/safar-android-user"
+          export ANDROID_EMULATOR_HOME="$ANDROID_USER_HOME"
+          export ANDROID_AVD_HOME="$ANDROID_USER_HOME/avd"
+          mkdir -p "$ANDROID_AVD_HOME"
+          system_image="system-images;android-36;google_apis;x86_64"
+          apk="android/app/build/outputs/apk/debug/app-debug.apk"
+
+          sudo chown "$USER" /dev/kvm
+          "$sdk_tools/sdkmanager" --sdk_root="$ANDROID_HOME" 'emulator' "$system_image"
+          printf 'no\n' | "$sdk_tools/avdmanager" create avd --name safar_android_36 --package "$system_image"
+
+          "$ANDROID_HOME/emulator/emulator" -list-avds | grep -Fx safar_android_36
+          adb start-server
+          emulator_log="$RUNNER_TEMP/safar-emulator.log"
+          "$ANDROID_HOME/emulator/emulator" -avd safar_android_36 -port 5554 \
+            -no-window -no-audio -no-boot-anim -no-snapshot -gpu software >"$emulator_log" 2>&1 &
+          emulator_pid=$!
+          trap 'kill "$emulator_pid" 2>/dev/null || true' EXIT
+          export ANDROID_SERIAL=emulator-5554
+
+          if ! timeout 5m bash -e -c '
+            adb wait-for-device
+            until [ "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 2; done
+          '; then
+            tail -n 120 "$emulator_log"
+            exit 1
+          fi
+
+          adb shell input keyevent 82
+          adb install --no-streaming "$apk"
+          launch_log="$RUNNER_TEMP/safar-launch.log"
+          adb shell am start -W -n com.safarerp.mobile/.MainActivity | tee "$launch_log"
+          grep -F 'Status: ok' "$launch_log"
+          sleep 2
+          if ! adb shell pidof com.safarerp.mobile; then
+            adb logcat -d -b crash
+            exit 1
+          fi
+
+          # A per-run key verifies upgrades without exposing company credentials to PRs.
+          export SAFAR_ANDROID_KEYSTORE="$RUNNER_TEMP/safar-upgrade-test.p12"
+          export SAFAR_ANDROID_KEY_ALIAS=safar-upgrade-test
+          export SAFAR_ANDROID_KEYSTORE_PASSWORD="$(openssl rand -hex 24)"
+          echo "::add-mask::$SAFAR_ANDROID_KEYSTORE_PASSWORD"
+          keytool -genkeypair -storetype PKCS12 -keyalg RSA -keysize 2048 -validity 365 \
+            -keystore "$SAFAR_ANDROID_KEYSTORE" -alias "$SAFAR_ANDROID_KEY_ALIAS" \
+            -storepass:env SAFAR_ANDROID_KEYSTORE_PASSWORD -dname 'CN=Safar Android Upgrade Test'
+          bash scripts/android-release.sh 3 "$RUNNER_TEMP/safar-version-3.apk"
+          bash scripts/android-release.sh 4 "$RUNNER_TEMP/safar-version-4.apk"
+          adb uninstall com.safarerp.mobile
+          adb install --no-streaming "$RUNNER_TEMP/safar-version-3.apk"
+          adb shell dumpsys package com.safarerp.mobile | grep -E '^[[:space:]]*versionCode=3 '
+          adb install -r --no-streaming "$RUNNER_TEMP/safar-version-4.apk"
+          adb shell dumpsys package com.safarerp.mobile | grep -E '^[[:space:]]*versionCode=4 '
+          adb shell am start -W -n com.safarerp.mobile/.MainActivity > "$launch_log"
+          cat "$launch_log"
+          grep -F 'Status: ok' "$launch_log"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SafarERP-Android-debug
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+  ios:
+    runs-on: macos-26
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npm run native:sync
+      - run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/safar-ios" \
+            CODE_SIGNING_ALLOWED=NO build
+          ditto -c -k --keepParent "$RUNNER_TEMP/safar-ios/Build/Products/Debug-iphonesimulator/App.app" "$RUNNER_TEMP/SafarERP-iOS-simulator.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SafarERP-iOS-simulator
+          path: ${{ runner.temp }}/SafarERP-iOS-simulator.zip
