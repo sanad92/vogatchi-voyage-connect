@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 export interface WhatsAppInbox {
   id: string;
   label: string | null;
+  branch_id: string | null;
   business_name: string | null;
   phone_number_id: string | null;
   display_phone_number: string | null;
@@ -52,7 +53,7 @@ export const useWhatsAppSettings = () => {
       const { data, error } = await supabase
         .from('whatsapp_settings')
         .select(
-          'id, label, business_name, phone_number_id, display_phone_number, waba_id, webhook_url, is_active, is_default, api_version, rate_limit_per_minute, auto_assignment_enabled, business_description, business_website, business_email, onboarding_status, connected_at, created_at, updated_at',
+          'id, branch_id, label, business_name, phone_number_id, display_phone_number, waba_id, webhook_url, is_active, is_default, api_version, rate_limit_per_minute, auto_assignment_enabled, business_description, business_website, business_email, onboarding_status, connected_at, created_at, updated_at',
         )
         .eq('organization_id', orgId!)
         .order('is_default', { ascending: false })
@@ -106,6 +107,7 @@ export const useWhatsAppSettings = () => {
         .from('whatsapp_settings')
         .update({ ...rest, updated_at: new Date().toISOString() })
         .eq('id', targetId)
+        .eq('organization_id', orgId!)
         .select('id')
         .single();
       if (error) throw error;
@@ -113,6 +115,8 @@ export const useWhatsAppSettings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-settings', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['wa-inbox-channels', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations', orgId] });
       toast.success('تم حفظ الإعدادات');
     },
     onError: (e: any) => {

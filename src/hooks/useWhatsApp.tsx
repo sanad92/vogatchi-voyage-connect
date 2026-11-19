@@ -1,12 +1,14 @@
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useWhatsAppChannels } from './useWhatsAppChannels';
 import { useOrgId } from '@/hooks/useOrgId';
 
 export const useWhatsApp = () => {
   const orgId = useOrgId();
   const queryClient = useQueryClient();
+  const { data: channels } = useWhatsAppChannels();
 
   const {
     data: conversations,
@@ -27,8 +29,7 @@ export const useWhatsApp = () => {
           .select(`
             *,
             customer:customers(id, name, email, phone),
-            assigned_employee:employees(full_name, employee_code),
-            inbox:whatsapp_settings(id, label, business_name, display_phone_number)
+            assigned_employee:employees(full_name, employee_code)
           `)
           .eq('organization_id', orgId as string)
           .order('id', { ascending: true })
@@ -124,5 +125,11 @@ export const useWhatsApp = () => {
     };
   }, [orgId, queryClient]);
 
-  return { conversations, conversationsLoading, conversationsError, refetch };
+  const withChannel = useMemo(() => {
+    const channelById = new Map(channels?.map(channel => [channel.id, channel]));
+    return conversations?.map(conversation => ({
+      ...conversation, inbox: channelById.get(conversation.whatsapp_settings_id),
+    }));
+  }, [channels, conversations]);
+  return { conversations: withChannel, conversationsLoading, conversationsError, refetch };
 };

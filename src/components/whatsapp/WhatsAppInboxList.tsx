@@ -14,6 +14,9 @@ import {
 import {
   CheckCircle2, Loader2, MessageCircle, Pencil, Plus, RefreshCw, Star, Unplug, XCircle,
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useBranches } from '@/hooks/useBranchesDepartments';
+import { useOrgMembers } from '@/hooks/useOrgMembers';
 import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 import { WhatsAppConnectCard } from './WhatsAppConnectCard';
 import { ManualConnectDialog } from './ManualConnectDialog';
@@ -23,8 +26,11 @@ import { toast } from 'sonner';
 
 export const WhatsAppInboxList: React.FC = () => {
   const orgId = useOrgId();
+  const { data: branches, isLoading: branchesLoading, error: branchesError } = useBranches();
+  const { currentUserRole } = useOrgMembers();
+  const canManageBranches = currentUserRole === 'owner' || currentUserRole === 'admin';
   const {
-    inboxes, isLoading,
+    inboxes, isLoading, updateSettings, isUpdating,
     setDefault, isSettingDefault,
     renameInbox,
     disconnectInbox, isDisconnecting,
@@ -94,6 +100,7 @@ export const WhatsAppInboxList: React.FC = () => {
                   <TableRow>
                     <TableHead className="text-right">الاسم / التسمية</TableHead>
                     <TableHead className="text-right">الرقم</TableHead>
+                    {canManageBranches && <TableHead className="text-right">الفرع</TableHead>}
                     <TableHead className="text-right">الحالة</TableHead>
                     <TableHead className="text-right">افتراضي</TableHead>
                     <TableHead className="text-right w-[280px]">إجراءات</TableHead>
@@ -157,6 +164,18 @@ export const WhatsAppInboxList: React.FC = () => {
                         <TableCell className="font-mono text-sm">
                           {inbox.display_phone_number || '—'}
                         </TableCell>
+                        {canManageBranches && <TableCell>
+                          <Select value={inbox.branch_id ?? 'shared'} disabled={isUpdating || branchesLoading || !!branchesError}
+                            onValueChange={value => updateSettings({ id: inbox.id, branch_id: value === 'shared' ? null : value })}>
+                            <SelectTrigger className="min-w-[140px]" aria-label={`فرع ${inbox.label || inbox.display_phone_number || 'رقم واتساب'}`}><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="shared">مشترك على مستوى المؤسسة</SelectItem>
+                              {branches?.filter(branch => branch.is_active || branch.id === inbox.branch_id).map(branch => (
+                                <SelectItem key={branch.id} value={branch.id}>{branch.name}{!branch.is_active && ' (غير نشط)'}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>}
                         <TableCell>
                           {connected ? (
                             <Badge className="bg-green-100 text-green-800 border-green-200">

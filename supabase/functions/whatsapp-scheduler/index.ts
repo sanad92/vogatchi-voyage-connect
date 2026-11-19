@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
         const to = normalizePhone(conv.phone_number);
         if (!to) throw new Error('رقم غير صالح | Invalid phone number');
 
-        const settings = await resolveSettings(admin, conv.organization_id, conv.whatsapp_settings_id);
+        const settings = await resolveSettings(admin, conv.organization_id, conv.whatsapp_settings_id, true);
         const windowOpen = await isWindowOpen(admin, conv.id);
 
         let payload: Record<string, any>;

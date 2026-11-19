@@ -113,6 +113,7 @@ export const ConversationListItem: React.FC<Props> = ({ conversation: c, active,
             {c.inbox && (
               <Badge variant="secondary" className="text-[10px] py-0 h-[18px] font-normal">
                 {c.inbox.label || c.inbox.display_phone_number || c.inbox.business_name || 'واتساب'}
+                {c.inbox.branch_name && ` · ${c.inbox.branch_name}`}
               </Badge>
             )}
             {c.customer?.name && (
