@@ -13,7 +13,34 @@
 
 ## Development agent workflow
 
-- The main Codex agent leads the task and owns the final diff, verification, and report. For cross-module work, or changes to bookings, money flows, tenant access, or authentication, delegate any independent work to the relevant project subagents as part of the task. Handle small, localized changes directly. Subagents carry out their assignments without delegating again.
-- Route UI and client changes to `safar_frontend`, and server, data, and permissions changes to `safar_backend`. Give implementers clear acceptance criteria and non-overlapping file ownership when they edit in parallel. Keep dependent edits sequential and check the combined diff before verification.
-- Use `safar_qa` for independent verification of behavior-changing diffs. Also use `safar_finance_review` when changes affect prices, invoices, collections, supplier payments, refunds, balances, or accounting. These reviewers report findings and evidence. The lead assigns any fixes and reruns the affected checks.
-- Give each reviewer the relevant diff, expected behavior, and available test environment. Use the repository's existing checks and fixtures. Include the roles and organization boundaries involved, the checks actually run, and any checks still pending in the final report. If delegation is unavailable, carry out the applicable checks directly and record that in the report.
+- The main Codex agent is the lead and owns the final diff, verification, and report. For cross-module work or changes to bookings, money flows, tenant access, or authentication, delegate independent work to the relevant project subagents. Choose the smallest team that covers the work and handle small, localized changes directly. Subagents complete their assignments without further delegation.
+- Pick a domain owner for each workstream. Add a cross-cutting specialist only when the task needs a separate contract, implementation area, or review. Give each implementer explicit acceptance criteria and file ownership. Keep shared-file or dependent edits sequential and check the combined diff before verification.
+- Use `safar_qa` for independent verification of material behavior changes and `safar_finance_review` as an additional reviewer for money changes, including prices, invoices, collections, supplier payments, refunds, balances, and accounting. For changes to authentication or organization authorization, have an agent other than the implementer review access controls. Reviewers report findings and evidence. The lead assigns any fixes and reruns affected checks.
+- Give each reviewer the relevant diff, expected behavior, and available test environment. Use existing checks and non-production fixtures. If the client supports delegation but cannot load a named role, pass its file's instructions to the delegated agent. If delegation is unavailable, do the applicable checks directly. Report how work was delegated, the checks actually run, and anything still unverified.
+
+### Project specialists
+
+| Area | Agent |
+| --- | --- |
+| Bookings and trip files, flights, hotels, cars, transfers, changes and cancellations | `safar_reservations` |
+| Quotes, itinerary builder, pricing, and conversion | `safar_quotes_itinerary` |
+| Supplier records, rates, allocations, and booking terms | `safar_suppliers` |
+| Hajj and Umrah departures, seat and room inventory, holds, rooming, and agency portal | `safar_pilgrimage` |
+| Customers, CRM, lead pipeline, customer service, and marketing journeys | `safar_crm` |
+| Collections, disbursements, banks, cash, refunds, wallets, and reconciliation | `safar_treasury` |
+| Invoices, general ledger, accounting periods, and financial statements | `safar_accounting` |
+| Staff, branches, departments, attendance, payroll, and commissions | `safar_hr` |
+| Authentication, invitations, roles, and tenant isolation | `safar_identity_access` |
+| Platform administration, plans, subscriptions, onboarding, and platform billing | `safar_saas` |
+| Travel providers, e-invoicing, and company API integrations | `safar_integrations` |
+| WhatsApp and email, queues, templates, and delivery | `safar_communications` |
+| Operations, tasks, events, SOP handovers, and automation rules | `safar_operations` |
+| Reports, analytics, imports, exports, and data quality | `safar_data_reports` |
+| Android and iOS, app updates, and push notifications | `safar_mobile` |
+| Document center, templates, PDF, printing, and branding | `safar_documents` |
+| AI-assisted flows, tools, and evaluations | `safar_ai` |
+| Shared UI, navigation, accessibility, RTL, and localization | `safar_frontend` |
+| Shared server code, data contracts, and implementation across domains | `safar_backend` |
+| QA and regression verification | `safar_qa` |
+| Independent financial reconciliation and verification | `safar_finance_review` |
+| CI, releases, deployment sequencing, and monitoring | `safar_release` |
