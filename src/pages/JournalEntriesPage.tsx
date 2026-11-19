@@ -73,7 +73,7 @@ export default function JournalEntriesPage() {
                     <TableCell className="font-mono text-sm">{e.entry_number}</TableCell>
                     <TableCell>{format(new Date(e.entry_date), 'yyyy-MM-dd')}</TableCell>
                     <TableCell className="max-w-xs truncate">{e.description}</TableCell>
-                    <TableCell><Badge variant="outline">{e.reference_type || '—'}</Badge></TableCell>
+                    <TableCell><Badge variant="outline">{e.reference_type === 'treasury_transfer' ? 'تحويل داخلي' : e.reference_type || '—'}</Badge></TableCell>
                     <TableCell className="text-left font-medium"><bdi>{formatNumber(e.total_debit)} {e.currency}</bdi></TableCell>
                     <TableCell>
                       <Badge className={e.status === 'posted' ? 'bg-green-500/10 text-green-700' : 'bg-gray-500/10'}>

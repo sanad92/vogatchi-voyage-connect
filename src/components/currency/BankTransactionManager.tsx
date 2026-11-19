@@ -161,31 +161,34 @@ const BankTransactionManager = () => {
                 {accountTransactions.length > 0 ? (
                   <div className="space-y-3">
                     <h4 className="font-medium text-sm text-gray-700">آخر المعاملات</h4>
-                    {accountTransactions.map((transaction) => (
-                      <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          {transaction.transaction_type === 'credit' ? (
-                            <ArrowDownLeft className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <ArrowUpRight className="h-4 w-4 text-red-600" />
-                          )}
-                          <div>
-                            <p className="font-medium text-sm">{transaction.description}</p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(transaction.transaction_date).toLocaleDateString('ar-SA')}
+                    {accountTransactions.map((transaction) => {
+                      const isDeposit = ['deposit', 'credit', 'income'].includes(transaction.transaction_type);
+                      return (
+                        <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            {isDeposit ? (
+                              <ArrowDownLeft className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <ArrowUpRight className="h-4 w-4 text-red-600" />
+                            )}
+                            <div>
+                              <p className="font-medium text-sm">{transaction.description}</p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(transaction.transaction_date).toLocaleDateString('ar-SA')}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={`font-medium ${isDeposit ? 'text-green-600' : 'text-red-600'}`}>
+                              {isDeposit ? '+' : '-'}{transaction.amount.toLocaleString()}
                             </p>
+                            {transaction.reference_number && (
+                              <p className="text-xs text-gray-500">#{transaction.reference_number}</p>
+                            )}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className={`font-medium ${transaction.transaction_type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                            {transaction.transaction_type === 'credit' ? '+' : '-'}{transaction.amount.toLocaleString()}
-                          </p>
-                          {transaction.reference_number && (
-                            <p className="text-xs text-gray-500">#{transaction.reference_number}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
