@@ -1,3 +1,4 @@
+import { useHrAccess } from '@/hooks/useHrAccess';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ const EmployeeFormDialog = ({
   onSubmit,
   isAddingEmployee,
 }: EmployeeFormDialogProps) => {
+  const { canManagePayroll, canManageCommissions } = useHrAccess();
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -131,11 +133,10 @@ const EmployeeFormDialog = ({
 
           <Separator />
 
-          {/* المعلومات المالية */}
-          <div className="space-y-4">
+          {(canManagePayroll || canManageCommissions) && <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">المعلومات المالية</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              {canManagePayroll && <div>
                 <Label htmlFor="base_salary">الراتب الأساسي (جنيه مصري)</Label>
                 <Input
                   id="base_salary"
@@ -145,9 +146,9 @@ const EmployeeFormDialog = ({
                   placeholder="0"
                   min="0"
                 />
-              </div>
+              </div>}
               
-              <div>
+              {canManagePayroll && <div>
                 <Label htmlFor="allowances">البدلات (جنيه مصري)</Label>
                 <Input
                   id="allowances"
@@ -157,9 +158,9 @@ const EmployeeFormDialog = ({
                   placeholder="0"
                   min="0"
                 />
-              </div>
+              </div>}
               
-              <div>
+              {canManageCommissions && <div>
                 <Label htmlFor="commission_rate">معدل العمولة (%)</Label>
                 <Input
                   id="commission_rate"
@@ -171,9 +172,9 @@ const EmployeeFormDialog = ({
                   max="100"
                   step="0.1"
                 />
-              </div>
+              </div>}
               
-              <div>
+              {canManagePayroll && <div>
                 <Label htmlFor="salary_scale_level">مستوى السلم الوظيفي</Label>
                 <Input
                   id="salary_scale_level"
@@ -183,14 +184,11 @@ const EmployeeFormDialog = ({
                   placeholder="1"
                   min="1"
                 />
-              </div>
+              </div>}
             </div>
-          </div>
+          </div>}
 
-          <Separator />
-
-          {/* المعلومات البنكية */}
-          <div className="space-y-4">
+          {canManagePayroll && <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">المعلومات البنكية</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -213,7 +211,7 @@ const EmployeeFormDialog = ({
                 />
               </div>
             </div>
-          </div>
+          </div>}
 
           <Separator />
 

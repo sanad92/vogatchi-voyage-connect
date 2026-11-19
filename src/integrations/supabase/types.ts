@@ -5715,6 +5715,38 @@ export type Database = {
           },
         ]
       }
+      employee_attendance: {
+        Row: {
+          id: string
+          organization_id: string
+          employee_id: string
+          attendance_date: string
+          status: string
+          check_in_time: string | null
+          check_out_time: string | null
+          actual_hours: number | null
+          notes: string | null
+        }
+        Insert: {
+          organization_id: string
+          employee_id: string
+          attendance_date: string
+          status: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          notes?: string | null
+        }
+        Update: Partial<Database["public"]["Tables"]["employee_attendance"]["Insert"]>
+        Relationships: [
+          {
+            foreignKeyName: "employee_attendance_organization_id_employee_id_fkey"
+            columns: ["organization_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["organization_id", "id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           allowances: number | null
@@ -8665,6 +8697,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organization_role_permission_defaults: {
+        Row: {
+          organization_id: string
+          base_role: string
+          permission_key: string
+          granted: boolean
+        }
+        Insert: Database["public"]["Tables"]["organization_role_permission_defaults"]["Row"]
+        Update: Partial<Database["public"]["Tables"]["organization_role_permission_defaults"]["Row"]>
+        Relationships: []
       }
       organization_permission_catalog: {
         Row: {
@@ -16927,6 +16970,10 @@ export type Database = {
       }
     }
     Views: {
+      employee_directory: {
+        Row: Database["public"]["Tables"]["employees"]["Row"] & { linked_user_id: string | null }
+        Relationships: []
+      }
       car_rentals_unified: {
         Row: {
           created_at: string | null

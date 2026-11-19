@@ -68,7 +68,7 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
             ))}
           </dl>
           <Link className="mt-3 inline-block text-primary underline underline-offset-4" to="/organization/roles">
-            إدارة الأدوار المخصصة
+            ضبط الصلاحيات الافتراضية والأدوار المخصصة
           </Link>
         </details>
       )}

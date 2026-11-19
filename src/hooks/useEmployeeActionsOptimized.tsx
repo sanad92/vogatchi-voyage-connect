@@ -1,7 +1,8 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { useHrAccess } from '@/hooks/useHrAccess';
+import { useOrgId } from '@/hooks/useOrgId';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -16,14 +17,15 @@ interface EmployeeActionResponse {
 
 export const useEmployeeActionsOptimized = () => {
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
-  const { isSuperAdmin, hasRole } = useOptimizedAuth();
+  const { canEditFiles, canDeleteFiles, canCreateFiles, canManagePayroll, canManageCommissions } = useHrAccess();
+  const orgId = useOrgId();
   const queryClient = useQueryClient();
 
   // تحديد الصلاحيات
   const permissions = {
-    canToggleStatus: hasRole('admin') || hasRole('manager') || isSuperAdmin(),
-    canDelete: isSuperAdmin(),
-    canEdit: hasRole('admin') || hasRole('manager') || isSuperAdmin(),
+    canToggleStatus: canEditFiles,
+    canDelete: canDeleteFiles,
+    canEdit: canEditFiles,
   };
 
   // إدارة حالة التحميل لعمليات مختلفة
@@ -60,18 +62,19 @@ export const useEmployeeActionsOptimized = () => {
           email: employeeData.email,
           national_id: employeeData.national_id,
           hire_date: employeeData.hire_date,
-          base_salary: employeeData.base_salary,
-          allowances: employeeData.allowances,
-          commission_rate: employeeData.commission_rate,
+          base_salary: canManagePayroll ? employeeData.base_salary : undefined,
+          allowances: canManagePayroll ? employeeData.allowances : undefined,
+          commission_rate: canManageCommissions ? employeeData.commission_rate : undefined,
           is_active: employeeData.is_active,
-          bank_account_number: employeeData.bank_account_number,
-          bank_name: employeeData.bank_name,
+          bank_account_number: canManagePayroll ? employeeData.bank_account_number : undefined,
+          bank_name: canManagePayroll ? employeeData.bank_name : undefined,
           emergency_contact_name: employeeData.emergency_contact_name,
           emergency_contact_phone: employeeData.emergency_contact_phone,
           updated_at: new Date().toISOString()
         })
         .eq('id', employeeData.id)
-        .select()
+        .eq('organization_id', orgId!)
+        .select('id')
         .single();
 
       if (error) {
@@ -93,7 +96,7 @@ export const useEmployeeActionsOptimized = () => {
     } finally {
       setActionLoading(actionKey, false);
     }
-  }, [permissions.canEdit, setActionLoading, invalidateEmployeeQueries]);
+  }, [permissions.canEdit, setActionLoading, invalidateEmployeeQueries, orgId, canManagePayroll, canManageCommissions]);
 
   // تفعيل/إيقاف الموظف - محسن
   const toggleEmployeeStatus = useCallback(async (employeeId: string, isActive: boolean, reason?: string) => {
@@ -225,7 +228,7 @@ export const useEmployeeActionsOptimized = () => {
 
   // إنشاء موظف جديد - محسن
   const createEmployee = useCallback(async (employeeData: any) => {
-    if (!permissions.canEdit) {
+    if (!canCreateFiles) {
       toast.error('ليس لديك صلاحية لهذه العملية');
       return { success: false, error: 'غير مصرح' };
     }
@@ -238,7 +241,7 @@ export const useEmployeeActionsOptimized = () => {
       const { data, error } = await supabase
         .from('employees')
         .insert([employeeData])
-        .select()
+        .select('id')
         .single();
 
       if (error) {
@@ -259,7 +262,7 @@ export const useEmployeeActionsOptimized = () => {
     } finally {
       setActionLoading(actionKey, false);
     }
-  }, [permissions.canEdit, setActionLoading, invalidateEmployeeQueries]);
+  }, [canCreateFiles, setActionLoading, invalidateEmployeeQueries]);
 
   return {
     // العمليات

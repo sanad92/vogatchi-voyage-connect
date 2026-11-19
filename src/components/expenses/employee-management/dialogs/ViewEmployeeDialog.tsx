@@ -1,3 +1,4 @@
+import { useHrAccess } from '@/hooks/useHrAccess';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ interface ViewEmployeeDialogProps {
 }
 
 const ViewEmployeeDialog = ({ isOpen, onOpenChange, employee }: ViewEmployeeDialogProps) => {
+  const { canManagePayroll } = useHrAccess();
   const totalSalary = employee.base_salary + employee.allowances;
 
   return (
@@ -135,8 +137,7 @@ const ViewEmployeeDialog = ({ isOpen, onOpenChange, employee }: ViewEmployeeDial
             </CardContent>
           </Card>
 
-          {/* المعلومات المالية */}
-          <Card>
+          {canManagePayroll && <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
@@ -173,7 +174,7 @@ const ViewEmployeeDialog = ({ isOpen, onOpenChange, employee }: ViewEmployeeDial
                 )}
               </div>
             </CardContent>
-          </Card>
+          </Card>}
 
           {/* المعلومات البنكية */}
           {(employee.bank_name || employee.bank_account_number) && (

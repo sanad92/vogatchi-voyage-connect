@@ -5,7 +5,7 @@ import { Users, Plus } from 'lucide-react';
 
 interface EmployeeEmptyStateProps {
   searchTerm: string;
-  onAddEmployee: () => void;
+  onAddEmployee?: () => void;
 }
 
 const EmployeeEmptyState = ({ searchTerm, onAddEmployee }: EmployeeEmptyStateProps) => {
@@ -19,10 +19,10 @@ const EmployeeEmptyState = ({ searchTerm, onAddEmployee }: EmployeeEmptyStatePro
         <p className="text-gray-600 mb-4">
           {searchTerm 
             ? 'لم يتم العثور على موظفين يطابقون البحث الحالي'
-            : 'ابدأ بإضافة موظف جديد لإدارة فريق العمل'
+            : 'لا توجد ملفات موظفين مسجلة في المؤسسة.'
           }
         </p>
-        {!searchTerm && (
+        {!searchTerm && onAddEmployee && (
           <Button onClick={onAddEmployee}>
             <Plus className="h-4 w-4 mr-2" />
             إضافة موظف جديد

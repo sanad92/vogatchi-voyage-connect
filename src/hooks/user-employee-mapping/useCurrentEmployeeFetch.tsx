@@ -34,7 +34,7 @@ export const useCurrentEmployeeFetch = () => {
         .from('profiles')
         .select(`
           *,
-          employees!profiles_linked_employee_id_fkey(*)
+          employees!profiles_linked_employee_id_fkey(id, full_name, employee_code, position, department, email, hire_date, is_active, organization_id, created_at, updated_at)
         `)
         .eq('id', user.id)
         .single();
@@ -56,7 +56,7 @@ export const useCurrentEmployeeFetch = () => {
         // البحث عن موظف بنفس البريد الإلكتروني
         if (user.email) {
           const { data: employeeData, error: employeeError } = await supabase
-            .from('employees')
+            .from('employee_directory')
             .select('*')
             .eq('email', user.email)
             .eq('is_active', true)
