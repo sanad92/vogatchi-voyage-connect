@@ -22,6 +22,7 @@ type Passenger = {
   room_type: string;
   status: string;
   inventory_booking_id?: string | null;
+  manual_allotment_booking?: boolean;
   makkah_room?: string | null;
   madinah_room?: string | null;
   makkah_rooming_group_id?: string | null;
@@ -110,6 +111,8 @@ export default function UmrahRooming({ orgId, programId, hotels, passengers, gro
 
   function personRow(person: Passenger, city: City) {
     const group = person[`${city}_rooming_group_id`];
+    const canEditPerson = canEdit && (!person.inventory_booking_id || person.manual_allotment_booking)
+      && !['traveled', 'completed'].includes(person.status);
     return <div key={person.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-sm">
       <div>
         <p className="font-medium">{person.full_name}</p>
@@ -119,12 +122,12 @@ export default function UmrahRooming({ orgId, programId, hotels, passengers, gro
           {!group && person[`${city}_room`] && ` · غرفة الفندق ${person[`${city}_room`]}`}
         </p>
       </div>
-      {canEdit && !person.inventory_booking_id && person.gender && !['traveled', 'completed'].includes(person.status) && <Button
+      {canEditPerson && person.gender && <Button
         size="sm" variant="outline"
         aria-label={`${group ? 'نقل' : 'تسكين'} ${person.full_name} في ${CITIES[city]}`}
         onClick={() => setEditing({ kind: 'assign', person, city, choice: group || 'new', newGroupId: crypto.randomUUID() })}
       >{group ? 'نقل' : 'تسكين'}</Button>}
-      {canEdit && !person.inventory_booking_id && !person.gender && !['traveled', 'completed'].includes(person.status) && <Button size="sm" variant="outline"
+      {canEditPerson && !person.gender && <Button size="sm" variant="outline"
         onClick={() => onEditPassenger(person.id)}>تحديد النوع</Button>}
     </div>;
   }
