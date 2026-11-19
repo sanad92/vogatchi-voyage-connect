@@ -5,7 +5,7 @@ import { useUserEmployeeMapping } from '@/hooks/useUserEmployeeMapping';
 import { toast } from 'sonner';
 
 export const useEmployeeManagementActions = (onRefreshData: () => Promise<void>) => {
-  const { addEmployee, isAddingEmployee } = useEmployees();
+  const { addEmployeeAsync, isAddingEmployee } = useEmployees();
   const { linkUserToEmployee } = useUserEmployeeMapping();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -20,23 +20,16 @@ export const useEmployeeManagementActions = (onRefreshData: () => Promise<void>)
     }
 
     try {
-      console.log('🚀 إضافة الموظف...', newEmployee);
-      
-      await addEmployee(newEmployee);
+      await addEmployeeAsync(newEmployee);
       
       console.log('✅ تم إضافة الموظف بنجاح');
       
-      setTimeout(async () => {
-        console.log('🔄 تحديث البيانات الموحدة...');
-        await handleRefreshData();
-      }, 1000);
-      
+      await onRefreshData();
       closeDialog();
       resetForm();
       
     } catch (error) {
       console.error('❌ خطأ في إضافة الموظف:', error);
-      toast.error('حدث خطأ أثناء إضافة الموظف');
     }
   };
 

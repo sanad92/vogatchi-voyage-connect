@@ -16,6 +16,16 @@ const loadTypeScriptModule = async (path) => {
 const access = await loadTypeScriptModule(new URL('../src/lib/accessControl.ts', import.meta.url));
 const redirects = await loadTypeScriptModule(new URL('../src/lib/safeRedirect.ts', import.meta.url));
 const authErrors = await loadTypeScriptModule(new URL('../src/lib/authErrorMessage.ts', import.meta.url));
+const passwords = await loadTypeScriptModule(new URL('../src/lib/passwordRules.ts', import.meta.url));
+
+const inviteEmail = await loadTypeScriptModule(new URL('../src/lib/invitationEmail.ts', import.meta.url));
+
+assert.equal(inviteEmail.getInvitationEmailWarning({ success: true }, null), null);
+assert.match(inviteEmail.getInvitationEmailWarning({ success: false, reason: 'recipient_suppressed' }, null), /أوقف الإرسال/);
+assert.match(inviteEmail.getInvitationEmailWarning({ success: false }, null), /تعذّر تأكيد/);
+assert.match(inviteEmail.getInvitationEmailWarning(null, null), /تعذّر تأكيد/);
+assert.match(inviteEmail.getInvitationEmailWarning({ success: 'true' }, null), /تعذّر تأكيد/);
+assert.match(inviteEmail.getInvitationEmailWarning({ success: true }, new Error('connection lost')), /تعذّر تأكيد/);
 
 const can = (role, departments, permission) =>
   access.hasPermissionForRole(role, departments, permission);
@@ -92,6 +102,25 @@ assert.equal(
   'تعذر تسجيل الدخول: Project is paused',
   'unknown provider errors remain visible for diagnosis',
 );
+
+
+const weakPasswordMessage = 'Password is known to be weak and easy to guess, please choose a different one.';
+assert.match(authErrors.getPasswordAuthErrorMessage({ code: 'weak_password', reasons: ['pwned'] }), /سهلة التخمين/);
+assert.match(authErrors.getPasswordAuthErrorMessage(new Error(weakPasswordMessage)), /سهلة التخمين/);
+assert.match(authErrors.getPasswordAuthErrorMessage({ code: 'weak_password', reasons: ['length'] }), /أقصر/);
+assert.match(authErrors.getPasswordAuthErrorMessage({ code: 'weak_password', reasons: ['characters'] }), /حروفًا/);
+assert.equal(authErrors.getPasswordAuthErrorMessage({ code: 'user_already_exists' }), undefined);
+assert.equal(passwords.getPasswordChecks('abcdefgh').length, true);
+assert.equal(passwords.getPasswordChecks('abcdefg').length, false);
+assert.deepEqual(passwords.getPasswordChecks('SampleWord4!'), {
+  length: true,
+  longer: true,
+  uppercase: true,
+  lowercase: true,
+  number: true,
+  symbol: true,
+});
+assert.equal(passwords.getPasswordChecks('abc def').symbol, false);
 
 const migration = await readFile(
   new URL('../supabase/migrations/20260822160000_saas_core_hardening.sql', import.meta.url),

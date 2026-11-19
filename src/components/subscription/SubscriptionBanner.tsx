@@ -1,18 +1,24 @@
 import { Link } from 'react-router-dom';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { AlertTriangle, XCircle, Clock, Sparkles } from 'lucide-react';
+import { AlertTriangle, XCircle, Clock, Sparkles, CreditCard } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 
 const SubscriptionBanner = () => {
   const { subscription, isExpired, isActive, isTrialing, trialDaysRemaining, loading } = useSubscription();
+  const { orgRole } = useOrganization();
 
   if (loading || !subscription) return null;
 
   // Trial banner
-  if (isTrialing && !isExpired && trialDaysRemaining !== null) {
-    const urgency = trialDaysRemaining <= 1 ? 'destructive' : trialDaysRemaining <= 3 ? 'warning' : 'info';
+  if (isTrialing && isActive && !isExpired) {
+    const urgency = trialDaysRemaining === null || trialDaysRemaining > 3
+      ? 'info'
+      : trialDaysRemaining <= 1 ? 'destructive' : 'warning';
+    // Match the purchase permissions in prepare_subscription_checkout and create-payment.
+    const canPurchase = orgRole === 'owner' || orgRole === 'manager';
     const startsAt = Date.parse(subscription.starts_at ?? '');
     const expiresAt = Date.parse(subscription.expires_at ?? '');
     const duration = expiresAt - startsAt;
@@ -40,20 +46,27 @@ const SubscriptionBanner = () => {
           </div>
         </AlertTitle>
         <AlertDescription className="space-y-3 mt-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              متبقي <strong className="text-foreground">{trialDaysRemaining} {trialDaysRemaining === 1 ? 'يوم' : 'أيام'}</strong> من الفترة التجريبية
-              {' '}— خطة <strong>{subscription.plan_name_ar}</strong>
+              {trialDaysRemaining === null ? (
+                'تجربتك المجانية مفعّلة'
+              ) : (
+                <>متبقي <strong className="text-foreground">{trialDaysRemaining} {trialDaysRemaining === 1 ? 'يوم' : 'أيام'}</strong> من الفترة التجريبية</>
+              )}
+              {' '}— خطة <strong>{subscription.plan_name_ar || subscription.plan_name}</strong>
             </p>
-            <Link to="/pricing">
-              <Button size="sm" variant={urgency === 'destructive' ? 'destructive' : 'default'}>
-                ترقية الآن
+            {canPurchase && (
+              <Button asChild size="sm" variant={urgency === 'destructive' ? 'destructive' : 'default'}>
+                <Link to="/pricing">
+                  <CreditCard aria-hidden="true" />
+                  اشترك وادفع الآن
+                </Link>
               </Button>
-            </Link>
+            )}
           </div>
           {trialPercent !== null && <Progress value={trialPercent} className="h-2" />}
           <p className="text-xs text-muted-foreground">
-            {trialDaysRemaining <= 3
+            {urgency !== 'info'
               ? 'ستفقد إمكانية التعديل على البيانات بعد انتهاء التجربة!'
               : 'استمتع بجميع الميزات مجاناً خلال الفترة التجريبية.'}
           </p>

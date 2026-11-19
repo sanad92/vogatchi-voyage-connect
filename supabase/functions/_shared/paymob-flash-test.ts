@@ -1,5 +1,6 @@
 export const FLASH_TEST_REFERENCE_PREFIX = "paymob_flash_test_";
 export const FLASH_TEST_INTEGRATION_IDS = [6017673, 6066456] as const;
+const PRODUCTION_PROJECT_REF = "gvozalurfthzxpuasplo";
 const INTENTION_URL = "https://accept.paymob.com/v1/intention/";
 const HOSTED_CHECKOUT_URL = "https://eg.checkout.paymob.com/";
 
@@ -21,22 +22,33 @@ export interface FlashTestConfig {
   supabaseUrl: string;
 }
 
+export function isFlashTestBackend(supabaseUrl: string | undefined): boolean {
+  if (!supabaseUrl) return false;
+  try {
+    const url = new URL(supabaseUrl);
+    return url.protocol === "https:" && url.hostname === "jqskrncggawevytmehdd.supabase.co" &&
+      url.pathname === "/" && !url.port && !url.search && !url.hash && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
 export function flashTestConfig(
   secretKey: string | undefined, publicKey: string | undefined,
   returnOrigin: string | undefined, supabaseUrl: string | undefined,
 ): FlashTestConfig | null {
   if (!secretKey || !/^(egy_)?sk_test_[a-zA-Z0-9]+$/.test(secretKey) ||
       !publicKey || !/^(egy_)?pk_test_[a-zA-Z0-9]+$/.test(publicKey) ||
-      !returnOrigin || !supabaseUrl) return null;
+      !returnOrigin || !supabaseUrl || !isFlashTestBackend(supabaseUrl)) return null;
 
   try {
     const url = new URL(returnOrigin);
     const backend = new URL(supabaseUrl);
     const host = url.hostname.toLowerCase().replace(/\.$/, "");
-    if (url.protocol !== "https:" || backend.protocol !== "https:" ||
-        ["safarerp.com", "www.safarerp.com", "safarerp.lovable.app"].includes(host) ||
+    if (url.protocol !== "https:" || host === "safarerp.com" || host.endsWith(".safarerp.com") ||
+        host === "safarerp.lovable.app" || host === `${PRODUCTION_PROJECT_REF}.supabase.co` ||
         url.pathname !== "/" || url.search || url.hash || url.username || url.password ||
-        backend.username || backend.password) return null;
+        host === backend.hostname) return null;
     return { secretKey, publicKey, returnOrigin: url.origin, supabaseUrl: backend.origin };
   } catch {
     return null;

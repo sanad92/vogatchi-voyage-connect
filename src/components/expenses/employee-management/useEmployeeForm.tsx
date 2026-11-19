@@ -51,7 +51,6 @@ export const useEmployeeForm = () => {
   };
 
   const validateForm = () => {
-    console.log('🔄 فحص صحة النموذج:', newEmployee);
     
     // التحقق من الحقول المطلوبة
     if (!newEmployee.full_name?.trim()) {

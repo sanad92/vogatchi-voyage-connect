@@ -1,3 +1,4 @@
+import { useHrAccess } from '@/hooks/useHrAccess';
 
 import { CardContent } from '@/components/ui/card';
 import { MapPin, Phone, Mail, Calendar, DollarSign, CreditCard, User, Shield, Building } from 'lucide-react';
@@ -17,6 +18,7 @@ interface EmployeeCardContentProps {
 }
 
 const EmployeeCardContent = ({ employee, canDelete }: EmployeeCardContentProps) => {
+  const { canManagePayroll } = useHrAccess();
   const totalSalary = employee.base_salary + employee.allowances;
 
   return (
@@ -52,7 +54,7 @@ const EmployeeCardContent = ({ employee, canDelete }: EmployeeCardContentProps) 
           </span>
         </div>
         
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-100">
+        {canManagePayroll && <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-100">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="h-4 w-4 text-green-600" />
             <span className="font-semibold text-green-800 text-sm">المعلومات المالية</span>
@@ -71,7 +73,7 @@ const EmployeeCardContent = ({ employee, canDelete }: EmployeeCardContentProps) 
               <span className="font-bold text-lg text-green-600">{totalSalary.toLocaleString()} ج.م</span>
             </div>
           </div>
-        </div>
+        </div>}
         
         {employee.commission_rate && employee.commission_rate > 0 && (
           <div className="flex items-center gap-2 text-sm bg-blue-50 p-2 rounded-lg border border-blue-100">

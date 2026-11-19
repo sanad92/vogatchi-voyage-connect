@@ -1,15 +1,14 @@
 
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, UserRound } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useEmployeeActionsOptimized } from '@/hooks/useEmployeeActionsOptimized';
 import ToggleEmployeeStatusDialog from '../dialogs/ToggleEmployeeStatusDialog';
 import DeleteEmployeeDialog from '../dialogs/DeleteEmployeeDialog';
-import ViewEmployeeDialog from '../dialogs/ViewEmployeeDialog';
 import EditEmployeeDialog from '../dialogs/EditEmployeeDialog';
-import EmployeeCardHeader from './components/EmployeeCardHeader';
-import EmployeeCardBadges from './components/EmployeeCardBadges';
 import EmployeeCardActions from './components/EmployeeCardActions';
-import EmployeeCardContent from './components/EmployeeCardContent';
 
 interface EnhancedEmployeeCardProps {
   employee: {
@@ -51,14 +50,9 @@ const EnhancedEmployeeCard = ({ employee, onLinkEmployee }: EnhancedEmployeeCard
   } = useEmployeeActionsOptimized();
   const isLoading = typeof isLoadingFn === 'function' ? isLoadingFn() : !!isLoadingFn;
 
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-  const handleViewDetails = () => {
-    setIsViewDialogOpen(true);
-  };
 
   const handleEditEmployee = () => {
     if (!canEdit) return;
@@ -66,7 +60,8 @@ const EnhancedEmployeeCard = ({ employee, onLinkEmployee }: EnhancedEmployeeCard
   };
 
   const handleSaveEmployee = async (employeeData: any) => {
-    await updateEmployee(employeeData);
+    const result = await updateEmployee(employeeData);
+    if (!result.success) throw new Error(result.error);
   };
 
   const handleToggleStatus = async (employeeId: string, isActive: boolean, reason?: string) => {
@@ -77,44 +72,31 @@ const EnhancedEmployeeCard = ({ employee, onLinkEmployee }: EnhancedEmployeeCard
     await deleteEmployee(employeeId, forceDelete, reason);
   };
 
-  const cardClassName = `group hover:shadow-lg transition-all duration-200 hover:scale-[1.01] ${
-    !employee.is_active 
-      ? 'bg-gray-50 opacity-90' 
-      : 'bg-white'
-  }`;
-
+  const profileUrl = `/hr/employees/${employee.id}`;
   return (
     <>
-      <Card className={cardClassName}>
-        <EmployeeCardHeader employee={employee} />
-        
-        <div className="px-6 pb-3">
-          <div className="flex items-center justify-between mb-4">
-            <EmployeeCardBadges employee={employee} />
-            <EmployeeCardActions
-              employee={employee}
-              onLinkEmployee={onLinkEmployee}
-              onViewDetails={handleViewDetails}
-              onEditEmployee={handleEditEmployee}
-              onToggleStatus={() => setIsToggleDialogOpen(true)}
-              onDelete={() => setIsDeleteDialogOpen(true)}
-              isLoading={isLoading}
-              canToggleStatus={canToggleStatus}
-              canDelete={canDelete}
-              canEdit={canEdit}
-            />
-          </div>
-        </div>
-
-        <EmployeeCardContent employee={employee} canDelete={canDelete} />
+      <Card className="flex min-w-0 items-start justify-between gap-2 p-4">
+        <Link to={profileUrl} className="group flex min-w-0 flex-1 items-start gap-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <span className="rounded-lg bg-primary/10 p-2.5 text-primary"><UserRound className="h-5 w-5" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-1.5 font-semibold group-hover:text-primary">
+              <span className="truncate">{employee.full_name}</span><ArrowLeft className="h-4 w-4 shrink-0" />
+            </span>
+            <span className="mt-1 block truncate text-sm text-muted-foreground">
+              {[employee.employee_code, employee.position, employee.department].filter(Boolean).join(' · ')}
+            </span>
+            <span className="mt-2 flex flex-wrap gap-1.5">
+              <Badge variant={employee.is_active ? 'secondary' : 'outline'}>{employee.is_active ? 'نشط' : 'موقوف'}</Badge>
+              <Badge variant="outline">{employee.linkedToUser ? 'مرتبط بحساب' : 'بدون حساب'}</Badge>
+            </span>
+          </span>
+        </Link>
+        <EmployeeCardActions
+          employee={employee} onLinkEmployee={onLinkEmployee} onEditEmployee={handleEditEmployee}
+          onToggleStatus={() => setIsToggleDialogOpen(true)} onDelete={() => setIsDeleteDialogOpen(true)}
+          isLoading={isLoading} canToggleStatus={canToggleStatus} canDelete={canDelete} canEdit={canEdit}
+        />
       </Card>
-
-      {/* Dialogs */}
-      <ViewEmployeeDialog
-        isOpen={isViewDialogOpen}
-        onOpenChange={setIsViewDialogOpen}
-        employee={employee}
-      />
 
       <EditEmployeeDialog
         isOpen={isEditDialogOpen}

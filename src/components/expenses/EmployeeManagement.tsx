@@ -14,15 +14,15 @@ import { useEmployeeForm } from './employee-management/useEmployeeForm';
 import { useEmployeeManagementData } from '@/hooks/useEmployeeManagementData';
 import { useEmployeeManagementActions } from '@/hooks/useEmployeeManagementActions';
 import { useEmployeeFiltering } from './employee-management/EmployeeManagementFilters';
-import { useEmployees } from '@/hooks/useEmployees';
+import { useHrAccess } from '@/hooks/useHrAccess';
 
 const EmployeeManagement = () => {
-  const { employeesError } = useEmployees();
+  const { canViewFiles, canCreateFiles, canDeleteFiles } = useHrAccess();
   const { 
     allEmployees, 
     stats, 
     unifiedLoading, 
-    usersError, 
+    employeesError,
     refreshAllData 
   } = useEmployeeManagementData();
   
@@ -48,15 +48,6 @@ const EmployeeManagement = () => {
     linkedFilter
   });
 
-  console.log('📊 حالة البيانات الموحدة المحسنة:', {
-    unifiedUsers: allEmployees.filter(emp => emp.linkedToUser).length,
-    unlinkedEmployees: allEmployees.filter(emp => !emp.linkedToUser).length,
-    unifiedLoading,
-    isRefreshing,
-    usersError,
-    employeesError
-  });
-
   const onSubmit = (e: React.FormEvent) => {
     handleSubmit(e, newEmployee, validateForm, resetForm, () => setIsAddDialogOpen(false));
   };
@@ -64,7 +55,6 @@ const EmployeeManagement = () => {
   // تحسين عرض رسائل الخطأ
   const renderErrorAlert = () => {
     const errors = [];
-    if (usersError) errors.push('خطأ في جلب بيانات المستخدمين');
     if (employeesError) errors.push('خطأ في جلب بيانات الموظفين');
     
     if (errors.length === 0) return null;
@@ -110,6 +100,8 @@ const EmployeeManagement = () => {
     );
   };
 
+  if (!canViewFiles) return null;
+
   // عرض رسالة التحميل المحسنة
   if (unifiedLoading && !isRefreshing) {
     return (
@@ -136,7 +128,7 @@ const EmployeeManagement = () => {
         isRefreshing={isRefreshing}
         unifiedLoading={unifiedLoading}
         onRefresh={handleRefreshData}
-        onAddEmployee={() => setIsAddDialogOpen(true)}
+        onAddEmployee={canCreateFiles ? () => setIsAddDialogOpen(true) : undefined}
       />
 
       <Tabs defaultValue="employees" className="w-full">
@@ -145,10 +137,10 @@ const EmployeeManagement = () => {
             <Users className="h-4 w-4" />
             إدارة الموظفين
           </TabsTrigger>
-          <TabsTrigger value="duplicates" className="flex items-center gap-2">
+          {canDeleteFiles && <TabsTrigger value="duplicates" className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
-            الموظفين المكررين
-          </TabsTrigger>
+            الموظفون المكررون
+          </TabsTrigger>}
         </TabsList>
 
         <TabsContent value="employees" className="space-y-6">
@@ -165,31 +157,13 @@ const EmployeeManagement = () => {
             filteredEmployees={filteredEmployees.length}
           />
 
-          {/* معلومات النظام المحسن */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-blue-800">
-                  [نظام محسن] إجمالي: {stats.total} | 
-                  نشط: {stats.active} | 
-                  معطل: {stats.inactive} | 
-                  مرتبط: {stats.linked} | 
-                  غير مرتبط: {stats.unlinked} |
-                  مفلتر: {filteredEmployees.length} |
-                  <span className="text-green-700">✓ تم إصلاح مشكلة جلب الموظفين غير المرتبطين</span>
-                </span>
-              </div>
-            </div>
-          )}
-
           {filteredEmployees.length === 0 ? (
             <EmployeeEmptyState
               searchTerm={searchTerm}
-              onAddEmployee={() => setIsAddDialogOpen(true)}
+              onAddEmployee={canCreateFiles ? () => setIsAddDialogOpen(true) : undefined}
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               {filteredEmployees.map((employee) => (
                 <EnhancedEmployeeCard
                   key={employee.id}
@@ -201,19 +175,17 @@ const EmployeeManagement = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="duplicates">
-          <DuplicateEmployeesManager />
-        </TabsContent>
+        {canDeleteFiles && <TabsContent value="duplicates"><DuplicateEmployeesManager /></TabsContent>}
       </Tabs>
 
-      <EmployeeFormDialog
+      {canCreateFiles && <EmployeeFormDialog
         isOpen={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         newEmployee={newEmployee}
         setNewEmployee={setNewEmployee}
         onSubmit={onSubmit}
         isAddingEmployee={isAddingEmployee}
-      />
+      />}
     </div>
   );
 };

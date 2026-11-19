@@ -41,6 +41,7 @@ serve(async (req) => {
       .select("role")
       .eq("organization_id", organization_id)
       .eq("user_id", userId)
+      .eq("is_active", true)
       .maybeSingle();
     if (!roleRow || !["owner", "admin"].includes(roleRow.role)) {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });

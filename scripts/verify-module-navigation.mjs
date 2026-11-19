@@ -22,7 +22,7 @@ for (const label of [
   'الموردون والمشتريات',
   'الحجوزات والتشغيل',
   'المالية والمحاسبة',
-  'الموظفون والعمولات',
+  'الموارد البشرية',
   'التسويق والتواصل',
 ]) {
   assert.match(navigation, new RegExp(`label: '${label}'`), `module label exists: ${label}`);
@@ -91,15 +91,21 @@ assert.equal(registry.SHARED_WORKSPACES.length, 3);
 for (const [path, owner] of [
   ['/customers', 'sales'], ['/suppliers/123/workspace', 'supply'],
   ['/bookings/123/workspace', 'operations'], ['/invoices', 'finance'],
-  ['/employee-records', 'employees'], ['/employee-commissions', 'employees'],
+  ['/hr', 'employees'], ['/employee-records', 'employees'], ['/employee-commissions', 'employees'],
   ['/whatsapp-inbox/123', 'growth'], ['/team', 'settings'],
   ['/reports/business-health', 'management'], ['/automation', 'automation'],
 ]) assert.equal(registry.findModuleByPath(path)?.id, owner, `canonical owner: ${path}`);
 for (const id of ['management', 'growth']) assert.ok(registry.findModuleById(id), `legacy overview stays valid: ${id}`);
-for (const path of ['/employee-records', '/employee-commissions']) {
+for (const [path, permission] of [['/employee-records', 'employees_view'], ['/employee-commissions', 'employees_commission']]) {
   assert.equal(features.getRequiredPlanFeature(path)?.feature, 'finance', 'employee entry points retain the existing finance plan gate');
-  assert.equal(registry.getAllModuleScreens().find(s => s.href === path)?.requiredPermission, 'expenses_view');
+  assert.equal(registry.getAllModuleScreens().find(s => s.href === path)?.requiredPermission, permission);
 }
+const hr = registry.getAllModuleScreens().find(screen => screen.href === '/hr');
+assert.deepEqual(Array.from(hr.anyPermissions), ['employees_view', 'employees_attendance_view', 'employees_salary', 'employees_commission']);
+assert.equal(features.getRequiredPlanFeature('/hr')?.feature, 'finance');
+assert.equal(features.getRequiredPlanFeature('/hr/employees/example')?.feature, 'finance');
+assert.ok(activeRoutes.has('/hr/employees/:employeeId'));
+assert.equal(registry.findModuleByPath('/hr/employees/example')?.id, 'employees');
 assert.equal(registry.getAllModuleScreens().filter(s => s.href === '/whatsapp-inbox').length, 1);
 const paymentOrderGroups = registry.NAVIGATION_GROUPS.filter(group => group.items.some(item => item.href === '/payment-orders'));
 assert.equal(paymentOrderGroups.length, 1, 'supplier payment orders appear once in the sidebar');

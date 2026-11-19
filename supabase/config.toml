@@ -1,33 +1,31 @@
 project_id = "gvozalurfthzxpuasplo"
 
-[functions.whatsapp-webhook]
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.company-api-integrations]
+    verify_jwt = true
+  [functions.create-payment]
+    verify_jwt = true
+  [functions.paymob-flash-test-webhook]
+    verify_jwt = false
+  [functions.paymob-webhook]
+    verify_jwt = false
+  [functions.platform-paymob-operations]
+    verify_jwt = true
+  [functions.trip-file-air-reservation-status]
+    verify_jwt = true
+  [functions.trip-file-hotelbeds-status]
+    verify_jwt = true
+  [functions.whatsapp-data-deletion]
+    verify_jwt = false
+  [functions.whatsapp-queue-dispatch]
+    verify_jwt = true
+  [functions.whatsapp-webhook]
+    verify_jwt = false
+
+[functions.preview-transactional-email]
 verify_jwt = false
 
-[functions.whatsapp-data-deletion]
+[functions.send-invitation-email]
 verify_jwt = false
-
-[functions.process-email-queue]
-verify_jwt = true
-
-[functions.create-payment]
-verify_jwt = true
-
-[functions.paymob-webhook]
-verify_jwt = false
-
-[functions.paymob-flash-test-webhook]
-verify_jwt = false
-
-[functions.whatsapp-queue-dispatch]
-verify_jwt = true
-
-# Read-only Trip File supplier observation; user JWT required.
-[functions.trip-file-hotelbeds-status]
-verify_jwt = true
-
-# Trip File air PNR observation; signed-in user JWT and verified company connection required.
-[functions.trip-file-air-reservation-status]
-verify_jwt = true
-
-[functions.company-api-integrations]
-verify_jwt = true

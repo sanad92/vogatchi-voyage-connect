@@ -104,7 +104,7 @@ const PaymentSuccess = lazy(() => import("@/pages/PaymentSuccess"));
 // Operations
 const Suppliers = lazy(() => import("@/pages/Suppliers"));
 const Reports = lazy(() => import("@/pages/Reports"));
-const EmployeeCommissionsPage = lazy(() => import("@/pages/EmployeeCommissionsPage"));
+const EmployeeProfilePage = lazy(() => import("@/pages/EmployeeProfilePage"));
 const EnhancedEmployeesPage = lazy(() => import("@/pages/EnhancedEmployeesPage"));
 const DailyOperations = lazy(() => import("@/pages/DailyOperations"));
 const CustomerService = lazy(() => import("@/pages/CustomerService"));
@@ -367,8 +367,10 @@ function App() {
                               <Route path="/reports" element={<PermissionRouteGuard requiredPermission="reports_view"><Reports /></PermissionRouteGuard>} />
                               <Route path="/profit-loss-reports" element={<Navigate to="/accounting-reports" replace />} />
                               <Route path="/profit-analytics" element={<PermissionRouteGuard requiredPermission="reports_advanced"><ProfitAnalytics /></PermissionRouteGuard>} />
-                              <Route path="/employee-records" element={<PermissionRouteGuard requiredPermission="expenses_view"><EnhancedEmployeesPage /></PermissionRouteGuard>} />
-                              <Route path="/employee-commissions" element={<PermissionRouteGuard requiredPermission="expenses_view"><EmployeeCommissionsPage /></PermissionRouteGuard>} />
+                              <Route path="/hr" element={<EnhancedEmployeesPage />} />
+                              <Route path="/hr/employees/:employeeId" element={<EmployeeProfilePage />} />
+                              <Route path="/employee-records" element={<Navigate to="/hr?tab=files" replace />} />
+                              <Route path="/employee-commissions" element={<Navigate to="/hr?tab=commissions" replace />} />
                               <Route path="/expense-management" element={<PermissionRouteGuard requiredPermission="expenses_view"><ExpenseManagementEnhanced /></PermissionRouteGuard>} />
                               <Route path="/employees-enhanced" element={<Navigate to="/team" replace />} />
                               <Route path="/employees" element={<Navigate to="/team" replace />} />
@@ -449,7 +451,7 @@ function App() {
                               <Route path="/ai-assistant/:threadId" element={<PermissionRouteGuard requiredPermission="financial_view"><AIAssistant /></PermissionRouteGuard>} />
                               {/* Phase 7 — Enterprise / SaaS Core */}
                               <Route path="/organization" element={<OrganizationCenter />} />
-                              <Route path="/organization/roles" element={<PermissionRouteGuard requiredPermission="team_manage_roles"><OrganizationRolesPage /></PermissionRouteGuard>} />
+                              <Route path="/organization/roles" element={<PermissionRouteGuard requiredRoles={["owner", "admin"]}><OrganizationRolesPage /></PermissionRouteGuard>} />
                               <Route path="/organization/branches" element={<PermissionRouteGuard requiredPermission="admin_settings"><BranchesPage /></PermissionRouteGuard>} />
                               <Route path="/organization/departments" element={<PermissionRouteGuard requiredPermission="admin_settings"><DepartmentsPage /></PermissionRouteGuard>} />
                               <Route path="/organization/feature-flags" element={<PermissionRouteGuard requiredPermission="admin_settings"><FeatureFlagsPage /></PermissionRouteGuard>} />

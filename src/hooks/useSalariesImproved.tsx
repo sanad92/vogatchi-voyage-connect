@@ -23,9 +23,7 @@ export const useSalariesImproved = () => {
             employee_code,
             full_name,
             position,
-            department,
-            base_salary,
-            allowances
+            department
           )
         `) as any;
       const { data, error } = await query

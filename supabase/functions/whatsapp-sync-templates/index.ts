@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     const { data: { user } } = await authClient.auth.getUser();
     if (!user) return json({ error: 'Unauthorized' }, 401);
     const { data: member } = await admin.from('organization_members').select('id')
-      .eq('organization_id', organizationId).eq('user_id', user.id).maybeSingle();
+      .eq('organization_id', organizationId).eq('user_id', user.id).eq('is_active', true).maybeSingle();
     if (!member) return json({ error: 'Forbidden' }, 403);
 
     const settings = await resolveSettings(admin, organizationId, settingsId);

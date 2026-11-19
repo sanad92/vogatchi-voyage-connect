@@ -1,5 +1,5 @@
 
-import { useEmployeeManagementData, type EnhancedEmployee } from '@/hooks/useEmployeeManagementData';
+import { type EnhancedEmployee } from '@/hooks/useEmployeeManagementData';
 
 interface EmployeeManagementFiltersProps {
   allEmployees: EnhancedEmployee[];
@@ -14,13 +14,12 @@ export const useEmployeeFiltering = ({
   statusFilter,
   linkedFilter
 }: EmployeeManagementFiltersProps) => {
+  const needle = searchTerm.trim().toLocaleLowerCase();
   const filteredEmployees = allEmployees.filter(employee => {
     // فلتر البحث
-    const matchesSearch = employee.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.employee_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.department.toLowerCase().includes(searchTerm.toLowerCase());
-    
+    const matchesSearch = [employee.full_name, employee.employee_code, employee.position, employee.department]
+      .some(value => value?.toLocaleLowerCase().includes(needle));
+
     // فلتر الحالة
     const matchesStatus = statusFilter === 'all' || 
       (statusFilter === 'active' && employee.is_active) ||

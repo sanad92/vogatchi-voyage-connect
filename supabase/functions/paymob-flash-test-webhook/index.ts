@@ -1,12 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { flashTestCallbackStatus, FLASH_TEST_REFERENCE_PREFIX, type FlashTestCallback } from "../_shared/paymob-flash-test.ts";
+import { flashTestCallbackStatus, FLASH_TEST_REFERENCE_PREFIX, isFlashTestBackend, type FlashTestCallback } from "../_shared/paymob-flash-test.ts";
 import { verifyPaymobHmac } from "../_shared/paymob-signature.ts";
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405 });
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const secret = Deno.env.get("PAYMOB_FLASH_TEST_HMAC");
   const organizationId = Deno.env.get("PAYMOB_FLASH_TEST_ORGANIZATION_ID");
-  if (Deno.env.get("PAYMOB_FLASH_TEST_ENABLED") !== "true" || !secret || !organizationId) {
+  if (!isFlashTestBackend(supabaseUrl) || Deno.env.get("PAYMOB_FLASH_TEST_ENABLED") !== "true" || !secret || !organizationId) {
     return Response.json({ error: "Test webhook unavailable" }, { status: 503 });
   }
 
@@ -23,7 +24,7 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Invalid test transaction signature" }, { status: 401 });
     }
 
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const admin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: checkout, error } = await admin.from("payment_checkout_sessions")
       .select("id,status,merchant_order_id,paymob_order_id,amount_cents,currency,expires_at")
       .eq("merchant_order_id", reference).eq("organization_id", organizationId).maybeSingle();

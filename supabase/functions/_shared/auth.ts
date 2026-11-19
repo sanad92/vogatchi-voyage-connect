@@ -43,6 +43,7 @@ export async function requireOrgMembership(
     .select('id')
     .eq('organization_id', organizationId)
     .eq('user_id', userId)
+    .eq('is_active', true)
     .maybeSingle();
   if (member) return;
 

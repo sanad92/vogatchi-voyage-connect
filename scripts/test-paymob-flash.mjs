@@ -3,6 +3,7 @@ import { createHmac } from 'node:crypto';
 import test from 'node:test';
 import {
   createFlashTestIntention, flashTestCallbackStatus, flashTestConfig, flashTestReference, FLASH_TEST_INTEGRATION_IDS,
+  isFlashTestBackend,
 } from '../supabase/functions/_shared/paymob-flash-test.ts';
 import { verifyPaymobHmac } from '../supabase/functions/_shared/paymob-signature.ts';
 
@@ -10,7 +11,7 @@ const organizationCheckout = 'be3005c1-367a-4409-aa2e-dd252137e874';
 const reference = flashTestReference(organizationCheckout);
 const signingFixture = 'local-test-fixture';
 const referenceOrigin = 'https://billing-test.example.invalid';
-const supabaseOrigin = 'https://qa-project.example.invalid';
+const supabaseOrigin = 'https://jqskrncggawevytmehdd.supabase.co';
 const config = flashTestConfig('egy_sk_test_exampleonly', 'egy_pk_test_exampleonly', referenceOrigin, supabaseOrigin);
 assert.ok(config);
 
@@ -18,9 +19,14 @@ test('sandbox accepts only test keys and a separate HTTPS return site', () => {
   assert.equal(flashTestConfig('egy_sk_live_exampleonly', config.publicKey, referenceOrigin, supabaseOrigin), null);
   assert.equal(flashTestConfig(config.secretKey, 'egy_pk_live_exampleonly', referenceOrigin, supabaseOrigin), null);
   assert.equal(flashTestConfig(config.secretKey, config.publicKey, 'http://staging.example.invalid', supabaseOrigin), null);
-  for (const origin of ['https://safarerp.com','https://www.safarerp.com','https://safarerp.lovable.app']) {
+  for (const origin of ['https://safarerp.com','https://www.safarerp.com','https://admin.safarerp.com','https://safarerp.lovable.app',supabaseOrigin]) {
     assert.equal(flashTestConfig(config.secretKey, config.publicKey, origin, supabaseOrigin), null);
   }
+  const productionBackend = 'https://gvozalurfthzxpuasplo.supabase.co';
+  assert.equal(isFlashTestBackend(supabaseOrigin), true);
+  assert.equal(isFlashTestBackend(productionBackend), false);
+  assert.equal(isFlashTestBackend('https://jqskrncggawevytmehdd.supabase.co.invalid'), false);
+  assert.equal(flashTestConfig(config.secretKey, config.publicKey, referenceOrigin, productionBackend), null);
 });
 
 test('creates one Intention with both test rails and redirects to the hosted Egypt checkout', async () => {

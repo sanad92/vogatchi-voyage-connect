@@ -8,8 +8,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { isEditableRoleDefault, useOrganizationRoleDefaults, type DefaultEmployeeRole } from '@/hooks/useOrganizationRoleDefaults';
 import { Textarea } from '@/components/ui/textarea';
-import { useOrganizationPermissionRoles, type PermissionDataScope } from '@/hooks/useOrganizationPermissionRoles';
+import { useOrganizationPermissionRoles, type OrganizationPermissionCatalogEntry, type PermissionDataScope } from '@/hooks/useOrganizationPermissionRoles';
 
 const MODULE_LABELS: Record<string, string> = {
   customers: 'العملاء',
@@ -51,6 +53,74 @@ const roleLabel = (role: string) => ({
   agent: 'موظف',
   viewer: 'مشاهد',
 }[role] ?? role);
+
+function DefaultPermissions({ catalog }: { catalog: OrganizationPermissionCatalogEntry[] }) {
+  const [role, setRole] = useState<DefaultEmployeeRole>('agent');
+  const [module, setModule] = useState('employees');
+  const defaults = useOrganizationRoleDefaults(role);
+  const editable = catalog.filter(entry => isEditableRoleDefault(entry.permission_key));
+  const modules = Array.from(new Set(editable.map(entry => entry.module)));
+  const visiblePermissions = editable.filter(entry => entry.module === module);
+  const savedDefaults = defaults.data;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>الصلاحيات الافتراضية</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          تسري الإعدادات على الأعضاء الحاليين والجدد حسب دورهم الأساسي. خيار «حسب الدور والقسم» يعيد إعداد النظام.
+          يحتفظ العضو باستثناءاته وأدواره المخصصة حسب أولوية الصلاحيات الحالية.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label htmlFor="default-base-role">الدور الأساسي</Label>
+            <Select value={role} onValueChange={(value: DefaultEmployeeRole) => setRole(value)}>
+              <SelectTrigger id="default-base-role"><SelectValue /></SelectTrigger>
+              <SelectContent>{(['agent', 'manager', 'viewer'] as const).map(value => (
+                <SelectItem key={value} value={value}>{roleLabel(value)}</SelectItem>
+              ))}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="default-module">الموديول</Label>
+            <Select value={module} onValueChange={setModule}>
+              <SelectTrigger id="default-module"><SelectValue /></SelectTrigger>
+              <SelectContent>{modules.map(value => (
+                <SelectItem key={value} value={value}>{MODULE_LABELS[value] ?? value}</SelectItem>
+              ))}</SelectContent>
+            </Select>
+          </div>
+        </div>
+        {defaults.isLoading && <p className="text-sm text-muted-foreground">جارٍ تحميل الافتراضيات…</p>}
+        {defaults.isError && <Alert variant="destructive">
+          <AlertDescription>تعذّر تحميل الافتراضيات لهذه المؤسسة.</AlertDescription>
+        </Alert>}
+        {savedDefaults && <div className="divide-y rounded-lg border">
+          {visiblePermissions.map(entry => {
+            const grant = savedDefaults.get(entry.permission_key);
+            return <div key={entry.permission_key} className="flex flex-wrap items-center justify-between gap-3 p-3">
+              <Label htmlFor={`default-${entry.permission_key}`} className="flex items-center gap-2">
+                {entry.is_sensitive && <LockKeyhole className="h-4 w-4 text-amber-600" />}
+                {entry.label_ar}
+              </Label>
+              <Select value={grant === undefined ? 'inherit' : grant ? 'allow' : 'deny'} disabled={defaults.saving}
+                onValueChange={value => defaults.save({ permission: entry.permission_key, granted: value === 'inherit' ? null : value === 'allow' })}>
+                <SelectTrigger id={`default-${entry.permission_key}`} className="w-44"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inherit">حسب الدور والقسم</SelectItem>
+                  <SelectItem value="allow">سماح داخل المؤسسة</SelectItem>
+                  <SelectItem value="deny">منع</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>;
+          })}
+        </div>}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function OrganizationRolesPage() {
   const {
@@ -108,7 +178,7 @@ export default function OrganizationRolesPage() {
         <div>
           <h1 className="text-2xl font-bold">الأدوار والصلاحيات الخاصة بالمؤسسة</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            أنشئ أدوارًا تناسب هيكل شركتك، واربطها بالأقسام والفروع من غير تغيير الأدوار الأساسية للنظام.
+            اضبط الصلاحيات الافتراضية للدور الأساسي، وأنشئ أدوارًا مخصصة لأعضاء مؤسستك.
           </p>
         </div>
       </div>
@@ -120,6 +190,13 @@ export default function OrganizationRolesPage() {
         </Alert>
       )}
 
+      <Tabs defaultValue="defaults" dir="rtl">
+        <TabsList>
+          <TabsTrigger value="defaults">الافتراضيات</TabsTrigger>
+          <TabsTrigger value="custom">الأدوار المخصصة</TabsTrigger>
+        </TabsList>
+        <TabsContent value="defaults"><DefaultPermissions catalog={catalog} /></TabsContent>
+        <TabsContent value="custom" className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Plus className="h-4 w-4" />دور جديد</CardTitle></CardHeader>
@@ -182,7 +259,7 @@ export default function OrganizationRolesPage() {
                             {checked && (
                               <Select value={scope} onValueChange={(value) => setPermission(entry.permission_key, true, value as PermissionDataScope)} disabled={isUpdating}>
                                 <SelectTrigger className="h-7 w-28 text-[11px]"><SelectValue /></SelectTrigger>
-                                <SelectContent>{(['own', 'team', 'branch', 'organization'] as PermissionDataScope[]).map((value) => <SelectItem key={value} value={value}>{SCOPE_LABELS[value]}</SelectItem>)}</SelectContent>
+                                <SelectContent>{(entry.module === 'employees' ? ['organization'] : ['own', 'team', 'branch', 'organization']).map((value) => <SelectItem key={value} value={value}>{SCOPE_LABELS[value as PermissionDataScope]}</SelectItem>)}</SelectContent>
                               </Select>
                             )}
                           </div>
@@ -218,6 +295,8 @@ export default function OrganizationRolesPage() {
           </div>}
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -33,6 +33,7 @@ export type PermissionKey = `${PermissionCategory}_${PermissionAction}`
   | 'bookings_cancel' | 'bookings_confirm'
   | 'suppliers_contracts'
   | 'employees_salary' | 'employees_commission'
+  | 'employees_attendance_view' | 'employees_attendance_edit'
   | 'expenses_approve'
   | 'system_users' | 'system_settings' | 'system_backup' | 'system_audit'
   | 'banking_transactions' | 'banking_transfer'
@@ -56,7 +57,8 @@ const MANAGER_PERMISSIONS: PermissionKey[] = [
   'invoices_view', 'invoices_create', 'invoices_edit', 'invoices_send', 'invoices_payment',
   'suppliers_view', 'suppliers_create', 'suppliers_edit',
   'reports_view', 'reports_export',
-  'employees_view', 'employees_edit', 'employees_commission',
+  'employees_view', 'employees_create', 'employees_edit', 'employees_commission',
+  'employees_attendance_view', 'employees_attendance_edit',
   'expenses_view', 'expenses_create', 'expenses_approve',
   'banking_view', 'banking_transactions',
   'crm_view', 'crm_create', 'crm_edit', 'crm_follow_ups', 'crm_campaigns', 'crm_segments',

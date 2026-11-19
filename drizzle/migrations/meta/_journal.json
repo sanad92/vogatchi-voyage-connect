@@ -141,6 +141,27 @@
       "when": 1794937888106,
       "tag": "0019_harden_messaging_permissions_ai",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795036434665,
+      "tag": "0020_invitation_email_via_function",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795037352200,
+      "tag": "0021_harden_dynamic_definer_functions",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795037578274,
+      "tag": "0022_create_booking_atomic_static_sql",
+      "breakpoints": true
     }
   ]
 }

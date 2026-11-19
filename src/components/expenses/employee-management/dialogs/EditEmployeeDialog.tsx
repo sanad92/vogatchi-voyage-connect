@@ -1,3 +1,4 @@
+import { useHrAccess } from '@/hooks/useHrAccess';
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -37,6 +38,7 @@ interface EditEmployeeDialogProps {
 }
 
 const EditEmployeeDialog = ({ isOpen, onOpenChange, employee, onSave, isLoading }: EditEmployeeDialogProps) => {
+  const { canManagePayroll, canManageCommissions } = useHrAccess();
   const [formData, setFormData] = useState({
     full_name: '',
     position: '',
@@ -215,14 +217,13 @@ const EditEmployeeDialog = ({ isOpen, onOpenChange, employee, onSave, isLoading 
             </CardContent>
           </Card>
 
-          {/* المعلومات المالية */}
-          <Card>
+          {(canManagePayroll || canManageCommissions) && <Card>
             <CardHeader>
               <CardTitle className="text-lg">المعلومات المالية</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
-                <div>
+                {canManagePayroll && <div>
                   <Label htmlFor="base_salary">الراتب الأساسي</Label>
                   <Input
                     id="base_salary"
@@ -231,8 +232,8 @@ const EditEmployeeDialog = ({ isOpen, onOpenChange, employee, onSave, isLoading 
                     value={formData.base_salary}
                     onChange={(e) => handleInputChange('base_salary', parseFloat(e.target.value) || 0)}
                   />
-                </div>
-                <div>
+                </div>}
+                {canManagePayroll && <div>
                   <Label htmlFor="allowances">البدلات</Label>
                   <Input
                     id="allowances"
@@ -241,8 +242,8 @@ const EditEmployeeDialog = ({ isOpen, onOpenChange, employee, onSave, isLoading 
                     value={formData.allowances}
                     onChange={(e) => handleInputChange('allowances', parseFloat(e.target.value) || 0)}
                   />
-                </div>
-                <div>
+                </div>}
+                {canManageCommissions && <div>
                   <Label htmlFor="commission_rate">معدل العمولة (%)</Label>
                   <Input
                     id="commission_rate"
@@ -251,13 +252,12 @@ const EditEmployeeDialog = ({ isOpen, onOpenChange, employee, onSave, isLoading 
                     value={formData.commission_rate}
                     onChange={(e) => handleInputChange('commission_rate', parseFloat(e.target.value) || 0)}
                   />
-                </div>
+                </div>}
               </div>
             </CardContent>
-          </Card>
+          </Card>}
 
-          {/* المعلومات البنكية */}
-          <Card>
+          {canManagePayroll && <Card>
             <CardHeader>
               <CardTitle className="text-lg">المعلومات البنكية</CardTitle>
             </CardHeader>
@@ -281,7 +281,7 @@ const EditEmployeeDialog = ({ isOpen, onOpenChange, employee, onSave, isLoading 
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card>}
 
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

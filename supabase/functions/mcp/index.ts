@@ -3,14 +3,14 @@
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
 // src/lib/mcp/index.ts
-import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.28.0";
+import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@3.5.0";
 
 // src/lib/mcp/tools/search-customers.ts
-import { defineTool } from "npm:@lovable.dev/mcp-js@0.28.0";
-import { z } from "npm:zod@^4";
+import { defineTool } from "npm:@lovable.dev/mcp-js@3.5.0";
+import { z } from "npm:zod@^4.6.7";
 
 // src/lib/mcp/supabase.ts
-import { createClient } from "npm:@supabase/supabase-js@^2.95.3";
+import { createClient } from "npm:@supabase/supabase-js@2.95.3";
 function runtimeEnv(name) {
   const runtime = globalThis;
   return runtime.Deno?.env?.get?.(name) ?? runtime.process?.env?.[name];
@@ -69,7 +69,7 @@ function failure(message) {
 function rows(data) {
   return {
     content: [{ type: "text", text: JSON.stringify(data ?? [], null, 2) }],
-    structuredContent: { data: data ?? [] }
+    structuredContent: { data: JSON.parse(JSON.stringify(data ?? [])) }
   };
 }
 
@@ -95,8 +95,8 @@ var search_customers_default = defineTool({
 });
 
 // src/lib/mcp/tools/list-bookings.ts
-import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.28.0";
-import { z as z2 } from "npm:zod@^4";
+import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@3.5.0";
+import { z as z2 } from "npm:zod@^4.6.7";
 var list_bookings_default = defineTool2({
   name: "list_bookings",
   title: "List bookings",
@@ -125,8 +125,8 @@ var list_bookings_default = defineTool2({
 });
 
 // src/lib/mcp/tools/get-booking.ts
-import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.28.0";
-import { z as z3 } from "npm:zod@^4";
+import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@3.5.0";
+import { z as z3 } from "npm:zod@^4.6.7";
 var get_booking_default = defineTool3({
   name: "get_booking",
   title: "Get booking",
@@ -152,8 +152,8 @@ var get_booking_default = defineTool3({
 });
 
 // src/lib/mcp/tools/list-leads.ts
-import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.28.0";
-import { z as z4 } from "npm:zod@^4";
+import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@3.5.0";
+import { z as z4 } from "npm:zod@^4.6.7";
 var list_leads_default = defineTool4({
   name: "list_leads",
   title: "List sales leads",
@@ -180,8 +180,8 @@ var list_leads_default = defineTool4({
 });
 
 // src/lib/mcp/tools/list-quotes.ts
-import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.28.0";
-import { z as z5 } from "npm:zod@^4";
+import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@3.5.0";
+import { z as z5 } from "npm:zod@^4.6.7";
 var list_quotes_default = defineTool5({
   name: "list_quotes",
   title: "List quotes",
@@ -222,5 +222,5 @@ var mcp_default = defineMcp({
 });
 
 // lovable-mcp-supabase-entry.ts
-import { createSupabaseHandler } from "npm:@lovable.dev/mcp-js@0.28.0/stacks/supabase";
+import { createSupabaseHandler } from "npm:@lovable.dev/mcp-js@3.5.0/stacks/supabase";
 Deno.serve(createSupabaseHandler(mcp_default, { functionName: "mcp" }));

@@ -64,6 +64,7 @@ export interface NavigationScreen {
   description: string;
   keywords?: string;
   requiredPermission?: PermissionKey;
+  anyPermissions?: PermissionKey[];
   requiredFeature?: PlanFeature;
   sidebar?: boolean;
   badge?: string;
@@ -278,20 +279,21 @@ export const ERP_MODULES: ErpModule[] = [
   },
   {
     id: 'employees',
-    label: 'الموظفون والعمولات',
-    shortLabel: 'الموظفون',
+    label: 'الموارد البشرية',
+    shortLabel: 'الموارد البشرية',
     icon: Users,
-    description: 'ملفات الموظفين والعمولات المرتبطة بالحجوزات؛ إدارة الدخول والصلاحيات في إعدادات المؤسسة.',
+    description: 'ملفات الموظفين والحضور والإجازات والرواتب والعمولات.',
     receives: 'بيانات الموظفين والحجوزات المرتبطة بهم',
     delivers: 'استحقاقات عمولات تراجع وتصرف من المالية',
     overviewHref: '/modules/employees',
     sections: [
       {
         title: 'الموظفون والاستحقاقات',
-        description: 'نفس سجلات الموظفين والعمولات المستخدمة في المالية.',
+        description: 'ملفات وحضور واستحقاقات موظفي المؤسسة.',
         screens: [
-          screen({ title: 'ملفات الموظفين', href: '/employee-records', icon: Users, description: 'ملفات الموظفين المرتبطة بالمصروفات والحجوزات.', requiredPermission: 'expenses_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
-          screen({ title: 'عمولات الموظفين', href: '/employee-commissions', icon: Calculator, description: 'إعداد وحساب ومراجعة استحقاقات العمولات.', requiredPermission: 'expenses_view', requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
+          screen({ title: 'الموارد البشرية', href: '/hr', icon: Users, description: 'الملفات والحضور والرواتب والعمولات.', anyPermissions: ['employees_view', 'employees_attendance_view', 'employees_salary', 'employees_commission'], requiredFeature: PLAN_FEATURES.FINANCE, sidebar: true }),
+          screen({ title: 'ملفات الموظفين', href: '/employee-records', icon: Users, description: 'ملفات الموظفين المرتبطة بالمصروفات والحجوزات.', requiredPermission: 'employees_view', requiredFeature: PLAN_FEATURES.FINANCE }),
+          screen({ title: 'عمولات الموظفين', href: '/employee-commissions', icon: Calculator, description: 'إعداد وحساب ومراجعة استحقاقات العمولات.', requiredPermission: 'employees_commission', requiredFeature: PLAN_FEATURES.FINANCE }),
         ],
       },
     ],
@@ -453,7 +455,7 @@ const SIDEBAR_LAYOUT: { label: string; icon: ElementType; hrefs: string[] }[] = 
   { label: 'قنوات التواصل', icon: MessageSquare, hrefs: ['/whatsapp-inbox', '/email-inbox', '/marketing/journeys'] },
   { label: 'المالية والمحاسبة', icon: Wallet, hrefs: ['/invoices', '/payment-orders', '/refund-balances', '/treasury', '/expense-management', '/accounting-reports', '/executive-finance'] },
   { label: 'الموردون والتعاقدات', icon: Building2, hrefs: ['/suppliers', '/supplier-rates', '/supplier-allotments'] },
-  { label: 'الإدارة والتقارير', icon: BarChart3, hrefs: ['/reports', '/reports/business-health', '/employee-records', '/employee-commissions', '/audit-log', '/automation', '/ai-assistant'] },
+  { label: 'الإدارة والتقارير', icon: BarChart3, hrefs: ['/reports', '/reports/business-health', '/hr', '/audit-log', '/automation', '/ai-assistant'] },
   { label: 'الإعدادات والدعم', icon: Settings, hrefs: ['/organization', '/team', '/admin-settings', '/whatsapp-admin', '/support', '/subscription'] },
 ];
 
