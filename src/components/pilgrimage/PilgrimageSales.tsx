@@ -338,7 +338,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
       setHoldManifestOpen(false);
       refresh();
       setSaleId(id);
-      toast({title:'تم تثبيت الحجز وتسجيل المسافرين داخليًا'});
+      toast({title:'تم تأكيد الحجز من حصة البرنامج وتسجيل المسافرين'});
     },onError:fail,
   });
   const cloneQuote=useMutation({
@@ -430,12 +430,12 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
           {!directBooking && <> · الحالة {SALE_STATES[selected.status as keyof typeof SALE_STATES]}</>}</p>
         {selected.program_id && !programSaleReady && <p className="text-sm text-muted-foreground">{salesConfirmationRequired}</p>}
         {selected.program_id&&<p className="text-xs text-muted-foreground">
-          المتاح داخليًا الآن وفق السعة والتسجيلات والتخصيصات النشطة: {
+          <span>{directBooking ? 'رصيد المقاعد المتاح' : 'المتاح داخليًا الآن وفق السعة والتسجيلات والتخصيصات النشطة'}</span>{' · '}{
             availabilityQ.isError ? 'تعذر تحميل التوافر' :
               !availabilityQ.data ? 'بانتظار تحديث بيانات التوافر' :
               availabilityQ.data.program_status !== 'open' ? 'البرنامج مغلق للبيع' :
               availabilityQ.data.available_seats ?? 'السعة غير محددة'
-          }. التوافر لدى المنظّم/الفندق/الطيران مستقل عن ذلك.
+          }{!directBooking && ' · التوافر لدى المنظّم/الفندق/الطيران مستقل عن ذلك.'}
         </p>}
         {selected.supersedes_sale_id&&<p className="text-xs text-muted-foreground">
           هذه نسخة مراجعة لعرض سابق، مع حفظ العرض الأصلي دون تعديل.</p>}
@@ -444,9 +444,9 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
       {selected.program_id && ['group_seat','b2b_group'].includes(selected.sale_model) &&
         <Card className="p-4 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="font-semibold">التخصيص الداخلي لمقاعد البرنامج</h3>
+            <h3 className="font-semibold">{directBooking ? 'حجز المقاعد من حصة البرنامج' : 'التخصيص الداخلي لمقاعد البرنامج'}</h3>
             <Badge variant="outline">{!allocation?'لم يُحجز':
-              conversion||allocation.confirmed_sale_id?'تم تسجيل المسافرين':
+              conversion||allocation.confirmed_sale_id?(directBooking?'حجز مؤكد':'تم تسجيل المسافرين'):
               allocation.status==='allocated'?'مخصص داخليًا':
               allocation.status==='released'?'تم تحرير المقاعد':
               allocationIsActive?'حجز مؤقت نشط':'انتهت مدة الحجز المؤقت'}</Badge>
@@ -455,7 +455,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
             {allocation?.status==='held' && allocationIsActive
               ? 'ينتهي الحجز المؤقت: '+new Date(allocation.hold_expires_at).toLocaleString('ar-EG')
               : conversion || allocation?.confirmed_sale_id
-              ? 'نُقلت المقاعد إلى ملفات المعتمرين؛ التسجيل ليس فاتورة أو تأشيرة.'
+              ? (directBooking ? 'تم تثبيت المقاعد من حصة البرنامج وتسجيل المسافرين.' : 'نُقلت المقاعد إلى ملفات المعتمرين؛ التسجيل ليس فاتورة أو تأشيرة.')
               : allocation?.status==='allocated'
               ? 'المقاعد مثبتة ضمن السعة الداخلية فقط، بلا تأكيد من أي مورّد.'
               : 'المقاعد غير مخصصة حاليًا.'}
@@ -493,13 +493,13 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
                   تحويل إلى تسجيلات معتمرين
                 </Button>}
             </div>}
-          <p className="text-xs text-amber-700 dark:text-amber-300">
+          {!directBooking&&<p className="text-xs text-amber-700 dark:text-amber-300">
             تحويل تسجيلات الأفراد مشروط بمطابقة عدد الأسماء والغرف مع أسعار البرنامج؛
             عروض B2B تحتاج حسابات العقد والشركة قبل تحويلها إلى ملفات مالية فردية.
             هذه العملية تخصّ سعة البرنامج داخل Safar ERP فقط. ليست تأكيدًا من فندق أو شركة طيران،
             ولا حجزًا رسميًا للحج أو العمرة، ولا إصدار تأشيرة أو فاتورة.
             عرض الأسماء المرتبطة بمعتمرين مسجلين سابقًا يحتاج تسوية قبل تخصيص مقاعد جديدة.
-          </p>
+          </p>}
           {(eventsQ.data||[]).length>0&&<div className="space-y-1">
             <p className="text-sm font-medium">آخر سجل تغييرات المقاعد</p>
             {(eventsQ.data||[]).map((ev:any)=><p key={ev.id} className="text-xs text-muted-foreground">

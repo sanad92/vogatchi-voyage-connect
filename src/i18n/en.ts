@@ -1,5 +1,13 @@
 /** English translations keyed by the Arabic source string. Missing keys fall back to Arabic. */
 export const EN_DICTIONARY: Record<string, string> = {
+  "تم تأكيد الحجز من حصة البرنامج وتسجيل المسافرين": "Booking confirmed against the program allotment and travelers registered",
+  "ابحث في رصيد مقاعد برامجك واحجز من حصة البرنامج.": "Search your programs for available seats and book against their allotment.",
+  "فئة الغرفة تحدد سعر الفرد. التسكين من صفحة البرنامج.": "The room category determines the price per person. Assign rooms from the program page.",
+  "الحجز يثبّت المقاعد من حصة البرنامج ويسجّل المسافرين عليه.": "Booking confirms seats against the program allotment and registers the travelers.",
+  "الهولد بيمسك المقاعد من الحصة لمدة ساعتين. تقدر تضيف أسماء المسافرين وقت التأكيد.": "A hold reserves seats from the allotment for two hours. Add traveler names when you confirm the booking.",
+  "رصيد المقاعد المتاح": "Available seats",
+  "حجز المقاعد من حصة البرنامج": "Seat booking from the program allotment",
+  "تم تثبيت المقاعد من حصة البرنامج وتسجيل المسافرين.": "Seats were confirmed against the program allotment and travelers were registered.",
   "تحويل داخلي": "Internal transfer",
   "أحدث التحويلات الداخلية": "Recent internal transfers",
   "تعذّر تحميل التحويلات الداخلية": "Could not load internal transfers",

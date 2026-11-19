@@ -35,7 +35,7 @@ const initialFilters = { type: 'all', from: '', to: '', party: '1', room: 'quad'
 const alternativeLimit = 5;
 const actions = {
   hold: { label: 'هولد ساعتين', success: 'تم حجز المقاعد مؤقتًا لمدة ساعتين' },
-  book: { label: 'حجز مباشر', success: 'تم حجز المقاعد وتسجيل المسافرين داخليًا' },
+  book: { label: 'حجز مباشر', success: 'تم تأكيد الحجز من حصة البرنامج وتسجيل المسافرين' },
   quote: { label: 'إنشاء مسودة عرض', success: 'تم إنشاء مسودة عرض السعر' },
 };
 type SearchAction = keyof typeof actions;
@@ -193,7 +193,7 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenSale
   return <div className="space-y-5">
     <Button variant="ghost" onClick={onBack}><ArrowRight className="h-4 w-4 me-1" />العودة إلى البرامج</Button>
     <PageHeader title="بحث توافر الحج والعمرة" icon={Search}
-      description="ابحث في مقاعد البرامج الداخلية واحجزها مؤقتًا أو سجّل المسافرين مباشرة." />
+      description="ابحث في رصيد مقاعد برامجك واحجز من حصة البرنامج." />
     <Card className="p-4">
       <form className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-6" onSubmit={event => {
         event.preventDefault();
@@ -231,7 +231,7 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenSale
       </form>
     </Card>
 
-    <p className="text-sm text-muted-foreground">التوافر لمقاعد البرنامج. فئة الغرفة تحدد سعر الفرد، وتأكيد الغرفة من المورد له إجراء منفصل.</p>
+    <p className="text-sm text-muted-foreground">فئة الغرفة تحدد سعر الفرد. التسكين من صفحة البرنامج.</p>
     {results.isLoading && <p role="status">جاري تحميل التوافر…</p>}
     {results.isError && <Card className="flex items-center justify-between gap-3 p-4" role="alert">
       <p>تعذر تحميل التوافر. راجع الصلاحيات أو حاول مرة أخرى.</p>
@@ -303,8 +303,8 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenSale
             placeholder="اكتب اسم كل مسافر في سطر" />
           <p className="text-sm text-muted-foreground">{travelerNames.length} من {partySize} · الاسم من 3 إلى 200 حرف</p>
         </div>}
-        {bookSelected && <p className="text-sm text-muted-foreground">التسجيل على رصيد البرنامج داخل Safar ERP. تأكيد المورد إجراء منفصل.</p>}
-        {selection?.action === 'hold' && <p className="text-sm text-muted-foreground">المقاعد تفضل محجوزة ساعتين. تقدر تضيف أسماء المسافرين عند التأكيد.</p>}
+        {bookSelected && <p className="text-sm text-muted-foreground">الحجز يثبّت المقاعد من حصة البرنامج ويسجّل المسافرين عليه.</p>}
+        {selection?.action === 'hold' && <p className="text-sm text-muted-foreground">الهولد بيمسك المقاعد من الحصة لمدة ساعتين. تقدر تضيف أسماء المسافرين وقت التأكيد.</p>}
         <Button disabled={!customer || !canSubmit || create.isPending} onClick={() => create.mutate()}>
           {create.isPending ? 'جارٍ الحفظ…' : quoteSelected ? 'حفظ وفتح المسودة' : selection && actions[selection.action].label}
         </Button>
