@@ -128,7 +128,7 @@ const Pilgrimage = () => {
     pilgrimage_passenger_not_changeable: 'التسكين مقفل بعد سفر المعتمر أو اكتمال الرحلة.',
   } as Record<string, string>)[e.message] ?? e.message, variant: 'destructive' });
   const sb = supabase as any;
-  const refresh = () => [bookingStaffQueryKey, 'pilgrimage-programs', 'pilgrimage-sale-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability', 'pilgrimage-operation-refunds', 'umrah-rooming-groups', 'umrah-room-stock', 'umrah-inventory-bookings', 'umrah-unified-links', 'unified-bookings', 'workspace-booking', 'workspace-invoices', 'workspace-payments', 'booking-profit-cockpit'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+  const refresh = () => [bookingStaffQueryKey, 'pilgrimage-programs', 'pilgrimage-sale-programs', 'pilgrims', 'pilgrimage-costs', 'pilgrim-payments', 'pilgrimage-availability', 'pilgrimage-operation-refunds', 'umrah-rooming-groups', 'umrah-room-stock', 'umrah-inventory-bookings', 'umrah-unified-links', 'unified-bookings', 'workspace-booking', 'workspace-invoices', 'workspace-payments', 'booking-profit-cockpit', 'bank-accounts', 'bank-transactions'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
 
   const q = (key: string, fn: () => any, enabled = true) => useQuery({
     queryKey: [key, orgId], enabled: !!orgId && enabled,
@@ -167,25 +167,30 @@ const Pilgrimage = () => {
   });
   const reservationLinks = useQuery({
     queryKey: ['umrah-unified-links', orgId, programId],
-    enabled: !!orgId && !!program?.uses_room_inventory,
+    enabled: !!orgId && !!programId && usesGroupedRooming,
     queryFn: async () => {
-      const { data, error } = await sb.from('umrah_inventory_bookings').select('id,booking_id')
+      const { data, error } = await sb.from('umrah_inventory_bookings').select('id,booking_id,availability_sale_id')
         .eq('organization_id', orgId).eq('program_id', programId).not('booking_id', 'is', null);
       if (error) throw error;
-      return new Map<string, string>(data.map((row: { id: string; booking_id: string }) => [row.id, row.booking_id]));
+      return new Map<string, { booking_id: string; availability_sale_id: string | null }>(
+        data.map((row: { id: string; booking_id: string; availability_sale_id: string | null }) => [row.id, row]),
+      );
     },
   });
   const list = programs.filter((p) => p.program_type === type);
   const programPilgrims = useMemo(() => pilgrims.filter((g) => g.program_id === programId)
     .map((g) => ({ ...g, reserved_refunds: operationRefunds.data?.get(g.id) ?? 0,
-      unified_booking_id: reservationLinks.data?.get(g.inventory_booking_id) ?? null })),
+      unified_booking_id: reservationLinks.data?.get(g.inventory_booking_id)?.booking_id ?? null,
+      manual_allotment_booking: !!reservationLinks.data?.get(g.inventory_booking_id)?.availability_sale_id })),
     [pilgrims, programId, operationRefunds.data, reservationLinks.data]);
   const approvedEdit = useBookingStaff(
     editingBookingId && programPilgrims.some(person => person.unified_booking_id === editingBookingId) ? editingBookingId : null,
   );
-  const canEditPassenger = (person: { inventory_booking_id?: string; unified_booking_id?: string; status: string }) =>
-    !person.inventory_booking_id || (person.status !== 'cancelled' && !!person.unified_booking_id
-      && person.unified_booking_id === editingBookingId && approvedEdit.data?.can_edit === true);
+  const canEditPassenger = (person: { inventory_booking_id?: string; unified_booking_id?: string; status: string; manual_allotment_booking?: boolean }) =>
+    !person.inventory_booking_id || (person.status !== 'cancelled' && (
+      (person.manual_allotment_booking && !['traveled', 'completed'].includes(person.status) && hasPermission('bookings_edit'))
+      || (!!person.unified_booking_id && person.unified_booking_id === editingBookingId && approvedEdit.data?.can_edit === true)
+    ));
   const priceFor = (p: any, room: string) => Number(p?.[`price_${room}`] ?? 0);
 
   const salesIssues = pilgrimageSalesIssues(pf);
@@ -303,7 +308,8 @@ const Pilgrimage = () => {
     mutationFn: async () => {
       if (!canManage) throw new Error('ليس لديك صلاحية تحصيل دفعة من هذا القسم');
       const g = payFor;
-      if (!program || !g || (usesGroupedRooming && !operationRefunds.isSuccess) || (!usesGroupedRooming && g.status === 'cancelled')) throw new Error('لا يمكن التحصيل لهذه الحالة');
+      if (!program || !g || g.unified_booking_id || (g.inventory_booking_id && !reservationLinks.isSuccess)
+        || (usesGroupedRooming && !operationRefunds.isSuccess) || (!usesGroupedRooming && g.status === 'cancelled')) throw new Error('لا يمكن التحصيل لهذه الحالة');
       const remaining = outstanding(g);
       if (!Number.isFinite(pay.amount) || pay.amount <= 0 || pay.amount > remaining)
         throw new Error(`المبلغ يجب أن يكون بين 0 و ${remaining}`);

@@ -36,6 +36,7 @@ type Passenger = {
   paid_amount: number;
   reserved_refunds?: number;
   b2b_roster_entry_id?: string | null;
+  inventory_booking_id?: string | null;
   unified_booking_id?: string | null;
 };
 type History = {
@@ -68,6 +69,7 @@ const ERRORS: Record<string, string> = {
   umrah_unified_cancellation_permission: 'إلغاء حجز مرتبط بفاتورة يحتاج صلاحية الإلغاء ومعالجة المدفوعات.',
   umrah_unified_refund_review_required: 'راجع مستحقات الحجز وصلاحية اعتماد الاسترداد قبل الإلغاء.',
   umrah_unified_refund_fx_review_required: 'راجع سعر صرف الدفعات مع الحسابات قبل تسوية الإلغاء.',
+  umrah_use_booking_financial_operations: 'تعديل السعر أو نقل المسافر هنا يحتاج تسوية على ملف الحجز الموحّد.',
   pilgrimage_operation_denied: 'لا توجد صلاحية لتنفيذ الإجراء على البرنامج.',
   room_capacity_exceeded: 'الغرفة المختارة مكتملة.',
   room_category_conflict: 'رقم الغرفة مسجل لفئة مختلفة.',
@@ -108,11 +110,13 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
     },
   });
   const active = passengers.filter((person) => !person.b2b_roster_entry_id && !['cancelled', 'traveled', 'completed'].includes(person.status));
+  const standalone = active.filter((person) => !person.inventory_booking_id);
+  const eligible = action === 'cancel' ? active : standalone;
   const targets = programs.filter((option) => option.id !== program.id && !option.uses_room_inventory && option.status === 'open'
     && option.program_type === program.program_type && option.currency === program.currency && option.travel_scope === program.travel_scope);
   const destination = action === 'transfer' ? targets.find((option) => option.id === targetId) : program;
   const newPrice = action === 'cancel' ? 0 : amount(destination?.[`price_${room}`]);
-  const selectedPassengers = active.filter((person) => selected[person.id]);
+  const selectedPassengers = eligible.filter((person) => selected[person.id]);
   const feeFor = (person: Passenger) => action === 'room_category' ? 0 : Number(fees[person.id] || 0);
   const hasInvalidFee = selectedPassengers.some((person) => {
     const fee = feeFor(person);
@@ -177,8 +181,8 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
         <h2 className="font-semibold">تعديلات وإلغاءات المسافرين</h2>
         {canManage && !['departed', 'completed', 'cancelled'].includes(program.status) && (
           <div className="flex flex-wrap gap-2">
-            {!program.uses_room_inventory && <Button variant="outline" disabled={!active.length} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>}
-            {canCancel && !program.uses_room_inventory && <Button variant="outline" disabled={!active.length || !targets.length} onClick={() => open('transfer')}>{ACTIONS.transfer}</Button>}
+            {!program.uses_room_inventory && <Button variant="outline" disabled={!standalone.length} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>}
+            {canCancel && !program.uses_room_inventory && <Button variant="outline" disabled={!standalone.length || !targets.length} onClick={() => open('transfer')}>{ACTIONS.transfer}</Button>}
             {canCancel && <Button variant="destructive" disabled={!active.length} onClick={() => open('cancel')}>{ACTIONS.cancel}</Button>}
           </div>
         )}
@@ -215,7 +219,7 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
           </DialogHeader>
           <fieldset disabled={Boolean(submission)} className="space-y-3 disabled:opacity-60">
           <div className="max-h-52 space-y-2 overflow-y-auto rounded-md border p-2">
-            {active.map((person) => (
+            {eligible.map((person) => (
               <div key={person.id} className="flex flex-wrap items-center gap-2 text-sm">
                 <Checkbox id={`operation-${person.id}`} checked={!!selected[person.id]}
                   disabled={apply.isPending || (action === 'cancel' && selectedPassengers.length >= 100 && !selected[person.id])}
@@ -249,7 +253,7 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
                   value={fees[person.id] ?? '0'} onChange={(event) => { setFees({ ...fees, [person.id]: event.target.value }); setApproved(false); }} />
               </div>}
               {person.unified_booking_id ? <p className="text-muted-foreground">
-                يخفض الإلغاء سعر حجز الأسرة بمبلغ {money(Math.max(0, person.total_price - due), program.currency)}. أي زيادة في التحصيل تُسوّى على فاتورة الحجز.
+                يخفض الإلغاء قيمة الحجز بمبلغ {money(Math.max(0, person.total_price - due), program.currency)}. يُخصم المبلغ من المتبقي على الفاتورة ويُسوّى أي مبلغ زائد.
               </p> : <div className="flex flex-wrap gap-x-4 gap-y-1">
                 <span>المبلغ المحصل المتاح {money(paid, program.currency)}</span>
                 <span>متبقي {money(Math.max(0, due - paid), program.currency)}</span>

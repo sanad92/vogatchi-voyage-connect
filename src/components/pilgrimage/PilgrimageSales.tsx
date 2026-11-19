@@ -124,6 +124,10 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
       .select('id,registered_count,converted_at')
       .eq('organization_id',orgId).eq('sale_id',saleId),!!saleId);
   const conversion=conversionsQ.data?.[0]||null;
+  const unifiedBookingQ=useRows('pilgrimage-sale-unified-booking',orgId,saleId,
+    ()=>sb.from('umrah_inventory_bookings').select('booking_id').eq('organization_id',orgId)
+      .eq('availability_sale_id',saleId).not('booking_id','is',null), directBooking && !!conversion);
+  const unifiedBookingId=unifiedBookingQ.data?.[0]?.booking_id;
   const allocationsQ=useRows('pilgrimage-seat-allocations',orgId,selected?.program_id||null,
     ()=>sb.from('pilgrimage_seat_allocations')
       .select('id,sale_id,status,seat_count,hold_expires_at,allocated_at,released_at,confirmed_sale_id')
@@ -176,12 +180,14 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
     pilgrimage_quote_room_price_required: 'يلزم سعر معتمد وسعر بيع موجب لكل فئة غرفة في العرض.',
     active_unexpired_hold_required: 'الهولد انتهى. راجع التوافر قبل الحجز مرة تانية.',
     active_hold_required: 'المقاعد لم تعد محجوزة مؤقتًا.',
+    umrah_unified_invoice_permission: 'تأكيد الحجز يحتاج صلاحية إصدار الفاتورة.',
     retail_program_tariff_mismatch_or_extra_services: 'سعر البرنامج اتغيّر. راجع نتائج البحث قبل الحجز مرة تانية.',
   } as Record<string, string>)[error?.message] || error?.message || 'راجع البيانات والصلاحيات',variant:'destructive'});
   const refresh=()=>['pilgrimage-sales','pilgrimage-agencies','pilgrimage-sale-items',
     'pilgrimage-sale-costs','pilgrimage-sale-travelers',
     'pilgrimage-seat-allocations','pilgrimage-seat-events',
-    'pilgrimage-retail-conversions','pilgrimage-sale-pilgrims','pilgrims','pilgrimage-programs','pilgrimage-availability'].forEach(key=>
+    'pilgrimage-retail-conversions','pilgrimage-sale-pilgrims','pilgrims','pilgrimage-programs','pilgrimage-availability',
+    'pilgrimage-sale-unified-booking'].forEach(key=>
     qc.invalidateQueries({queryKey:[key,orgId]}));
 
   const createSale=useMutation({
@@ -463,6 +469,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
           {allocation?.confirmed_sale_id && <Button variant="outline" size="sm"
             onClick={()=>setSaleId(allocation.confirmed_sale_id)}>فتح الحجز المؤكد</Button>}
           {conversion && selected.program_type === 'umrah' && <div className="flex flex-wrap gap-2">
+            {unifiedBookingId && <Button asChild size="sm"><Link to={`/bookings/${unifiedBookingId}?tab=financials`}>فتح الحجز الموحّد والتحصيل</Link></Button>}
             <Button asChild variant="outline" size="sm"><Link to={`/pilgrimage?program=${selected.program_id}&tab=rooming`}>تسكين المعتمرين</Link></Button>
             <Button asChild variant="outline" size="sm"><Link to={`/pilgrimage?program=${selected.program_id}&tab=operations`}>تعديل أو إلغاء التسجيل</Link></Button>
           </div>}
@@ -478,7 +485,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
                   onClick={()=>allocateSeat.mutate('allocate')}>تثبيت التخصيص الداخلي</Button>}
               {directBooking && hasPermission('bookings_create') && hasPermission('customers_view') &&
                 allocation?.status==='held' && allocationIsActive && !conversion &&
-                <Button disabled={allocateSeat.isPending || confirmAvailabilityHold.isPending || !programSaleReady}
+                <Button disabled={allocateSeat.isPending || confirmAvailabilityHold.isPending || !programSaleReady
+                  || (selected.program_type === 'umrah' && !hasPermission('invoices_create'))}
                   onClick={()=>{
                     const buyer=customers.find((row:any)=>row.id===selected.buyer_customer_id);
                     setHoldManifest(selected.party_size===1 ? buyer?.name ?? '' : '');

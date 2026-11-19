@@ -51,6 +51,7 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenSale
   const canQuote = canViewCustomers && hasPermission('quotes_create');
   const canBook = canViewCustomers && hasPermission('bookings_create')
     && ['owner', 'admin', 'manager'].includes(orgRole ?? '');
+  const canInvoice = hasPermission('invoices_create');
   const qc = useQueryClient();
   const { toast } = useToast();
   const [filters, setFilters] = useState(initialFilters);
@@ -66,7 +67,8 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenSale
     && travelerNames.every(name => name.length >= 3 && name.length <= 200);
   const quoteSelected = selection?.action === 'quote';
   const bookSelected = selection?.action === 'book';
-  const canSubmit = quoteSelected ? canQuote : canBook && (!bookSelected || validManifest);
+  const canSubmit = quoteSelected ? canQuote : canBook && (!bookSelected ||
+    (validManifest && (selection?.row.program_type !== 'umrah' || canInvoice)));
   const validFilters = Number.isInteger(Number(filters.party)) && Number(filters.party) >= 1
     && Number(filters.party) <= 10000 && (!filters.from || !filters.to || filters.from <= filters.to);
   const searchKey = ['pilgrimage-availability', orgId, submitted] as const;
@@ -263,7 +265,9 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenSale
         </div>
         <div className="flex flex-wrap gap-2">
           {canBook && <>
-            <Button disabled={actionDisabled} onClick={() => openAction(row, 'book')}>{actions.book.label}</Button>
+            <Button disabled={actionDisabled || (row.program_type === 'umrah' && !canInvoice)}
+              title={row.program_type === 'umrah' && !canInvoice ? 'تأكيد الحجز يحتاج صلاحية إصدار الفاتورة' : undefined}
+              onClick={() => openAction(row, 'book')}>{actions.book.label}</Button>
             <Button variant="outline" disabled={actionDisabled} onClick={() => openAction(row, 'hold')}>{actions.hold.label}</Button>
           </>}
           {canQuote && <Button variant="ghost" disabled={actionDisabled} onClick={() => openAction(row, 'quote')}>
