@@ -28,7 +28,7 @@ const setup = `
   CREATE FUNCTION public.has_org_permission(uuid, text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
   AS 'SELECT finance_view AND $2 = ''financial_view'' FROM public.members WHERE organization_id = $1 AND user_id = auth.uid() AND active';
   CREATE FUNCTION public._org_permission_state(uuid, uuid, text) RETURNS TABLE(granted boolean, data_scope text)
-  LANGUAGE sql STABLE AS 'SELECT transfer_scope <> ''none'' AND $3 = ''banking_transfer'', transfer_scope
+  LANGUAGE sql STABLE AS 'SELECT transfer_scope <> ''none'' AND $3 IN (''banking_transfer'', ''banking_transactions''), transfer_scope
     FROM public.members WHERE organization_id = $1 AND user_id = $2 AND active';
   CREATE FUNCTION public.can_org_write(uuid) RETURNS boolean LANGUAGE sql STABLE
   AS 'SELECT writable FROM public.organizations WHERE id = $1';
@@ -264,7 +264,46 @@ try {
   assert.equal((await one('SELECT current_balance FROM public.bank_accounts WHERE id = $1', [foreignBank])).current_balance, '20000.00');
   await db.query('DELETE FROM public.bank_account_transactions WHERE id = $1', [manual.id]);
   assert.deepEqual(await balances(), ['40475.00', '14500.00']);
-  console.log('Treasury transfers and finance organization isolation passed for valid posting, balances, journal links, and permissions.');
+  await db.exec(sql('20261119170521_record_cash_treasury_counts.sql'));
+  const count = (request, account, amount, notes = null) => one(
+    'SELECT * FROM public.record_cash_treasury_count($1, $2, $3, $4, $5)',
+    [org, id(request), account, amount, notes],
+  );
+  const list = () => one('SELECT count(*)::int n FROM public.list_cash_treasury_counts($1)', [org]);
+  const beforeCount = await counts();
+  await as(owner);
+  const short = await count(201, till, '14499.45', ' End of shift ');
+  assert.equal(short.book_amount, '14500.00');
+  assert.equal(short.counted_amount, '14499.45');
+  assert.equal(short.difference, '-0.55');
+  assert.equal(short.notes, 'End of shift');
+  assert.equal(short.counted_by, owner);
+  assert.equal((await count(201, till, '14499.45', 'End of shift')).id, short.id);
+  assert.equal((await count(202, till, '14500')).difference, '0.00');
+  assert.equal((await count(203, till, '14501.10')).difference, '1.10');
+  assert.equal((await count(204, till, '0')).difference, '-14500.00');
+  assert.equal((await list()).n, 4);
+  await assert.rejects(count(201, till, '14499'), /cash_count_request_conflict/);
+  await assert.rejects(count(205, bank, '100'), /cash_count_account/);
+  await assert.rejects(count(205, inactiveTill, '100'), /cash_count_account/);
+  await assert.rejects(count(205, foreignBank, '100'), /cash_count_account/);
+  await assert.rejects(count(205, till, '-1'), /cash_count_invalid/);
+  await assert.rejects(count(205, till, '0.001'), /cash_count_invalid/);
+  await assert.rejects(count(205, till, 'NaN'), /cash_count_invalid/);
+  await assert.rejects(db.query('UPDATE public.cash_treasury_counts SET counted_amount = 0'), /permission denied/);
+  await as(financeReader);
+  assert.equal((await list()).n, 4);
+  await assert.rejects(count(205, till, '100'), /cash_count_permission/);
+  await as(scoped);
+  await assert.rejects(count(205, till, '100'), /cash_count_permission/);
+  await as(outsider);
+  assert.equal((await list()).n, 0);
+  await assert.rejects(count(205, till, '100'), /cash_count_permission/);
+
+  await db.exec('RESET ROLE');
+  assert.deepEqual(await balances(), ['40475.00', '14500.00']);
+  assert.deepEqual(await counts(), beforeCount);
+  console.log('Treasury transfers, cash counts, and company isolation passed for balances, journal links, and permissions.');
 } finally {
   await db.close();
 }

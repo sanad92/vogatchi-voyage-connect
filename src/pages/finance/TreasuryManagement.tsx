@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Wallet, Plus } from 'lucide-react';
 import { ListLoadError } from '@/components/common/ListLoadError';
+import { CashTreasuryCounts } from '@/components/finance/CashTreasuryCounts';
 import TreasuryTransferDialog, { type TreasuryTransfer } from '@/components/finance/TreasuryTransferDialog';
 import type { Database } from '@/integrations/supabase/types';
 import { formatMoney } from '@/lib/customerMetrics';
@@ -42,6 +43,7 @@ export default function TreasuryManagement() {
   const { dir } = useLanguage();
   const { hasPermission, getPermissionScope } = useSupabasePermissions();
   const canTransfer = hasPermission('banking_transfer') && getPermissionScope('banking_transfer') === 'organization';
+  const canCount = hasPermission('banking_transactions') && getPermissionScope('banking_transactions') === 'organization';
   const accountsQuery = useTreasuryAccounts();
   const accounts: BankAccount[] = accountsQuery.data ?? [];
   const transfersQuery = useQuery({
@@ -166,6 +168,8 @@ export default function TreasuryManagement() {
           }
         </CardContent>
       </Card>
+
+      {orgId && <CashTreasuryCounts key={orgId} orgId={orgId} accounts={accounts} canRecord={canCount} />}
 
       <Card>
         <CardHeader><CardTitle className="text-base">أحدث التحويلات الداخلية</CardTitle></CardHeader>
