@@ -27,3 +27,20 @@
 - [x] Platform support tickets (company /support + platform /platform/support)
 - [x] Hajj & Umrah module (/pilgrimage)
 - [ ] English translations for support & Hajj/Umrah screens; ticket attachments
+
+## 2026-11-19 release checkpoint
+
+Baseline: main [493d45fc](https://github.com/sanad92/vogatchi-voyage-connect/commit/493d45fcc7fe0a6270181514c6d66421c6f3f3). The team follows the manager and specialist profiles in [#120](https://github.com/sanad92/vogatchi-voyage-connect/pull/120) while that PR is open. The mobile candidate is [#111](https://github.com/sanad92/vogatchi-voyage-connect/pull/111). The July readiness report describes the earlier web pilot. Current acceptance includes web and mobile.
+
+| Priority | Owner | Exit evidence |
+| --- | --- | --- |
+| 1 | Finance manager, with Treasury and Accounting | Booking collection requires the correct treasury account. A deliberate advance leaves the invoice open. The invoice, journal and treasury agree after posting. A split FX receipt balances in base currency. Record independent QA, finance and access review. |
+| 2 | Organization Settings and Platform managers | Signup, business-email invitation, member roles and tenant boundaries verified against test organizations. Provider payments and transfer approval verified only in designated test environments. |
+| 2 | Sales, Operations, Finance, Pilgrimage and Supply managers | Exercise customer, quote, booking, invoice, collection, amendment, cancellation, refund and supplier closeout with test data. Trace Umrah inventory and accounting through those handoffs. |
+| 2 | Mobile manager | Android APK build, install, and update evidence. iOS build and runtime evidence recorded separately. Check notifications with supported test devices and credentials. |
+| 3 | Development director and Release | Record builds, failed checks, rollout order, and remaining decisions before declaring readiness. |
+
+- Passed on the baseline or this test-only branch: production-mode Vite compilation with local fixture configuration, SaaS/company/CRM core, business-email validation, tenant isolation (41 assertions), department/HR permissions, quote and booking UI fixtures, payment acceptance (11 fixture cases), booking status SQL, supplier closeout, bank baseline and financial formulas. The bank-reconciliation permissions harness had a missing spreadsheet sanitizer import. It passes with the production sanitizer loaded by the harness.
+- Existing work covers Paymob sandbox [#100](https://github.com/sanad92/vogatchi-voyage-connect/pull/100), branch POS [#67](https://github.com/sanad92/vogatchi-voyage-connect/pull/67), branch Inbox [#66](https://github.com/sanad92/vogatchi-voyage-connect/pull/66), and pilgrimage agency/inventory proposals [#42–45](https://github.com/sanad92/vogatchi-voyage-connect/pulls?q=is%3Apr+is%3Aopen+pilgrimage). Confirm which open proposals are required for the release before integrating them.
+- Mobile [run 44583713953](https://github.com/sanad92/vogatchi-voyage-connect/actions/runs/44583713953) at PR head `dc33ff02` produced an [Android debug APK](https://github.com/sanad92/vogatchi-voyage-connect/actions/runs/44583713953/artifacts/14561550792) with install, launch and v3-to-v4 update on an Android emulator, and an iOS Simulator build. Device notifications, distribution signing and iOS execution remain to be verified.
+- Continue with `codex/release-collection-integrity` for the collection changes and rerun related gates against that head. The Operations checkout is `codex/release-booking-verification`. Authenticated staging verification needs designated users, roles, and two isolated test organizations. Production rollout requires separate authorization.
