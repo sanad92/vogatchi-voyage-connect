@@ -25,9 +25,10 @@ const ROLE_META: Record<OrgRole, { label: string; description: string; icon: Luc
 interface Props {
   currentUserId?: string;
   canManage: boolean;
+  focusedMemberId?: string;
 }
 
-const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
+const TeamMembersTable = ({ currentUserId, canManage, focusedMemberId }: Props) => {
   const { members, isLoading, updateRole, toggleActive, removeMember } = useTeamManagement();
   const { userRole } = useOptimizedAuth();
   const { data: deptMembers = [] } = useSopDepartmentMembers();
@@ -50,12 +51,18 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
     );
   }
 
+  const visibleMembers = focusedMemberId ? members.filter(member => member.user_id === focusedMemberId) : members;
+
   if (!members.length) {
     return <div className="text-center py-12 text-muted-foreground">لا يوجد أعضاء في الفريق بعد.</div>;
   }
 
   return (
     <>
+      {focusedMemberId && <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+        <span>{visibleMembers.length ? 'حساب الموظف المرتبط' : 'حساب الموظف غير متاح في هذه المؤسسة.'}</span>
+        <Button asChild size="sm" variant="outline"><Link to="/team">عرض كل أعضاء الفريق</Link></Button>
+      </div>}
       {canManage && (
         <details className="mb-3 rounded-lg border px-3 py-2 text-sm">
           <summary className="cursor-pointer font-medium">معنى أدوار الفريق</summary>
@@ -84,7 +91,7 @@ const TeamMembersTable = ({ currentUserId, canManage }: Props) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {members.map((m) => {
+            {visibleMembers.map((m) => {
               const meta = ROLE_META[m.role] || ROLE_META.viewer;
               const RoleIcon = meta.icon;
               const isMe = m.user_id === currentUserId;

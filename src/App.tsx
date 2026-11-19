@@ -104,6 +104,7 @@ const PaymentSuccess = lazy(() => import("@/pages/PaymentSuccess"));
 // Operations
 const Suppliers = lazy(() => import("@/pages/Suppliers"));
 const Reports = lazy(() => import("@/pages/Reports"));
+const EmployeeProfilePage = lazy(() => import("@/pages/EmployeeProfilePage"));
 const EnhancedEmployeesPage = lazy(() => import("@/pages/EnhancedEmployeesPage"));
 const DailyOperations = lazy(() => import("@/pages/DailyOperations"));
 const CustomerService = lazy(() => import("@/pages/CustomerService"));
@@ -367,6 +368,7 @@ function App() {
                               <Route path="/profit-loss-reports" element={<Navigate to="/accounting-reports" replace />} />
                               <Route path="/profit-analytics" element={<PermissionRouteGuard requiredPermission="reports_advanced"><ProfitAnalytics /></PermissionRouteGuard>} />
                               <Route path="/hr" element={<EnhancedEmployeesPage />} />
+                              <Route path="/hr/employees/:employeeId" element={<EmployeeProfilePage />} />
                               <Route path="/employee-records" element={<Navigate to="/hr?tab=files" replace />} />
                               <Route path="/employee-commissions" element={<Navigate to="/hr?tab=commissions" replace />} />
                               <Route path="/expense-management" element={<PermissionRouteGuard requiredPermission="expenses_view"><ExpenseManagementEnhanced /></PermissionRouteGuard>} />

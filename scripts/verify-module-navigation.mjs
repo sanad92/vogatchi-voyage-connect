@@ -103,6 +103,9 @@ for (const [path, permission] of [['/employee-records', 'employees_view'], ['/em
 const hr = registry.getAllModuleScreens().find(screen => screen.href === '/hr');
 assert.deepEqual(Array.from(hr.anyPermissions), ['employees_view', 'employees_attendance_view', 'employees_salary', 'employees_commission']);
 assert.equal(features.getRequiredPlanFeature('/hr')?.feature, 'finance');
+assert.equal(features.getRequiredPlanFeature('/hr/employees/example')?.feature, 'finance');
+assert.ok(activeRoutes.has('/hr/employees/:employeeId'));
+assert.equal(registry.findModuleByPath('/hr/employees/example')?.id, 'employees');
 assert.equal(registry.getAllModuleScreens().filter(s => s.href === '/whatsapp-inbox').length, 1);
 const paymentOrderGroups = registry.NAVIGATION_GROUPS.filter(group => group.items.some(item => item.href === '/payment-orders'));
 assert.equal(paymentOrderGroups.length, 1, 'supplier payment orders appear once in the sidebar');

@@ -34,7 +34,7 @@ try {
     CREATE TABLE public.organization_salary_settings (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid, setting_key text, setting_value numeric
     );
-    CREATE TABLE public.bank_accounts (id uuid, organization_id uuid, currency text, is_active boolean);
+    CREATE TABLE public.bank_accounts (id uuid, organization_id uuid, currency text, is_active boolean, treasury_kind text);
     GRANT SELECT, INSERT, UPDATE, DELETE ON public.employees, public.monthly_salaries, public.organization_salary_settings TO authenticated;
     ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
     CREATE POLICY test_employee_member ON public.employees FOR ALL TO authenticated
@@ -51,6 +51,7 @@ try {
   await exec(dispatcher.slice(dispatcher.indexOf('DO $split_permission$'), dispatcher.indexOf('CREATE FUNCTION operations_private.notification_recipient')));
   await exec('GRANT EXECUTE ON FUNCTION public._org_permission_state(uuid,uuid,text) TO authenticated');
   await exec(sql('supabase/migrations/20261119112811_organization_role_defaults_and_hr.sql'));
+  await exec(sql('supabase/migrations/20261119121105_guard_salary_payment_retries.sql'));
 
   await exec(`
     INSERT INTO auth.users(id) VALUES ('${owner}'), ('${manager}'), ('${agent}'), ('${inactive}');
@@ -63,6 +64,11 @@ try {
       ('${orgA}','${inactive}','manager',false);
     INSERT INTO public.sop_department_members(organization_id,user_id,department)
       VALUES ('${orgA}','${agent}','sales'), ('${orgB}','${agent}','sales');
+    INSERT INTO public.bank_accounts VALUES
+      ('${id(31)}','${orgA}','EGP',true,'bank'),
+      ('${id(32)}','${orgA}','USD',true,'bank'),
+      ('${id(33)}','${orgB}','EGP',true,'bank'),
+      ('${id(34)}','${orgA}','EGP',true,'cash');
     INSERT INTO public.employees(id,organization_id,full_name,is_active,base_salary,allowances,national_id)
       VALUES ('${employeeA}','${orgA}','First employee',true,6000,500,'private-a'),
              ('${employeeB}','${orgB}','Other employee',true,7000,750,'private-b');
@@ -84,7 +90,10 @@ try {
     on conflict (organization_id,employee_id,attendance_date)
       do update set status=excluded.status,check_in_time=excluded.check_in_time,check_out_time=excluded.check_out_time
     returning id, actual_hours`, [org, employee, status, start, end]);
-  const calc = employee => one("select public.calculate_monthly_salary($1, date '2026-11-01') as result", [employee]);
+  const calc = (employee, month = '2026-11-01') =>
+    one('select public.calculate_monthly_salary($1, $2::date) as result', [employee, month]);
+  const pay = (salaryId, method = null, bank = null, date = '2026-11-19') =>
+    one("select public.update_salary_status($1, 'paid', $2::date, $3, $4) as result", [salaryId, date, method, bank]);
 
   await actor(agent);
   assert.equal(await allowed(orgA, 'quotes_create'), true);
@@ -113,6 +122,13 @@ try {
   const updated = await saveAttendance(orgA, employeeA, 'vacation');
   assert.equal(updated.id, first.id);
   assert.equal(updated.actual_hours, null);
+  const bulk = await db.query(`
+    insert into public.employee_attendance(organization_id,employee_id,attendance_date,status)
+    values($1,$2,date '2026-11-19','present'),($1,$2,date '2026-11-20','present')
+    on conflict (organization_id,employee_id,attendance_date) do nothing returning attendance_date
+  `, [orgA, employeeA]);
+  assert.equal(bulk.rows.length, 1);
+  assert.equal((await one('select status from public.employee_attendance where id=$1',[first.id])).status, 'vacation');
   await assert.rejects(saveAttendance(orgA, employeeB, 'present'), { code: '23503' });
   await assert.rejects(saveAttendance(orgB, employeeB, 'present'), { code: '42501' });
   await assert.rejects(db.query('update public.employees set base_salary=9999 where id=$1', [employeeA]), { code: '42501' });
@@ -137,10 +153,24 @@ try {
   await actor(manager);
   assert.equal((await db.query('select id from public.monthly_salaries')).rows.length, 1);
   assert.equal((await one("select public.update_salary_status($1, 'cancelled') as result", [salary.salary_id])).result.success, true);
+  await assert.rejects(pay(salary.salary_id, 'cash'), /المعلّق فقط/);
+  const cashSalary = (await calc(employeeA, '2026-12-01')).result.salary_id;
+  await assert.rejects(pay(cashSalary), /اختر طريقة الدفع/);
+  assert.equal((await pay(cashSalary, 'cash')).result.new_status, 'paid');
+  assert.equal((await pay(cashSalary, 'cash')).result.old_status, 'paid');
+  await assert.rejects(pay(cashSalary, 'cash', null, '2026-11-20'), /تم تسجيل صرف الراتب بالفعل/);
+  const transferSalary = (await calc(employeeA, '2027-01-01')).result.salary_id;
+  await assert.rejects(pay(transferSalary, 'bank_transfer'), /اختر حساب الخزينة/);
+  for (const bankId of [id(32), id(33), id(34)]) {
+    await assert.rejects(pay(transferSalary, 'bank_transfer', bankId), /حساب الخزينة غير موجود/);
+  }
+  assert.equal((await pay(transferSalary, 'bank_transfer', id(31))).result.new_status, 'paid');
+  assert.equal((await pay(transferSalary, 'bank_transfer', id(31))).result.old_status, 'paid');
+  assert.equal((await one('select bank_account_id from public.monthly_salaries where id=$1', [transferSalary])).bank_account_id, id(31));
   await actor(inactive);
   assert.equal((await db.query('select id from public.employee_directory')).rows.length, 0);
 
-  console.log('Organization defaults, department fallback, tenant isolation, attendance upserts, and payroll access passed.');
+  console.log('Organization defaults, department fallback, tenant isolation, attendance inserts, payroll permissions, and idempotent cash/bank payment passed.');
 } finally {
   await db.close();
 }
