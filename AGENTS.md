@@ -30,20 +30,26 @@
 - When nested delegation is available, dispatch the assignments, collect the specialists' results, check them against the module's acceptance criteria, and send back gaps for correction. When the director dispatches on the manager's behalf, review the returned worker outputs before reporting. Use existing checks and non-production fixtures as applicable.
 - Report the assignments and outcomes by specialist, changed files, checks and actual results, dependencies, and any unresolved finding to the director. Specialists execute the assigned work and return the evidence to their manager or the director who dispatched them.
 
-| Module or work area | Manager |
-| --- | --- |
-| Customers and Sales (`sales`) | `safar_manager_sales` |
-| Suppliers and Procurement (`supply`) | `safar_manager_supply` |
-| Bookings and Operations (`operations`) | `safar_manager_operations` |
-| Finance and Accounting (`finance`) | `safar_manager_finance` |
-| Human Resources (`employees`) | `safar_manager_employees` |
-| Marketing and Communications (`growth`) | `safar_manager_growth` |
-| Management Reporting (`management`) | `safar_manager_management` |
-| Organization Settings (`settings`) | `safar_manager_settings` |
-| Automation and AI (`automation`) | `safar_manager_automation` |
-| Hajj and Umrah, within Bookings and Operations | `safar_manager_pilgrimage` |
-| Platform Administration and Subscriptions | `safar_manager_platform` |
-| Mobile Applications | `safar_manager_mobile` |
+| Module or work area | Manager | Product research agent |
+| --- | --- | --- |
+| Customers and Sales (`sales`) | `safar_manager_sales` | `safar_development_sales` (نهى) |
+| Suppliers and Procurement (`supply`) | `safar_manager_supply` | `safar_development_supply` (طارق) |
+| Bookings and Operations (`operations`) | `safar_manager_operations` | `safar_development_operations` (شروق) |
+| Finance and Accounting (`finance`) | `safar_manager_finance` | `safar_development_finance` (أمينة) |
+| Human Resources (`employees`) | `safar_manager_employees` | `safar_development_employees` (ياسمين) |
+| Marketing and Communications (`growth`) | `safar_manager_growth` | `safar_development_growth` (سليم) |
+| Management Reporting (`management`) | `safar_manager_management` | `safar_development_management` (روان) |
+| Organization Settings (`settings`) | `safar_manager_settings` | `safar_development_settings` (شريف) |
+| Automation and AI (`automation`) | `safar_manager_automation` | `safar_development_automation` (فرح) |
+| Hajj and Umrah, within Bookings and Operations | `safar_manager_pilgrimage` | `safar_development_pilgrimage` (معاذ) |
+| Platform Administration and Subscriptions | `safar_manager_platform` | `safar_development_platform` (نجلاء) |
+| Mobile Applications | `safar_manager_mobile` | `safar_development_mobile` (آية) |
+
+### Competitor research and development proposals
+
+- For a research assignment, the module manager briefs its product research agent on the target user, current Safar workflow, and questions to compare. The agent documents evidence from public product pages, support manuals, or demos and records how each claim was verified.
+- The agent checks whether Safar already supports the feature or a related workflow. Proposals describe the specific gap, where any affected input is stored and used, expected impact, effort, dependencies, at least one acceptance scenario, and a metric. Include small usability and field-mapping observations when applicable.
+- Module managers verify the proposals and return the ranked findings to the development director. When a proposal moves to implementation, the appropriate engineering and review roles handle it through the normal workflow.
 
 ### Project specialists
 
