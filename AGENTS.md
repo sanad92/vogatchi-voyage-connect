@@ -10,3 +10,10 @@
 - Privileged RPC denial predicates coalesce missing organization roles to an empty value, and membership identity is immutable. Why: SQL NULL must deny access, and memberships must never move between tenants or users.
 - Staff invitation emails are rendered and queued by the send-invitation-email function after the invitation RPC; the database never builds or queues email. Why: keeps email sending convertible to managed delivery.
 - Subscription checkout uses Paymob Unified Checkout (Intention API with secret key, card + wallet integration IDs from secrets); the legacy iframe flow is retired. Why: Paymob no longer supports the legacy flow and it breaks 3DS.
+
+## Parallel team workflow
+
+- Start independent work in parallel within the available agent slots. While product development investigates and writes proposals, implementation progresses on ready work and prepares scoped implementation or tests for proposals in progress. Reviewers inspect the current behavior, define acceptance cases, and review changes as they become available. QA and delivery prepare fixtures, verification, and release steps from the start.
+- For each workstream, record its owner, scope, dependencies, and acceptance criteria. Identify the owner of each shared file or interface before editing. Use separate branches or worktrees for concurrent repository changes and coordinate shared changes through the assigned owner.
+- Share interim findings that affect another workstream as soon as they are verified. Attach the relevant files, revision, test results, and exact blockers to each handoff. If work depends on another result, move to the next independent task while that dependency is resolved.
+- Sequence only the work that genuinely depends on another result. Integrate compatible changes as they become ready and verify the combined affected paths before reporting completion or releasing them. Treat a review of a proposal or an individual branch as evidence for that scope.
