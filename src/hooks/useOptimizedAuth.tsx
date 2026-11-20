@@ -263,12 +263,12 @@ export const OptimizedAuthProvider = ({ children }: { children: React.ReactNode 
       });
       if (error) throw error;
 
-      if (data.user && !data.user.email_confirmed_at) {
-        toast.success('تم إنشاء الحساب! يرجى فحص بريدك الإلكتروني');
-      } else {
-        toast.success('تم إنشاء الحساب بنجاح');
-        navigate(safeRedirect);
+      if (!data.session) {
+        toast.info('راجع بريدك الإلكتروني لإكمال التسجيل.');
+        return { error: null, confirmationRequired: true };
       }
+      toast.success('تم إنشاء الحساب بنجاح');
+      navigate(safeRedirect);
       return { error: null };
     } catch (error) {
       return { error };

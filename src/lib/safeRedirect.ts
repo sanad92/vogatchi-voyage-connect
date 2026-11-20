@@ -23,3 +23,16 @@ export function getCompanyLoginPath(location: { pathname: string; search: string
   const target = getSafeInternalRedirect(location.pathname + location.search + location.hash);
   return target ? `/login?${new URLSearchParams({ redirect: target })}` : '/login';
 }
+
+const SUBSCRIPTION_PLAN_ID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+
+/** Only resume subscription checkout after company creation. */
+export function getSubscriptionCheckoutContinuation(value: string | null | undefined): string | null {
+  const path = getSafeInternalRedirect(value);
+  if (!path) return null;
+  const target = new URL(path, 'https://safarerp.com');
+  const plan = target.searchParams.get('plan');
+  if (target.pathname !== '/payment' || !plan || !SUBSCRIPTION_PLAN_ID.test(plan)) return null;
+  const billing = target.searchParams.get('billing') === 'yearly' ? 'yearly' : 'monthly';
+  return `/payment?${new URLSearchParams({ plan, billing })}`;
+}

@@ -57,6 +57,8 @@ jobs:
           node scripts/verify-booking-voucher-confirmation.mjs
       - name: Verify operations, public pages and reporting
         run: |
+          node scripts/verify-launch-regressions.mjs
+          node --experimental-strip-types scripts/verify-launch-workflows.mjs
           bun run test:whatsapp
           bun run test:crm
           bun run test:itinerary
@@ -65,6 +67,7 @@ jobs:
           node scripts/verify-meta-deletion-confirmation.mjs
           node scripts/verify-operations-remediation.mjs
           node scripts/verify-marketing-journey-runtime.mjs
+          node scripts/verify-customer-marketing-permissions.mjs
           node scripts/verify-booking-automation-access.mjs
           node scripts/verify-sales-customer-context.mjs
           node scripts/verify-public-booking-intake.mjs

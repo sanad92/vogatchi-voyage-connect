@@ -12,11 +12,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
+import { privateRoomTotal, type PrivateRule } from '@/lib/pilgrimage/roomPricing';
 import { money, ROOM, ROOM_SIZE } from './pilgrimage-documents';
 
 type City = 'makkah' | 'madinah';
 type Room = 'quad' | 'triple' | 'double' | 'single';
-type PrivateRule = { method: 'fixed'; per_person: Record<string, number> } | { method: 'supplement'; per_empty_bed: number };
 type Program = {
   id: string;
   uses_room_inventory: boolean;
@@ -140,10 +140,8 @@ export default function UmrahDepartureInventory({
   const sharedPrice = Number(program[`price_${room}`]);
   const occupied = travelers.length;
   const roomSize = ROOM_SIZE[room];
-  const total = mode === 'shared' ? sharedPrice * occupied
-    : priceRule?.method === 'fixed' ? (priceRule.per_person[occupied] ?? 0) * occupied
-    : priceRule?.method === 'supplement' ? sharedPrice * occupied + priceRule.per_empty_bed * (roomSize - occupied) : 0;
-  const totalPrice = Math.round(total * 100) / 100;
+  const totalPrice = mode === 'shared' ? Math.round(sharedPrice * occupied * 100) / 100
+    : privateRoomTotal(priceRule, sharedPrice, occupied, roomSize);
   const availableSeats = Math.max(0, program.capacity - passengers.filter((person) => person.status !== 'cancelled').length);
   const validBooking = registrationOpen && canBook && customer && totalPrice > 0 && occupied <= availableSeats
     && (mode !== 'private' || occupied <= roomSize)
