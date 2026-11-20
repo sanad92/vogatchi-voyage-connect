@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { normalizeContactPhone, validContactEmail, validContactName } from '@/lib/organizationContacts';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
+import { finishCustomPlanInquiryRequest, getCustomPlanInquiryRequestId } from '@/lib/customPlanInquiryRetry';
 
 type InquiryReceipt = { accepted: true; reference: string };
 
@@ -73,7 +74,6 @@ export default function CustomPlanInquiry() {
       _consent: consent,
       _honeypot: getText('website') || null,
     };
-    const fingerprint = JSON.stringify(body);
     inFlight.current = true;
     setIsSubmitting(true);
     setErrorMessage(null);
@@ -81,11 +81,7 @@ export default function CustomPlanInquiry() {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 15_000);
     try {
-      let requestId = attempts.current.get(fingerprint);
-      if (!requestId) {
-        requestId = crypto.randomUUID();
-        attempts.current.set(fingerprint, requestId);
-      }
+      const requestId = await getCustomPlanInquiryRequestId(JSON.stringify(body), attempts.current);
       const { data, error } = await callUntypedRpc<InquiryReceipt>('submit_platform_custom_plan_inquiry', {
         _request_id: requestId,
         ...body,
@@ -98,7 +94,7 @@ export default function CustomPlanInquiry() {
       } else if (error || data?.accepted !== true || typeof data.reference !== 'string' || !receiptPattern.test(data.reference)) {
         setErrorMessage(unconfirmedSubmission);
       } else {
-        attempts.current.clear();
+        finishCustomPlanInquiryRequest(requestId, attempts.current);
         setReceipt(data.reference);
       }
     } catch {
