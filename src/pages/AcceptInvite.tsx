@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { Check, Loader2, UserPlus, X } from 'lucide-react';
+import { Check, Eye, EyeOff, Loader2, UserPlus, X } from 'lucide-react';
 import { useAcceptInvitation, type AcceptInvitationResult } from '@/hooks/useInvitations';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getAuthErrorMessage, getPasswordAuthErrorMessage } from '@/lib/authErrorMessage';
-import { PASSWORD_LENGTH_MESSAGE, PASSWORD_MIN_LENGTH } from '@/lib/passwordRules';
+import { getPasswordPolicyError } from '@/lib/passwordRules';
 
 const invitationTokenPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
@@ -42,6 +42,11 @@ function InvitationFlow({ token }: { token: string }) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [accountKind, setAccountKind] = useState<string | null>(null);
+  const sendPending = useRef(false);
+  const passwordInput = useRef<HTMLInputElement>(null);
   const redirectPath = `/accept-invite?token=${encodeURIComponent(token)}`;
   const validToken = invitationTokenPattern.test(token);
   const invitation = useQuery({
@@ -62,8 +67,10 @@ function InvitationFlow({ token }: { token: string }) {
 
   async function continueInvitation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (sending || sent) return;
+    if (sendPending.current || sent) return;
+    sendPending.current = true;
     setEmailError('');
+    setPasswordError('');
     setSending(true);
     try {
       const address = email.trim().toLowerCase();
@@ -77,10 +84,13 @@ function InvitationFlow({ token }: { token: string }) {
         return;
       }
       const emailRedirectTo = `${window.location.origin}${redirectPath}`;
-      switch (currentInvitation.account_state) {
+      const state = currentInvitation.account_state;
+      setAccountKind(typeof state === 'string' ? state : null);
+      switch (state) {
         case 'new': {
-          if (password.length < PASSWORD_MIN_LENGTH) {
-            setEmailError(PASSWORD_LENGTH_MESSAGE);
+          const feedback = getPasswordPolicyError(password);
+          if (feedback) {
+            setPasswordError(feedback);
             return;
           }
           const { data, error } = await supabase.auth.signUp({
@@ -99,7 +109,7 @@ function InvitationFlow({ token }: { token: string }) {
         }
         case 'existing': {
           if (!password) {
-            setEmailError('أدخل كلمة المرور.');
+            setPasswordError('أدخل كلمة المرور لحسابك الحالي.');
             return;
           }
           const { error } = await supabase.auth.signInWithPassword({ email: address, password });
@@ -133,15 +143,22 @@ function InvitationFlow({ token }: { token: string }) {
           setEmailError('تعذّر التحقق من الدعوة.');
       }
     } catch (error) {
-      setEmailError(getPasswordAuthErrorMessage(error)
-        ?? 'تعذّر إكمال قبول الدعوة. حاول مرة أخرى.');
+      const passwordFeedback = getPasswordAuthErrorMessage(error);
+      if (passwordFeedback) setPasswordError(passwordFeedback);
+      else setEmailError('تعذّر إكمال قبول الدعوة. حاول مرة أخرى.');
     } finally {
+      sendPending.current = false;
       setSending(false);
     }
   }
 
+  useEffect(() => {
+    if (passwordError && !sending) passwordInput.current?.focus();
+  }, [passwordError, sending]);
+
   async function switchAccount() {
     setEmailError('');
+    setPasswordError('');
     const { error } = await supabase.auth.signOut({ scope: 'local' });
     if (error) {
       setEmailError('تعذّر تسجيل الخروج. حاول مرة أخرى.');
@@ -213,14 +230,32 @@ function InvitationFlow({ token }: { token: string }) {
               <form className="space-y-3 text-start" onSubmit={continueInvitation}>
                 <Label htmlFor="invited-email">بريد العمل</Label>
                 <Input id="invited-email" type="email" dir="ltr" autoComplete="email" value={email}
-                  onChange={event => setEmail(event.target.value)} required disabled={sending} />
+                  onChange={event => {
+                    setEmail(event.target.value);
+                    setEmailError('');
+                    setPasswordError('');
+                    setAccountKind(null);
+                  }}
+                  required disabled={sending} />
                 <Label htmlFor="invited-password">كلمة المرور</Label>
-                <Input id="invited-password" type="password" dir="ltr" autoComplete="new-password"
-                  value={password} onChange={event => setPassword(event.target.value)}
-                  aria-describedby="invited-password-guidance" disabled={sending} />
+                <div className="relative">
+                  <Input id="invited-password" ref={passwordInput} type={showPassword ? 'text' : 'password'} dir="ltr"
+                    autoComplete={accountKind === 'existing' ? 'current-password' : 'new-password'}
+                    value={password} onChange={event => { setPassword(event.target.value); setPasswordError(''); }}
+                    aria-invalid={Boolean(passwordError)}
+                    aria-describedby={passwordError ? 'invited-password-guidance invited-password-error' : 'invited-password-guidance'}
+                    className="pe-12" disabled={sending} />
+                  <button type="button" onClick={() => setShowPassword(value => !value)}
+                    aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'} aria-pressed={showPassword}
+                    className="absolute right-1 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring">
+                    {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+                  </button>
+                </div>
                 <p id="invited-password-guidance" className="text-sm text-muted-foreground">
-                  لو ده حسابك الأول، اختار كلمة مرور من ٨ أحرف على الأقل. لو عندك حساب، استخدم كلمتك الحالية.
+                  {accountKind === 'existing' ? 'استخدم كلمة مرور حسابك الحالي.' :
+                    'لو ده أول حساب ليك، اختار كلمة مرور من ٨ أحرف على الأقل. لو عندك حساب، استخدم كلمتك الحالية.'}
                 </p>
+                {passwordError && <p id="invited-password-error" role="alert" className="text-sm text-destructive">{passwordError}</p>}
                 <Button type="submit" className="w-full" disabled={sending}>
                   {sending ? 'جارٍ الإرسال...' : 'متابعة قبول الدعوة'}
                 </Button>

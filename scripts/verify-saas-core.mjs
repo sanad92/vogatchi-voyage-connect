@@ -110,10 +110,31 @@ assert.match(authErrors.getPasswordAuthErrorMessage(new Error(weakPasswordMessag
 assert.match(authErrors.getPasswordAuthErrorMessage({ code: 'weak_password', reasons: ['length'] }), /أقصر/);
 assert.match(authErrors.getPasswordAuthErrorMessage({ code: 'weak_password', reasons: ['characters'] }), /حروفًا/);
 assert.equal(authErrors.getPasswordAuthErrorMessage({ code: 'user_already_exists' }), undefined);
+assert.match(authErrors.getPasswordAuthErrorMessage({ code: 'same_password' }), /مختلفة/);
+assert.match(authErrors.getPasswordAuthErrorMessage({
+  code: 'validation_failed', message: 'Password cannot be longer than 72 characters',
+}), /أكبر من الحد/);
+assert.match(authErrors.getPasswordAuthErrorMessage({
+  code: 'weak_password', reasons: ['length'], message: 'Password should be at least 12 characters.',
+}), /12/);
+const characterFeedback = authErrors.getPasswordAuthErrorMessage({
+  code: 'weak_password', reasons: ['characters'],
+  message: 'Password should contain at least one character of each: abcdefghijklmnopqrstuvwxyz, 0123456789.',
+});
+assert.match(characterFeedback, /حرف إنجليزي صغير، رقم/);
+assert.doesNotMatch(characterFeedback, /رمز أو كبير|رمز مثل/);
+assert.equal(authErrors.getSignupAuthError({ code: 'weak_password' }).field, 'password');
+assert.equal(authErrors.getSignupAuthError({ code: 'user_already_exists' }).field, 'email');
+assert.equal(authErrors.getSignupAuthError({ code: 'business_email_required' }).field, 'email');
+assert.equal(authErrors.getSignupAuthError({ code: 'email_address_invalid' }).field, 'email');
+assert.equal(authErrors.getSignupAuthError({ code: 'email_address_not_authorized' }).field, undefined);
+assert.match(authErrors.getSignupAuthError({ code: 'over_email_send_rate_limit' }).message, /انتظر/);
+assert.equal(authErrors.getSignupAuthError(new Error('Payment lock already released')).field, undefined);
 assert.equal(passwords.getPasswordChecks('abcdefgh').length, true);
 assert.equal(passwords.getPasswordChecks('abcdefg').length, false);
 assert.deepEqual(passwords.getPasswordChecks('SampleWord4!'), {
   length: true,
+  withinLimit: true,
   longer: true,
   uppercase: true,
   lowercase: true,
@@ -121,6 +142,15 @@ assert.deepEqual(passwords.getPasswordChecks('SampleWord4!'), {
   symbol: true,
 });
 assert.equal(passwords.getPasswordChecks('abc def').symbol, false);
+assert.equal(passwords.getPasswordPolicyError('🔒'.repeat(4)), passwords.PASSWORD_LENGTH_MESSAGE);
+assert.equal(passwords.getPasswordPolicyError('🔒'.repeat(18)), undefined);
+assert.equal(passwords.getPasswordPolicyError('🔒'.repeat(19)), passwords.PASSWORD_MAX_BYTES_MESSAGE);
+assert.equal(passwords.getPasswordPolicyError('ق'.repeat(36)), undefined);
+assert.equal(passwords.getPasswordPolicyError('ق'.repeat(37)), passwords.PASSWORD_MAX_BYTES_MESSAGE);
+assert.equal(passwords.getPasswordPolicyError('a'.repeat(72)), undefined);
+assert.equal(passwords.getPasswordPolicyError('a'.repeat(73)), passwords.PASSWORD_MAX_BYTES_MESSAGE);
+assert.match(passwords.getPasswordPolicyError('abcdefgh', { requireMixedCharacters: true }), /كبيرًا/);
+assert.equal(passwords.getPasswordPolicyError('Abcd1234', { requireMixedCharacters: true }), undefined);
 
 const migration = await readFile(
   new URL('../supabase/migrations/20260822160000_saas_core_hardening.sql', import.meta.url),
