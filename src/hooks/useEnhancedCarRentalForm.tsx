@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useCarRentals } from '@/hooks/useCarRentals';
 import { useUserEmployeeMapping } from '@/hooks/useUserEmployeeMapping';
+import { useParentBookingFields } from '@/contexts/ParentBookingContext';
 
 interface CarRentalFormData {
   // Customer & Supplier
@@ -92,7 +93,7 @@ const initialFormData: CarRentalFormData = {
   deposit_paid: 0,
   payment_method: 'cash',
   driver_license_number: '',
-  driver_license_expiry: new Date().toISOString().slice(0, 10),
+  driver_license_expiry: '',
   booking_agent_id: '',
   booking_agent_name: '',
   insurance_included: true,
@@ -112,7 +113,9 @@ const initialFormData: CarRentalFormData = {
 export const useEnhancedCarRentalForm = () => {
   const { addCarRental, isAddingRental } = useCarRentals();
   const { getCurrentEmployeeName } = useUserEmployeeMapping();
-  const [formData, setFormData] = useState<CarRentalFormData>(initialFormData);
+  const { customer, currency } = useParentBookingFields();
+  const getInitialFields = () => ({ ...initialFormData, customer_id: customer?.id || '', customer_name: customer?.name || '', currency: currency || initialFormData.currency });
+  const [formData, setFormData] = useState<CarRentalFormData>(getInitialFields);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Auto-calculate duration when dates change
@@ -132,14 +135,14 @@ export const useEnhancedCarRentalForm = () => {
   // Auto-calculate totals when costs or duration change
   useEffect(() => {
     const totalRentalCost = formData.daily_rate * formData.rental_duration_days;
-    const supplierTotalCost = formData.supplier_daily_cost * formData.rental_duration_days;
+    const supplierTotalCost = formData.supplier_daily_cost * formData.rental_duration_days + formData.insurance_cost + formData.additional_fees;
     
     setFormData(prev => ({
       ...prev,
       total_rental_cost: totalRentalCost,
       supplier_total_cost: supplierTotalCost
     }));
-  }, [formData.daily_rate, formData.supplier_daily_cost, formData.rental_duration_days]);
+  }, [formData.daily_rate, formData.supplier_daily_cost, formData.rental_duration_days, formData.insurance_cost, formData.additional_fees]);
 
   const updateField = (field: keyof CarRentalFormData, value: any) => {
     setFormData(prev => ({
@@ -224,9 +227,14 @@ export const useEnhancedCarRentalForm = () => {
     
     const rentalData = {
       ...formData,
+      customer_id: formData.customer_id || null,
+      supplier_id: formData.supplier_id || null,
+      booking_agent_id: formData.booking_agent_id || null,
+      vehicle_type_id: formData.vehicle_type_id || null,
+      driver_license_expiry: formData.driver_license_expiry || null,
       booking_agent_name: currentEmployee,
       remaining_amount: Math.max(0, formData.total_rental_cost - formData.paid_amount),
-      total_profit: formData.total_rental_cost - formData.supplier_total_cost - formData.insurance_cost - formData.additional_fees,
+      total_profit: formData.total_rental_cost - formData.supplier_total_cost,
       exchange_rate_to_egp: 1.0,
       deposit_returned: 0,
       contract_sent_date: formData.contract_sent ? new Date().toISOString() : null,
@@ -242,7 +250,7 @@ export const useEnhancedCarRentalForm = () => {
       });
       
       // Reset form
-      setFormData(initialFormData);
+      setFormData(getInitialFields());
       setErrors({});
       
       return true;
@@ -258,7 +266,7 @@ export const useEnhancedCarRentalForm = () => {
   };
 
   const resetForm = () => {
-    setFormData(initialFormData);
+    setFormData(getInitialFields());
     setErrors({});
   };
 

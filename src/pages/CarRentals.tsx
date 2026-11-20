@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Plus, Car, BarChart3, Calendar } from 'lucide-react';
 import CarRentalsList from '@/components/transport/CarRentalsList';
 import { useCarRentals } from '@/hooks/useCarRentals';
+import { formatSpecializedBookingTotals } from '@/lib/specializedBookingFinance';
+import { format } from 'date-fns';
 
 const CarRentals = () => {
   const navigate = useNavigate();
@@ -13,14 +15,12 @@ const CarRentals = () => {
 
   // حساب الإحصائيات
   const totalRentals = carRentals?.length || 0;
-  const totalRevenue = carRentals?.reduce((sum, rental) => sum + rental.total_rental_cost, 0) || 0;
-  const totalProfit = carRentals?.reduce((sum, rental) => sum + (rental.total_profit || 0), 0) || 0;
-  const activeRentals = carRentals?.filter(rental => {
-    const today = new Date();
-    const startDate = new Date(rental.rental_start_date);
-    const endDate = new Date(rental.rental_end_date);
-    return startDate <= today && endDate >= today;
-  }).length || 0;
+  const active = (carRentals ?? []).filter(rental => !['cancelled', 'canceled'].includes(rental.booking_status_code ?? ''));
+  const totalRevenue = formatSpecializedBookingTotals(active.map(rental => ({ amount: rental.total_rental_cost, currency: rental.currency })));
+  const totalProfit = formatSpecializedBookingTotals(active.map(rental => ({ amount: rental.total_profit, currency: rental.currency })));
+  const localDate = format(new Date(), 'yyyy-MM-dd');
+  const activeRentals = active.filter(rental => rental.rental_start_date && rental.rental_end_date &&
+    rental.rental_start_date <= localDate && rental.rental_end_date >= localDate).length;
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">
@@ -61,10 +61,8 @@ const CarRentals = () => {
             <div className="flex items-center gap-2">
               <BarChart3 className="h-8 w-8 text-primary" />
               <div>
-                <div className="text-2xl font-bold">
-                  {(totalRevenue / 1000).toFixed(0)}ك
-                </div>
-                <div className="text-sm text-muted-foreground">إجمالي الإيرادات</div>
+                <div className="text-lg font-bold">{totalRevenue}</div>
+                <div className="text-sm text-muted-foreground">قيمة العقود</div>
               </div>
             </div>
           </CardContent>
@@ -75,9 +73,7 @@ const CarRentals = () => {
             <div className="flex items-center gap-2">
               <BarChart3 className="h-8 w-8 text-primary" />
               <div>
-                <div className="text-2xl font-bold">
-                  {(totalProfit / 1000).toFixed(0)}ك
-                </div>
+                <div className="text-lg font-bold">{totalProfit}</div>
                 <div className="text-sm text-muted-foreground">إجمالي الأرباح</div>
               </div>
             </div>

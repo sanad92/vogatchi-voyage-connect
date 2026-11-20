@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { HotelBooking, NewHotelBooking } from "@/types/hotelBooking";
@@ -6,7 +7,8 @@ import { Customer } from "@/types/customer";
 import { useOrgId } from "./useOrgId";
 import { useCurrencyHelper } from "./useCurrencyHelper";
 import { calculateFinancialBreakdown } from "@/utils/calculationHelpers";
-import { useParentBookingLink } from "@/contexts/ParentBookingContext";
+import { useParentBookingFields, useParentBookingLink } from "@/contexts/ParentBookingContext";
+import { callUntypedRpc } from "@/lib/supabaseRpc";
 
 interface UseHotelBookingSubmissionProps {
   booking?: HotelBooking | null;
@@ -15,15 +17,28 @@ interface UseHotelBookingSubmissionProps {
 
 export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookingSubmissionProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitting = useRef(false);
+  const queryClient = useQueryClient();
   const orgId = useOrgId();
   const { ensureSupportedCurrency } = useCurrencyHelper();
-  const { parentBookingId, syncParent } = useParentBookingLink();
+  const { parentBookingId } = useParentBookingLink();
+  const parent = useParentBookingFields();
 
   const submitBooking = async (
     data: NewHotelBooking,
     selectedCustomer: Customer,
     selectedRequests: string[]
   ) => {
+    if (submitting.current) return;
+    if (!orgId) {
+      toast.error('تعذّر تحديد المؤسسة لحفظ الحجز.');
+      return;
+    }
+    if (parentBookingId && (!parent.customer?.id || !parent.currency)) {
+      toast.error('تعذّر قراءة العميل والعملة من ملف الحجز.');
+      return;
+    }
+    submitting.current = true;
     setIsSubmitting(true);
     try {
       const { custom_request, adults, children, attachment_urls, ...rest } = data;
@@ -46,8 +61,8 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
 
       const submitData: any = {
         organization_id: orgId,
-        customer_id: selectedCustomer.id,
-        customer_name: selectedCustomer.name,
+        customer_id: parent.customer?.id ?? selectedCustomer.id,
+        customer_name: parent.customer?.name ?? selectedCustomer.name,
         booking_agent_name: rest.booking_agent_name || null,
         booking_agent_id: rest.booking_agent_id || null,
         hotel_id: rest.hotel_id || null,
@@ -76,7 +91,7 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
         commission_amount: Number(rest.commission_amount) || 0,
         total_cost_customer: totalCustomer,
         total_profit: profit,
-        currency: ensureSupportedCurrency(rest.currency),
+        currency: parent.currency || ensureSupportedCurrency(rest.currency),
         payment_method: rest.payment_method || null,
         paid_amount: paid,
         remaining_amount: remaining,
@@ -89,51 +104,56 @@ export const useHotelBookingSubmission = ({ booking, onSuccess }: UseHotelBookin
 
       if (parentBookingId) submitData.booking_id = parentBookingId;
 
-      let bookingId = booking?.id;
+      let bookingId: string;
       let savedParentId = parentBookingId;
-
       if (booking) {
-        const { error } = await supabase
+        const { data: updated, error } = await supabase
           .from('hotel_bookings')
           .update(submitData)
           .eq('id', booking.id)
-          .eq('organization_id', orgId);
-        if (error) throw error;
-        toast.success('تم تحديث الحجز بنجاح');
-      } else {
-        const { data: inserted, error } = await supabase
-          .from('hotel_bookings')
-          .insert(submitData)
+          .eq('organization_id', orgId)
           .select('id, booking_id')
           .single();
         if (error) throw error;
+        bookingId = updated.id;
+        savedParentId = updated.booking_id ?? savedParentId;
+        const requests = await callUntypedRpc('save_hotel_special_requests', {
+          _org: orgId,
+          _hotel: bookingId,
+          _types: selectedRequests,
+          _custom: custom_request ?? null,
+        });
+        if (requests.error) throw new Error('تم تحديث الحجز وتعذّر حفظ الطلبات الخاصة. أعد المحاولة.');
+      } else {
+        const withRequests = selectedRequests.length > 0 || Boolean(custom_request?.trim());
+        const { data: inserted, error } = withRequests
+          ? await callUntypedRpc<{ id: string; booking_id: string | null }>('create_hotel_booking_with_requests', {
+            _org: orgId,
+            _details: submitData,
+            _types: selectedRequests,
+            _custom: custom_request ?? null,
+          })
+          : await supabase
+            .from('hotel_bookings')
+            .insert(submitData)
+            .select('id, booking_id')
+            .single();
+        if (withRequests && (error || !inserted?.id)) {
+          throw new Error('تعذّر حفظ حجز الفندق مع طلباته الخاصة. أعد المحاولة.');
+        }
+        if (error || !inserted?.id) throw error ?? new Error('تعذّر التحقق من حفظ الحجز.');
         bookingId = inserted.id;
         savedParentId = inserted.booking_id ?? savedParentId;
-        toast.success('تم إنشاء الحجز بنجاح');
       }
 
-      // Save special requests (delete + insert pattern)
-      if (bookingId) {
-        await supabase.from('booking_special_requests').delete().eq('booking_id', bookingId);
-        const requestRows: any[] = [];
-        for (const reqId of selectedRequests) {
-          requestRows.push({ booking_id: bookingId, special_request_type_id: reqId });
-        }
-        if (custom_request && custom_request.trim()) {
-          requestRows.push({ booking_id: bookingId, custom_request_text: custom_request.trim() });
-        }
-        if (requestRows.length) {
-          await supabase.from('booking_special_requests').insert(requestRows);
-        }
-      }
-
-      await syncParent();
-
-      onSuccess(bookingId ? { id: bookingId, parentId: savedParentId } : undefined);
+      void queryClient.invalidateQueries({ queryKey: ['booking-special-requests'] });
+      toast.success(booking ? 'تم تحديث الحجز بنجاح' : 'تم إنشاء الحجز بنجاح');
+      onSuccess({ id: bookingId, parentId: savedParentId });
     } catch (error: any) {
       console.error('Error saving booking:', error);
       toast.error(error?.message || 'حدث خطأ في حفظ الحجز');
     } finally {
+      submitting.current = false;
       setIsSubmitting(false);
     }
   };

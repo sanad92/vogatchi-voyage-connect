@@ -9,7 +9,7 @@ import { useParentBookingLink } from '@/contexts/ParentBookingContext';
 export const useFlightBookings = () => {
   const queryClient = useQueryClient();
   const orgId = useOrgId();
-  const { withParentBooking, syncParent } = useParentBookingLink();
+  const { withParentBooking } = useParentBookingLink();
 
   const { data: flightData, isLoading: bookingsLoading } = useQuery({
     queryKey: ['flight-bookings-unified', orgId],
@@ -36,11 +36,11 @@ export const useFlightBookings = () => {
       const statusesList = (statusesRes.data || []) as any[];
 
       const findAirport = (code?: string | null) =>
-        code ? airportsList.find(a => a.iata_code === code || a.icao_code === code || a.name === code) : null;
+        code ? airportsList.find(a => a.id === code || a.iata_code === code || a.icao_code === code || a.name === code) : null;
       const findAirline = (name?: string | null) =>
-        name ? airlinesList.find(a => a.name === name || a.name_ar === name || a.iata_code === name) : null;
+        name ? airlinesList.find(a => a.id === name || a.name === name || a.name_ar === name || a.iata_code === name) : null;
       const findClass = (name?: string | null) =>
-        name ? classesList.find(c => c.name === name || c.name_ar === name) : null;
+        name ? classesList.find(c => c.id === name || c.name === name || c.name_ar === name) : null;
 
       const bookings = (data || []).map((booking: any) => ({
         ...booking,
@@ -102,7 +102,6 @@ export const useFlightBookings = () => {
       };
       const { data, error } = await supabase.from('flight_bookings').insert([withParentBooking(dbBooking)]).select().single();
       if (error) throw error;
-      await syncParent();
       return data;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['flight-bookings'] }); toast({ title: "تم إنشاء حجز الطيران", description: "تم إضافة حجز الطيران بنجاح" }); },

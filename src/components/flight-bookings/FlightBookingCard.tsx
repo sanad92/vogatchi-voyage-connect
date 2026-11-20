@@ -2,8 +2,9 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plane, Calendar, Users, DollarSign, FileText, MapPin, Clock } from "lucide-react";
+import { Link } from "react-router-dom";
+import { BookingListFinance } from "@/components/bookings/BookingListFinance";
+import { Plane, Calendar, Users, FileText, MapPin } from "lucide-react";
 import { FlightBooking } from "@/types/flightBooking";
 import UnifiedBookingStatusSelector from "@/components/common/UnifiedBookingStatusSelector";
 import MultiCurrencyDisplay from "@/components/currency/MultiCurrencyDisplay";
@@ -88,22 +89,8 @@ const FlightBookingCard = ({ booking, onEdit }: FlightBookingCardProps) => {
             </span>
           </div>
           
-          <div className="flex items-center justify-between text-sm mb-2">
-            <span>المبلغ المدفوع:</span>
-            <span className="text-blue-600">
-              <MultiCurrencyDisplay amount={booking.paid_amount} currency={currency} />
-            </span>
-          </div>
-          
-          {booking.remaining_amount && booking.remaining_amount > 0 && (
-            <div className="flex items-center justify-between text-sm">
-              <span>المبلغ المتبقي:</span>
-              <span className="text-red-600 font-medium">
-                <MultiCurrencyDisplay amount={booking.remaining_amount} currency={currency} />
-              </span>
-            </div>
-          )}
         </div>
+        <BookingListFinance booking={booking} />
 
         {/* المورد */}
         <div className="text-sm">
@@ -125,19 +112,6 @@ const FlightBookingCard = ({ booking, onEdit }: FlightBookingCardProps) => {
           </div>
         )}
 
-        {/* حالة الوثائق */}
-        <div className="flex gap-2 text-xs">
-          <Badge variant={booking.invoice_sent ? "default" : "secondary"}>
-            فاتورة {booking.invoice_sent ? "✓" : "✗"}
-          </Badge>
-          <Badge variant={booking.voucher_sent ? "default" : "secondary"}>
-            قسيمة {booking.voucher_sent ? "✓" : "✗"}
-          </Badge>
-          <Badge variant={booking.supplier_payment_sent ? "default" : "secondary"}>
-            دفع مورد {booking.supplier_payment_sent ? "✓" : "✗"}
-          </Badge>
-        </div>
-
         {/* الطلبات الخاصة */}
         {booking.special_requests && (
           <div className="text-sm bg-yellow-50 p-2 rounded">
@@ -148,13 +122,11 @@ const FlightBookingCard = ({ booking, onEdit }: FlightBookingCardProps) => {
 
         {/* أزرار العمليات */}
         <div className="flex gap-2 pt-2">
-          <Button size="sm" variant="outline" className="flex-1">
-            <FileText className="h-4 w-4 mr-1" />
-            تفاصيل
-          </Button>
-          <Button size="sm" variant="outline">
-            <DollarSign className="h-4 w-4 mr-1" />
-            فاتورة
+          <Button asChild size="sm" variant="outline" className="flex-1">
+            <Link to={`/bookings/${booking.id}`}>
+              <FileText className="h-4 w-4 mr-1" />
+              فتح الحجز
+            </Link>
           </Button>
           {onEdit && (
             <Button size="sm" variant="outline" onClick={() => onEdit(booking)}>

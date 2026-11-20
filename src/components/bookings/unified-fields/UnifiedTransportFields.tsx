@@ -41,9 +41,16 @@ const UnifiedTransportFields = ({ formData, updateField, updateFields, errors }:
       </div>
 
       {/* المسار */}
-      <div>
-        <Label>المسار</Label>
-        <Input value={formData.route || ''} onChange={e => updateField('route', e.target.value)} placeholder="مثال: القاهرة - شرم الشيخ" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <Label>المسار</Label>
+          <Input value={formData.route || ''} onChange={e => updateField('route', e.target.value)} placeholder="مثال: القاهرة - شرم الشيخ" />
+        </div>
+        <div>
+          <Label htmlFor="transport-pickup-time">وقت الالتقاط</Label>
+          <Input id="transport-pickup-time" type="time" value={formData.pickup_time || ''} onChange={e => updateField('pickup_time', e.target.value)} />
+          <FieldError error={errors.pickup_time} />
+        </div>
       </div>
 
       {/* نقاط الالتقاط والتوصيل */}

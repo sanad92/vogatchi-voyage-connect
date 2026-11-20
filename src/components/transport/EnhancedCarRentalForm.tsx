@@ -8,8 +8,8 @@ import CustomerSupplierSection from './car-rental/enhanced/CustomerSupplierSecti
 import VehicleDetailsSection from './car-rental/enhanced/VehicleDetailsSection';
 import RentalDatesLocationsSection from './car-rental/enhanced/RentalDatesLocationsSection';
 import CostCalculationSection from '@/components/shared/CostCalculationSection';
-import PaymentSection from '@/components/shared/PaymentSection';
-import DocumentsTracking from '@/components/shared/DocumentsTracking';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import AdditionalInfoSection from './car-rental/AdditionalInfoSection';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useState } from 'react';
@@ -85,7 +85,7 @@ const EnhancedCarRentalForm = ({ onSuccess }: EnhancedCarRentalFormProps) => {
             }}
             onSupplierNameChange={(name) => updateField('supplier_name', name)}
             errors={errors}
-            register={() => {}}
+            register={() => ({ value: formData.customer_name, onChange: (event: React.ChangeEvent<HTMLInputElement>) => updateField('customer_name', event.target.value) })}
             setValue={() => {}}
           />
 
@@ -147,20 +147,11 @@ const EnhancedCarRentalForm = ({ onSuccess }: EnhancedCarRentalFormProps) => {
 
           <Separator />
 
-          {/* Payment Section */}
-          <PaymentSection
-            totalAmount={formData.total_rental_cost}
-            paidAmount={formData.paid_amount}
-            depositPaid={formData.deposit_paid}
-            securityDeposit={formData.security_deposit}
-            paymentMethod={formData.payment_method}
-            onPaidAmountChange={(amount) => updateField('paid_amount', amount)}
-            onDepositPaidChange={(amount) => updateField('deposit_paid', amount)}
-            onSecurityDepositChange={(amount) => updateField('security_deposit', amount)}
-            onPaymentMethodChange={(method) => updateField('payment_method', method)}
-            currency={formData.currency}
-            showDeposit={true}
-          />
+          <div className="space-y-1">
+            <Label htmlFor="rental-security-deposit">مبلغ التأمين المطلوب ({formData.currency})</Label>
+            <Input id="rental-security-deposit" type="number" min="0" step="0.01" value={formData.security_deposit}
+              onChange={event => updateField('security_deposit', Number(event.target.value))} />
+          </div>
 
           <Separator />
 
@@ -185,16 +176,6 @@ const EnhancedCarRentalForm = ({ onSuccess }: EnhancedCarRentalFormProps) => {
           />
 
           <Separator />
-
-          {/* Documents Tracking Section */}
-          <DocumentsTracking
-            contractSent={formData.contract_sent}
-            invoiceSent={formData.invoice_sent}
-            supplierPaymentSent={formData.supplier_payment_sent}
-            onContractSentChange={(sent) => updateField('contract_sent', sent)}
-            onInvoiceSentChange={(sent) => updateField('invoice_sent', sent)}
-            onSupplierPaymentSentChange={(sent) => updateField('supplier_payment_sent', sent)}
-          />
 
           {/* Form Actions */}
           <div className="flex gap-3 pt-4 border-t">

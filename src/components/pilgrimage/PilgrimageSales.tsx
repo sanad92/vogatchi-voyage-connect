@@ -94,6 +94,9 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
       .eq('organization_id',orgId).order('departure_date',{ascending:false}),canManage);
   const selected=(salesQ.data||[]).find((s:any)=>s.id===saleId)||null;
   const directBooking=selected?.booked_from_availability===true;
+  const canInvoice=hasPermission('invoices_create');
+  const departurePath=selected?.program_id
+    ? `/pilgrimage?program=${selected.program_id}&type=${selected.program_type}` : null;
   const holdTravelers=holdManifest.split(/\r?\n/).map(name=>name.trim()).filter(Boolean);
   const validHoldTravelers=holdTravelers.length===selected?.party_size
     && holdTravelers.every(name=>name.length>=3 && name.length<=200);
@@ -332,7 +335,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
   });
   const confirmAvailabilityHold=useMutation({
     mutationFn:async()=>{
-      if(!orgId||!selected||!directBooking)throw new Error('الحجز المؤقت غير متاح');
+      if(!orgId||!selected||!directBooking||!canInvoice)throw new Error('الحجز المؤقت غير متاح');
       const {data,error}=await callUntypedRpc<string>('confirm_pilgrimage_availability_hold',{
         _organization_id:orgId,_sale_id:selected.id,_traveler_names:holdTravelers,
       });
@@ -343,6 +346,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
     onSuccess:id=>{
       setHoldManifestOpen(false);
       refresh();
+      qc.invalidateQueries({queryKey:['umrah-unified-links',orgId]});
+      qc.invalidateQueries({queryKey:['unified-bookings',orgId]});
       setSaleId(id);
       toast({title:'تم تأكيد الحجز من حصة البرنامج وتسجيل المسافرين'});
     },onError:fail,
@@ -468,10 +473,10 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
           </p>
           {allocation?.confirmed_sale_id && <Button variant="outline" size="sm"
             onClick={()=>setSaleId(allocation.confirmed_sale_id)}>فتح الحجز المؤكد</Button>}
-          {conversion && selected.program_type === 'umrah' && <div className="flex flex-wrap gap-2">
+          {conversion && departurePath && (selected.program_type === 'umrah' || unifiedBookingId) && <div className="flex flex-wrap gap-2">
             {unifiedBookingId && <Button asChild size="sm"><Link to={`/bookings/${unifiedBookingId}?tab=financials`}>فتح الحجز الموحّد والتحصيل</Link></Button>}
-            <Button asChild variant="outline" size="sm"><Link to={`/pilgrimage?program=${selected.program_id}&tab=rooming`}>تسكين المعتمرين</Link></Button>
-            <Button asChild variant="outline" size="sm"><Link to={`/pilgrimage?program=${selected.program_id}&tab=operations`}>تعديل أو إلغاء التسجيل</Link></Button>
+            <Button asChild variant="outline" size="sm"><Link to={`${departurePath}&tab=rooming`}>تسكين المسافرين</Link></Button>
+            <Button asChild variant="outline" size="sm"><Link to={`${departurePath}&tab=operations`}>{selected.program_type === 'hajj' ? 'إلغاء التسجيل' : 'تعديل أو إلغاء التسجيل'}</Link></Button>
           </div>}
           {allocationsQ.error&&<p className="text-sm text-destructive">
             تعذر قراءة المقاعد؛ لا تعتمد على التوافر قبل التأكد من جاهزية قاعدة البيانات.
@@ -485,8 +490,8 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
                   onClick={()=>allocateSeat.mutate('allocate')}>تثبيت التخصيص الداخلي</Button>}
               {directBooking && hasPermission('bookings_create') && hasPermission('customers_view') &&
                 allocation?.status==='held' && allocationIsActive && !conversion &&
-                <Button disabled={allocateSeat.isPending || confirmAvailabilityHold.isPending || !programSaleReady
-                  || (selected.program_type === 'umrah' && !hasPermission('invoices_create'))}
+                <Button disabled={allocateSeat.isPending || confirmAvailabilityHold.isPending || !programSaleReady || !canInvoice}
+                  title={!canInvoice ? 'تأكيد الحجز يحتاج صلاحية إصدار الفاتورة' : undefined}
                   onClick={()=>{
                     const buyer=customers.find((row:any)=>row.id===selected.buyer_customer_id);
                     setHoldManifest(selected.party_size===1 ? buyer?.name ?? '' : '');
@@ -649,7 +654,7 @@ export default function PilgrimageSales({onBack,initialType,initialProgram,initi
             onChange={event=>setHoldManifest(event.target.value)} placeholder="اكتب اسم كل مسافر في سطر" />
           <p className="text-sm text-muted-foreground">{holdTravelers.length} من {selected?.party_size} · الاسم من 3 إلى 200 حرف</p>
         </div>
-        <Button disabled={!validHoldTravelers || confirmAvailabilityHold.isPending}
+        <Button disabled={!validHoldTravelers || !canInvoice || confirmAvailabilityHold.isPending}
           onClick={()=>confirmAvailabilityHold.mutate()}>
           {confirmAvailabilityHold.isPending ? 'جارٍ التأكيد…' : 'تأكيد الحجز وتسجيل المسافرين'}
         </Button>

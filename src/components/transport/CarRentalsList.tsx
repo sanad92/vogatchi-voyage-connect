@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Car, Calendar, MapPin, Clock, DollarSign, FileText, Settings } from 'lucide-react';
 import { useCarRentals } from '@/hooks/useCarRentals';
+import { BookingListFinance } from '@/components/bookings/BookingListFinance';
 import { useClientPagination } from '@/hooks/useClientPagination';
 import PaginationControlsUI from '@/components/ui/pagination-controls';
 import UnifiedBookingStatusSelector from '@/components/common/UnifiedBookingStatusSelector';
@@ -150,22 +151,6 @@ const CarRentalsList = () => {
                 </span>
               </div>
               
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span>المبلغ المدفوع:</span>
-                <span className="text-blue-600">
-                  <MultiCurrencyDisplay amount={rental.paid_amount} currency={rental.currency as "EGP" | "USD" | "SAR"} />
-                </span>
-              </div>
-              
-              {rental.remaining_amount && rental.remaining_amount > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span>المبلغ المتبقي:</span>
-                  <span className="text-red-600 font-medium">
-                    <MultiCurrencyDisplay amount={rental.remaining_amount} currency={rental.currency as "EGP" | "USD" | "SAR"} />
-                  </span>
-                </div>
-              )}
-
               {rental.security_deposit > 0 && (
                 <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t">
                   <span>العربون:</span>
@@ -196,18 +181,7 @@ const CarRentalsList = () => {
               </div>
             )}
 
-            {/* حالة الوثائق */}
-            <div className="flex gap-2 text-xs">
-              <Badge variant={rental.contract_sent ? "default" : "secondary"}>
-                عقد {rental.contract_sent ? "✓" : "✗"}
-              </Badge>
-              <Badge variant={rental.invoice_sent ? "default" : "secondary"}>
-                فاتورة {rental.invoice_sent ? "✓" : "✗"}
-              </Badge>
-              <Badge variant={rental.supplier_payment_sent ? "default" : "secondary"}>
-                دفع مورد {rental.supplier_payment_sent ? "✓" : "✗"}
-              </Badge>
-            </div>
+            <BookingListFinance booking={rental} />
 
             {/* المتطلبات الخاصة */}
             {rental.special_requirements && (

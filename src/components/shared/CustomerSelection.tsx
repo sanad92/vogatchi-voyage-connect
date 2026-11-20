@@ -10,6 +10,7 @@ import { Search, Plus, User } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import CustomerSearch from "@/components/customers/CustomerSearch";
 import QuickCustomerAdd from "@/components/customers/QuickCustomerAdd";
+import { useParentBookingFields } from "@/contexts/ParentBookingContext";
 
 interface CustomerSelectionProps {
   selectedCustomer: Customer | null;
@@ -28,6 +29,7 @@ const CustomerSelection = ({
 }: CustomerSelectionProps) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const { customer: bookingCustomer } = useParentBookingFields();
 
   const handleCustomerSelect = (customer: Customer) => {
     onCustomerSelect(customer);
@@ -45,6 +47,15 @@ const CustomerSelection = ({
     setIsSearchOpen(false);
     setIsAddOpen(true);
   };
+
+  if (bookingCustomer) {
+    return (
+      <div className="space-y-1">
+        <Label htmlFor="parent_booking_customer">العميل من ملف الحجز</Label>
+        <Input id="parent_booking_customer" value={bookingCustomer.name} readOnly />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

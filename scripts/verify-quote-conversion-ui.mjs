@@ -53,11 +53,12 @@ pending.props.onOpenChange(false);
 assert.equal(confirms,1);assert.equal(closes,0,'pending conversion cannot be closed/re-submitted');
 
 let allowed=true,failed=false,pendingMutation=false,queryFailed=false;
+let quoteOverrides={};
 const navigations=[],states=[];
 const pageImports={
  react:{useState:initial=>[typeof initial==='boolean' ? true : initial,x=>states.push(x)]},'react/jsx-runtime':{jsx,jsxs:jsx},
  'react-router-dom':{useParams:()=>({id:'quote-a'}),useNavigate:()=>x=>navigations.push(x)},
- '@tanstack/react-query':{useQuery:()=>({isLoading:false,isError:queryFailed,refetch:()=>{},data:{quote:{id:'quote-a',status:'accepted',quote_number:'Q1',customers:null,employees:null},items:[{id:'item-a',item_type:'hotel',description:'Room'}]}})},
+ '@tanstack/react-query':{useQuery:()=>({isLoading:false,isError:queryFailed,refetch:()=>{},data:{quote:{id:'quote-a',status:'accepted',quote_number:'Q1',customer_id:'customer-a',travel_date:'2027-01-10',return_date:'2027-01-12',currency:'EGP',customers:null,employees:null,...quoteOverrides},items:[{id:'item-a',item_type:'hotel',description:'Room'}]}})},
  '@/integrations/supabase/client':{supabase:{}},
  '@/hooks/useOrgId':{useOrgId:()=>org},
  '@/hooks/useOrganizationSettings':{useOrganizationSettings:()=>({settings:null})},
@@ -82,6 +83,12 @@ const confirm=()=>nodes(page.default()).find(x=>x.type==='ConvertQuoteDialog').p
 failed=true;await confirm();assert.equal(navigations.length,0);assert.equal(states.length,0,'failure preserves open dialog');
 failed=false;allowed=false;await confirm();assert.equal(navigations.length,0,'denied submit does not navigate or mutate');
 allowed=true;pendingMutation=true;await confirm();assert.equal(navigations.length,0);
+pendingMutation=false;
+quoteOverrides={travel_date:null};await confirm();assert.equal(navigations.length,0);
+assert.ok(nodes(page.default()).some(x=>x.props?.id==='quote-conversion-readiness'));
+quoteOverrides={customer_id:null};await confirm();assert.equal(navigations.length,0);
+quoteOverrides={valid_until:'2000-01-01'};await confirm();assert.equal(navigations.length,0);
+quoteOverrides={};assert.ok(!nodes(page.default()).some(x=>x.props?.id==='quote-conversion-readiness'));
 pendingMutation=false;await confirm();assert.deepEqual(navigations,['/bookings/booking-a']);assert.deepEqual(states,[false]);
 queryFailed=true;assert.ok(!nodes(page.default()).some(x=>x.type==='ConvertQuoteDialog'),'failed item load must not expose conversion');
 console.log('Quote conversion UI: identifiers-only RPC, retries/errors, permission/pending guards, controlled dialog, and canonical navigation passed.');

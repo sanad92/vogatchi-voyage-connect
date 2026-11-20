@@ -1,37 +1,15 @@
 
-import React, { useState } from "react";
+import React from "react";
+import { BookingListFinance } from "@/components/bookings/BookingListFinance";
 import { HotelBooking } from "@/types/hotelBooking";
 import AuditLogViewer from "@/components/audit/AuditLogViewer";
-import { Button } from "@/components/ui/button";
-import { Ban, RotateCcw, FileText } from "lucide-react";
 import UnifiedBookingStatusSelector from "@/components/common/UnifiedBookingStatusSelector";
-import CancelBookingDialog from "../dialogs/CancelBookingDialog";
-import RefundBookingDialog from "../dialogs/RefundBookingDialog";
-import BookingInvoiceManager from "@/components/bookings/shared/BookingInvoiceManager";
-import HotelInvoiceCreator from "../HotelInvoiceCreator";
 
 interface Props {
   booking: HotelBooking;
 }
 
 const HotelBookingDetails: React.FC<Props> = ({ booking }) => {
-  const [showCancel, setShowCancel] = useState(false);
-  const [showRefund, setShowRefund] = useState(false);
-  const [showInvoiceCreator, setShowInvoiceCreator] = useState(false);
-
-  // always get status name_ar correctly, fallback to ""
-  const statusNameAr = booking?.booking_status?.name_ar || "";
-
-  // شروط ظهور الأزرار بشكل محسّن
-  const isCancellable =
-    !["ملغي", "مسترد"].includes(statusNameAr) &&
-    !booking.invoice_sent;
-  const isRefundable =
-    (statusNameAr === "ملغي" ||
-      statusNameAr.toLowerCase() === "cancelled") &&
-    (booking.paid_amount || 0) > 0 &&
-    statusNameAr !== "مسترد";
-
   if (!booking) return null;
 
   return (
@@ -47,42 +25,6 @@ const HotelBookingDetails: React.FC<Props> = ({ booking }) => {
           />
         </div>
         
-        {isCancellable && (
-          <>
-            <Button
-              variant="destructive"
-              size="lg"
-              className="flex items-center gap-2 shadow-md text-lg px-8 py-4 hover:scale-105 transition-transform"
-              onClick={() => setShowCancel(true)}
-            >
-              <Ban className="h-5 w-5" />
-              <span>إلغاء الحجز</span>
-            </Button>
-            <CancelBookingDialog
-              open={showCancel}
-              bookingId={booking.id}
-              onClose={() => setShowCancel(false)}
-            />
-          </>
-        )}
-        {isRefundable && (
-          <>
-            <Button
-              variant="secondary"
-              size="lg"
-              className="flex items-center gap-2 bg-yellow-400 text-black border-yellow-500 shadow-md text-lg px-8 py-4 hover:bg-yellow-500 hover:scale-105 transition-all"
-              onClick={() => setShowRefund(true)}
-            >
-              <RotateCcw className="h-5 w-5" />
-              <span>استرداد الحجز</span>
-            </Button>
-            <RefundBookingDialog
-              open={showRefund}
-              bookingId={booking.id}
-              onClose={() => setShowRefund(false)}
-            />
-          </>
-        )}
       </div>
 
       {/* تفاصيل الحجز */}
@@ -127,27 +69,10 @@ const HotelBookingDetails: React.FC<Props> = ({ booking }) => {
             <p><strong>التكلفة/ليلة:</strong> {booking.cost_per_night} {booking.currency}</p>
             <p><strong>إجمالي المبلغ:</strong> {booking.total_cost_customer} {booking.currency}</p>
             <p><strong>الربح الإجمالي:</strong> {booking.total_profit} {booking.currency}</p>
-            <p><strong>المبلغ المدفوع:</strong> {booking.paid_amount} {booking.currency}</p>
-            <p><strong>المتبقي:</strong> {booking.remaining_amount} {booking.currency}</p>
+            <BookingListFinance booking={booking} />
           </div>
         </div>
       </div>
-
-      {/* إدارة الفواتير والمدفوعات */}
-      <BookingInvoiceManager
-        bookingId={booking.id}
-        bookingType="hotel"
-        onCreateInvoice={() => setShowInvoiceCreator(true)}
-      />
-
-      {/* حوار إنشاء الفاتورة */}
-      {showInvoiceCreator && (
-        <HotelInvoiceCreator
-          booking={booking}
-          open={showInvoiceCreator}
-          onClose={() => setShowInvoiceCreator(false)}
-        />
-      )}
 
       {/* سجل التدقيق للحجز */}
       <AuditLogViewer

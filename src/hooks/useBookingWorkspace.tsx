@@ -7,6 +7,8 @@ import { useOptimizedAuth } from './useOptimizedAuth';
 import { useOrgId } from './useOrgId';
 import { isRecordId } from './useCustomerContext';
 import { useUpdateOpsTask } from './useOpsCommandCenter';
+import { resolveFlightCatalogLabel } from '@/lib/bookingServiceFields';
+import type { TravelItinerary } from '@/lib/travelDocuments';
 
 /**
  * Unified Booking Workspace data layer (Phase 1 foundation).
@@ -82,6 +84,37 @@ export interface TimelineEvent {
 }
 
 const anyClient = supabase as any;
+const catalogUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function withFlightDisplayLabels<T extends NonNullable<TravelItinerary['flight']>>(flight: T, orgId: string) {
+  const scope = `organization_id.is.null,organization_id.eq.${orgId}`;
+  const { airline, flight_class, departure_airport, arrival_airport, return_departure_airport, return_arrival_airport } = flight;
+  const airportIds = [departure_airport, arrival_airport, return_departure_airport, return_arrival_airport]
+    .filter((id): id is string => Boolean(id && catalogUuid.test(id)));
+  const [airlineRows, classRows, airportRows] = await Promise.all([
+    airline && catalogUuid.test(airline)
+      ? supabase.from('airlines').select('id, name').or(scope).eq('id', airline)
+      : null,
+    flight_class && catalogUuid.test(flight_class)
+      ? supabase.from('flight_classes').select('id, name, name_ar').or(scope).eq('id', flight_class)
+      : null,
+    airportIds.length
+      ? supabase.from('airports').select('id, name, iata_code').or(scope).in('id', airportIds)
+      : null,
+  ]);
+  const failure = airlineRows?.error ?? classRows?.error ?? airportRows?.error;
+  if (failure) throw failure;
+  const airportLabel = (airport?: string | null) => resolveFlightCatalogLabel(airport, airportRows?.data ?? []);
+  return {
+    ...flight,
+    airline: resolveFlightCatalogLabel(airline, airlineRows?.data ?? []),
+    flight_class: resolveFlightCatalogLabel(flight_class, classRows?.data ?? []),
+    departure_airport: airportLabel(departure_airport),
+    arrival_airport: airportLabel(arrival_airport),
+    return_departure_airport: airportLabel(return_departure_airport),
+    return_arrival_airport: airportLabel(return_arrival_airport),
+  };
+}
 
 export const useBookingWorkspace = (bookingId: string | undefined) => {
   const qc = useQueryClient();
@@ -122,7 +155,7 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
 
   // 2. Customer
   const customerQ = useQuery({
-    queryKey: ['workspace-customer', customerId],
+    queryKey: ['workspace-customer', customerId, orgId],
     enabled: !!customerId,
     queryFn: async () => {
       const { data, error } = await anyClient
@@ -152,22 +185,25 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
     },
   });
 
-  // 4. Itinerary — hotel / flight / transport / car (linked by booking_id when present)
+  // 4. Unified service details are scoped through their verified parent booking.
   const itineraryQ = useQuery({
-    queryKey: ['workspace-itinerary', bookingId],
-    enabled: !!booking,
+    queryKey: ['workspace-itinerary', bookingId, orgId],
+    enabled: !!booking && booking.organization_id === orgId,
     queryFn: async () => {
+      if (!bookingId || !orgId || booking?.organization_id !== orgId) return {};
       const [hotel, flight, transport, car] = await Promise.all([
-        anyClient.from('booking_hotel_details').select('*').eq('booking_id', bookingId).maybeSingle(),
-        anyClient.from('booking_flight_details').select('*').eq('booking_id', bookingId).maybeSingle(),
-        anyClient.from('booking_transport_details').select('*').eq('booking_id', bookingId).maybeSingle(),
-        anyClient.from('booking_car_details').select('*').eq('booking_id', bookingId).maybeSingle(),
+        supabase.from('booking_hotel_details').select('*').eq('booking_id', bookingId).maybeSingle(),
+        supabase.from('booking_flight_details').select('*').eq('booking_id', bookingId).maybeSingle(),
+        supabase.from('booking_transport_details').select('*').eq('booking_id', bookingId).maybeSingle(),
+        supabase.from('booking_car_details').select('*').eq('booking_id', bookingId).maybeSingle(),
       ]);
+      const failure = hotel.error ?? flight.error ?? transport.error ?? car.error;
+      if (failure) throw failure;
       return {
-        hotel: hotel.data ?? null,
-        flight: flight.data ?? null,
-        transport: transport.data ?? null,
-        car: car.data ?? null,
+        hotel: hotel.data,
+        flight: flight.data ? await withFlightDisplayLabels(flight.data, orgId) : null,
+        transport: transport.data,
+        car: car.data,
       };
     },
   });
@@ -396,6 +432,8 @@ export const useBookingWorkspace = (bookingId: string | undefined) => {
     customer: customerQ.data,
     supplier: supplierQ.data,
     itinerary: itineraryQ.data,
+    itineraryError: itineraryQ.isError,
+    refreshItinerary: itineraryQ.refetch,
     invoices: invoicesQ.data ?? [],
     payments: paymentsQ.data ?? [],
     conversation: conversationQ.data,

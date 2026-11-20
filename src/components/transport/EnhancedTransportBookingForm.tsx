@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Truck, Save, RotateCcw } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTransportBookings } from '@/hooks/useTransportBookings';
 import { useExpenses } from '@/hooks/useExpenses';
 import { toast } from '@/hooks/use-toast';
@@ -10,9 +10,8 @@ import { Customer } from '@/types/customer';
 import TransportCustomerAgentSection from './enhanced/TransportCustomerAgentSection';
 import TransportTripDetailsSection from './enhanced/TransportTripDetailsSection';
 import CostCalculationSection from '@/components/shared/CostCalculationSection';
-import PaymentSection from '@/components/shared/PaymentSection';
-import DocumentsTracking from '@/components/shared/DocumentsTracking';
 import TransportAdditionalInfoSection from './enhanced/TransportAdditionalInfoSection';
+import { useParentBookingFields } from '@/contexts/ParentBookingContext';
 
 interface EnhancedTransportBookingFormProps {
   onSuccess?: () => void;
@@ -21,11 +20,12 @@ interface EnhancedTransportBookingFormProps {
 const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFormProps) => {
   const { employees } = useExpenses();
   const { vehicleTypes, transportRoutes, addTransportBooking, isAddingBooking } = useTransportBookings();
+  const { customer: bookingCustomer, currency: bookingCurrency } = useParentBookingFields();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   
-  const [formData, setFormData] = useState({
-    customer_id: '',
-    customer_name: '',
+  const initialForm = () => ({
+    customer_id: bookingCustomer?.id || '',
+    customer_name: bookingCustomer?.name || '',
     supplier_id: '',
     supplier_name: '',
     booking_agent_id: '',
@@ -38,21 +38,16 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
     pickup_location: '',
     dropoff_location: '',
     number_of_passengers: 1,
-    cost_per_trip: 0,
     selling_price_per_trip: 0,
     supplier_cost: 0,
-    paid_amount: 0,
-    currency: 'EGP' as const,
-    payment_method: 'cash',
+    currency: bookingCurrency || 'EGP',
     driver_name: '',
     driver_phone: '',
     vehicle_plate_number: '',
     special_requests: '',
-    contract_sent: false,
-    invoice_sent: false,
-    voucher_sent: false,
-    supplier_payment_sent: false
   });
+
+  const [formData, setFormData] = useState(initialForm);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -71,6 +66,10 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
     }
   };
 
+  const updateBookingAgent = useCallback((agentId: string) => {
+    setFormData(previous => previous.booking_agent_id === agentId ? previous : { ...previous, booking_agent_id: agentId });
+  }, []);
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -82,6 +81,15 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
     }
     if (!formData.departure_date) {
       newErrors.departure_date = 'تاريخ المغادرة مطلوب';
+    }
+    if (formData.arrival_date && formData.arrival_date < formData.departure_date) {
+      newErrors.arrival_date = 'تاريخ الوصول لازم يكون في نفس يوم المغادرة أو بعده';
+    }
+    if (!Number.isInteger(formData.number_of_passengers) || formData.number_of_passengers < 1) {
+      newErrors.number_of_passengers = 'أدخل عدد ركاب صحيح';
+    }
+    if (formData.selling_price_per_trip <= 0 || formData.supplier_cost < 0) {
+      newErrors.price = 'أدخل سعر بيع موجب وتكلفة مورد غير سالبة';
     }
     if (!formData.pickup_location.trim()) {
       newErrors.pickup_location = 'مكان الاستلام مطلوب';
@@ -110,9 +118,22 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
     
     const bookingData = {
       ...formData,
+      customer_id: formData.customer_id || null,
+      supplier_id: formData.supplier_id || null,
+      booking_agent_id: formData.booking_agent_id || null,
+      route_id: formData.route_id || null,
+      vehicle_type_id: formData.vehicle_type_id || null,
+      departure_time: formData.departure_time || null,
+      arrival_date: formData.arrival_date || null,
+      arrival_time: formData.arrival_time || null,
+      cost_per_trip: formData.supplier_cost,
       booking_agent_name: currentEmployee?.full_name || '',
       total_cost: formData.selling_price_per_trip * formData.number_of_passengers,
-      remaining_amount: Math.max(0, (formData.selling_price_per_trip * formData.number_of_passengers) - formData.paid_amount),
+      remaining_amount: formData.selling_price_per_trip * formData.number_of_passengers,
+      paid_amount: 0,
+      invoice_sent: false,
+      voucher_sent: false,
+      supplier_payment_sent: false,
       total_profit: (formData.selling_price_per_trip * formData.number_of_passengers) - formData.supplier_cost,
       exchange_rate_to_egp: 1.0
     };
@@ -128,36 +149,8 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
   };
 
   const resetForm = () => {
-    setFormData({
-      customer_id: '',
-      customer_name: '',
-      supplier_id: '',
-      supplier_name: '',
-      booking_agent_id: '',
-      route_id: '',
-      vehicle_type_id: '',
-      departure_date: new Date().toISOString().slice(0, 10),
-      departure_time: '',
-      arrival_date: '',
-      arrival_time: '',
-      pickup_location: '',
-      dropoff_location: '',
-      number_of_passengers: 1,
-      cost_per_trip: 0,
-      selling_price_per_trip: 0,
-      supplier_cost: 0,
-      paid_amount: 0,
-      currency: 'EGP' as const,
-      payment_method: 'cash',
-      driver_name: '',
-      driver_phone: '',
-      vehicle_plate_number: '',
-      special_requests: '',
-      contract_sent: false,
-      invoice_sent: false,
-      voucher_sent: false,
-      supplier_payment_sent: false
-    });
+    setFormData(initialForm());
+    setSelectedCustomer(null);
     setErrors({});
   };
 
@@ -197,15 +190,15 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
             supplierId={formData.supplier_id}
             supplierName={formData.supplier_name}
             bookingAgentId={formData.booking_agent_id}
-            selectedCustomer={selectedCustomer}
+            selectedCustomer={bookingCustomer ?? selectedCustomer}
             onCustomerSelect={handleCustomerSelect}
             onCustomerNameChange={(name) => updateField('customer_name', name)}
             onSupplierSelect={handleSupplierSelect}
             onSupplierNameChange={(name) => updateField('supplier_name', name)}
-            onBookingAgentChange={(agentId) => updateField('booking_agent_id', agentId)}
+            onBookingAgentChange={updateBookingAgent}
             employees={employees}
             errors={errors}
-            register={() => {}}
+            register={() => ({ value: formData.customer_name, onChange: (event: React.ChangeEvent<HTMLInputElement>) => updateField('customer_name', event.target.value) })}
             setValue={() => {}}
           />
 
@@ -246,23 +239,11 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
             additionalCosts={{}}
             onDailyRateChange={(rate) => updateField('selling_price_per_trip', rate)}
             onSupplierCostChange={(cost) => updateField('supplier_cost', cost)}
-            onAdditionalCostsChange={() => {}}
             currency={formData.currency}
             title="حساب تكاليف النقل"
+            perPassenger
           />
-
-          <Separator />
-
-          {/* Payment Section */}
-          <PaymentSection
-            totalAmount={formData.selling_price_per_trip * formData.number_of_passengers}
-            paidAmount={formData.paid_amount}
-            paymentMethod={formData.payment_method}
-            onPaidAmountChange={(amount) => updateField('paid_amount', amount)}
-            onPaymentMethodChange={(method) => updateField('payment_method', method)}
-            currency={formData.currency}
-            showDeposit={false}
-          />
+          {errors.price && <p className="text-sm text-destructive" role="alert">{errors.price}</p>}
 
           <Separator />
 
@@ -280,16 +261,6 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
 
           <Separator />
 
-          {/* Documents Tracking Section */}
-          <DocumentsTracking
-            contractSent={formData.contract_sent}
-            invoiceSent={formData.invoice_sent}
-            supplierPaymentSent={formData.supplier_payment_sent}
-            onContractSentChange={(sent) => updateField('contract_sent', sent)}
-            onInvoiceSentChange={(sent) => updateField('invoice_sent', sent)}
-            onSupplierPaymentSentChange={(sent) => updateField('supplier_payment_sent', sent)}
-          />
-
           {/* Form Actions */}
           <div className="flex gap-3 pt-4 border-t">
             <Button
@@ -304,39 +275,7 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setFormData({
-                  customer_id: '',
-                  customer_name: '',
-                  supplier_id: '',
-                  supplier_name: '',
-                  booking_agent_id: '',
-                  route_id: '',
-                  vehicle_type_id: '',
-                  departure_date: new Date().toISOString().slice(0, 10),
-                  departure_time: '',
-                  arrival_date: '',
-                  arrival_time: '',
-                  pickup_location: '',
-                  dropoff_location: '',
-                  number_of_passengers: 1,
-                  cost_per_trip: 0,
-                  selling_price_per_trip: 0,
-                  supplier_cost: 0,
-                  paid_amount: 0,
-                  currency: 'EGP' as const,
-                  payment_method: 'cash',
-                  driver_name: '',
-                  driver_phone: '',
-                  vehicle_plate_number: '',
-                  special_requests: '',
-                  contract_sent: false,
-                  invoice_sent: false,
-                  voucher_sent: false,
-                  supplier_payment_sent: false
-                });
-                setErrors({});
-              }}
+              onClick={resetForm}
               disabled={isAddingBooking}
             >
               <RotateCcw className="h-4 w-4 mr-2" />

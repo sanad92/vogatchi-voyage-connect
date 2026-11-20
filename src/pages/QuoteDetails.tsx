@@ -64,11 +64,27 @@ export default function QuoteDetails() {
   const sourceConversationId = typeof quoteSource === 'string' ? quoteSource : undefined;
   const quoteCurrency = quote.currency || '—';
   const canEdit = hasPermission('quotes_edit');
-  const approved = !!(quote as any).review_approved_at;
+  const approved = 'review_approved_at' in quote && Boolean(quote.review_approved_at);
   const eligibleStatus = ['draft', 'sent', 'accepted'].includes(quote.status);
   const canReviseItinerary = canEdit && hasPermission('quotes_create')
     && items.length > 0 && items.every(item => item.details?.itinerary_builder === true);
-  const canConvert = eligibleStatus && Boolean(quote.customer_id) && hasAllPermissions(['quotes_view', 'quotes_edit', 'bookings_create', 'invoices_create']);
+  const blockers: string[] = [];
+  const hasConversionPermissions = hasAllPermissions(['quotes_view', 'quotes_edit', 'bookings_create', 'invoices_create']);
+  const travelDate = quote.travel_date ?? '';
+  const returnDate = quote.return_date ?? '';
+  const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+  if (!hasConversionPermissions) blockers.push('التحويل يحتاج صلاحية تعديل العرض وإنشاء الحجز والفاتورة.');
+  if (!quote.customer_id) blockers.push('اربط العرض بعميل مسجّل في نفس الشركة.');
+  if (!items.length) blockers.push('أضف خدمة واحدة على الأقل للعرض.');
+  if (!isoDate.test(travelDate) || !isoDate.test(returnDate) || returnDate < travelDate) {
+    blockers.push('حدّد تاريخي السفر والعودة، بحيث يكون تاريخ العودة في يوم السفر أو بعده.');
+  }
+  if (quote.valid_until && (!isoDate.test(quote.valid_until) || quote.valid_until < new Date().toISOString().slice(0, 10))) {
+    blockers.push('حدّث تاريخ صلاحية العرض.');
+  }
+  if (!/^[A-Z]{3}$/.test(quote.currency ?? '')) blockers.push('حدّد عملة العرض.');
+  if ('is_demo' in quote && quote.is_demo === true) blockers.push('تحويل الحجز متاح لعروض العمل الفعلية.');
+  const canConvert = eligibleStatus && blockers.length === 0;
 
   const handleConvert = async () => {
     if (!canConvert || convertToBooking.isPending) return;
@@ -146,8 +162,10 @@ export default function QuoteDetails() {
               </Button>
             </>
           )}
-          {eligibleStatus && items.length > 0 && (
-            <Button size="sm" disabled={!canConvert || convertToBooking.isPending} onClick={() => { setSellerId(quote.assigned_employee_id ?? ''); setConvertOpen(true); }}>
+          {eligibleStatus && (
+            <Button size="sm" disabled={!canConvert || convertToBooking.isPending}
+              aria-describedby={blockers.length ? 'quote-conversion-readiness' : undefined}
+              onClick={() => { setSellerId(quote.assigned_employee_id ?? ''); setConvertOpen(true); }}>
               <ArrowLeftRight className="h-4 w-4 ml-1" />
               تحويل لحجز + فاتورة
             </Button>
@@ -155,13 +173,23 @@ export default function QuoteDetails() {
         </div>
       </div>
 
+      {eligibleStatus && blockers.length > 0 && (
+        <Card id="quote-conversion-readiness" className="print:hidden" dir="rtl">
+          <CardHeader className="pb-2"><CardTitle className="text-base">المطلوب قبل تحويل العرض لحجز</CardTitle></CardHeader>
+          <CardContent>
+            <ul className="list-disc space-y-1 ps-5 text-sm text-muted-foreground">
+              {blockers.map((message) => <li key={message}>{message}</li>)}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quote Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader><CardTitle className="text-base">بيانات العميل</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">الاسم</span><span>{quote.customer_name || quote.customers?.name}</span></div>
-            {!quote.customer_id && eligibleStatus && <p className="text-muted-foreground">يلزم ربط عميل مسجّل بالشركة قبل تحويل العرض إلى حجز.</p>}
             {quote.customers?.phone && <div className="flex justify-between"><span className="text-muted-foreground">الهاتف</span><span dir="ltr">{quote.customers.phone}</span></div>}
             {quote.customers?.email && <div className="flex justify-between"><span className="text-muted-foreground">البريد</span><span>{quote.customers.email}</span></div>}
           </CardContent>
@@ -171,8 +199,8 @@ export default function QuoteDetails() {
           <CardHeader><CardTitle className="text-base">تفاصيل الرحلة</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">الوجهة</span><span>{quote.destination || '—'}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">تاريخ السفر</span><span>{quote.travel_date ? format(new Date(quote.travel_date), 'dd MMM yyyy', { locale: ar }) : '—'}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">تاريخ العودة</span><span>{quote.return_date ? format(new Date(quote.return_date), 'dd MMM yyyy', { locale: ar }) : '—'}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">تاريخ السفر</span><span>{isoDate.test(travelDate) ? format(new Date(travelDate), 'dd MMM yyyy', { locale: ar }) : '—'}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">تاريخ العودة</span><span>{isoDate.test(returnDate) ? format(new Date(returnDate), 'dd MMM yyyy', { locale: ar }) : '—'}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">عدد المسافرين</span><span>{quote.number_of_travelers}</span></div>
             {quote.employees?.full_name && <div className="flex justify-between"><span className="text-muted-foreground">الموظف</span><span>{quote.employees.full_name}</span></div>}
           </CardContent>

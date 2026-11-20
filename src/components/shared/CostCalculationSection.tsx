@@ -3,7 +3,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calculator, DollarSign, TrendingUp } from 'lucide-react';
-import { useEffect } from 'react';
 
 interface CostCalculationSectionProps {
   dailyRate: number;
@@ -19,6 +18,7 @@ interface CostCalculationSectionProps {
   onAdditionalCostsChange?: (costs: any) => void;
   currency?: string;
   title?: string;
+  perPassenger?: boolean;
 }
 
 const CostCalculationSection = ({
@@ -30,10 +30,11 @@ const CostCalculationSection = ({
   onSupplierCostChange,
   onAdditionalCostsChange,
   currency = 'EGP',
-  title = "حساب التكاليف والأرباح"
+  title = "حساب التكاليف والأرباح",
+  perPassenger = false,
 }: CostCalculationSectionProps) => {
   const totalRevenue = dailyRate * duration;
-  const totalSupplierCost = supplierDailyCost * duration;
+  const totalSupplierCost = perPassenger ? supplierDailyCost : supplierDailyCost * duration;
   const totalAdditionalCosts = Object.values(additionalCosts).reduce((sum, cost) => sum + (cost || 0), 0);
   const totalCost = totalSupplierCost + totalAdditionalCosts;
   const totalProfit = totalRevenue - totalCost;
@@ -49,7 +50,7 @@ const CostCalculationSection = ({
       {/* Input Fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="daily_rate">السعر اليومي ({currency})</Label>
+          <Label htmlFor="daily_rate">{perPassenger ? 'سعر البيع للفرد' : 'السعر اليومي'} ({currency})</Label>
           <Input
             type="number"
             id="daily_rate"
@@ -61,7 +62,7 @@ const CostCalculationSection = ({
         </div>
         
         <div>
-          <Label htmlFor="supplier_daily_cost">تكلفة المورد اليومية ({currency})</Label>
+          <Label htmlFor="supplier_daily_cost">{perPassenger ? 'إجمالي تكلفة المورد للرحلة' : 'تكلفة المورد اليومية'} ({currency})</Label>
           <Input
             type="number"
             id="supplier_daily_cost"
@@ -121,7 +122,7 @@ const CostCalculationSection = ({
               {totalRevenue.toLocaleString()} {currency}
             </div>
             <div className="text-xs text-gray-500">
-              {dailyRate} × {duration} أيام
+              {dailyRate} × {duration} {perPassenger ? 'راكب' : 'أيام'}
             </div>
           </CardContent>
         </Card>

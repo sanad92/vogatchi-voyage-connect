@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Hotel, Plane, Car, Truck, TrendingUp, TrendingDown, Search, Plus, User } from 'lucide-react';
+import { Hotel, Plane, Car, Truck, TrendingUp, TrendingDown, Search, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { useOrgId } from '@/hooks/useOrgId';
 import { readActiveCustomer, useCustomerContext, type CustomerContext } from '@/hooks/useCustomerContext';
@@ -20,7 +20,6 @@ import { useWizardForm, WizardStepConfig } from '@/hooks/useWizardForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import CustomerSearch from '@/components/customers/CustomerSearch';
-import QuickCustomerAdd from '@/components/customers/QuickCustomerAdd';
 import SupplierSelection from '@/components/shared/SupplierSelection';
 import CurrencySelector from '@/components/currency/CurrencySelector';
 import { SupportedCurrency } from '@/types/currency';
@@ -31,26 +30,65 @@ import UnifiedCarFields from '@/components/bookings/unified-fields/UnifiedCarFie
 import UnifiedTransportFields from '@/components/bookings/unified-fields/UnifiedTransportFields';
 
 const typeOptions = [
-  { value: 'hotel' as BookingType, label: 'حجز فندق', icon: Hotel, desc: 'فنادق ومنتجعات' },
-  { value: 'flight' as BookingType, label: 'حجز طيران', icon: Plane, desc: 'تذاكر طيران' },
-  { value: 'car_rental' as BookingType, label: 'تأجير سيارات', icon: Car, desc: 'إيجار سيارات' },
-  { value: 'transport' as BookingType, label: 'نقل', icon: Truck, desc: 'خدمات النقل' },
-];
+  { value: 'hotel', label: 'حجز فندق', icon: Hotel, desc: 'فنادق ومنتجعات' },
+  { value: 'flight', label: 'حجز طيران', icon: Plane, desc: 'تذاكر طيران' },
+  { value: 'car_rental', label: 'تأجير سيارات', icon: Car, desc: 'إيجار سيارات' },
+  { value: 'transport', label: 'نقل', icon: Truck, desc: 'خدمات النقل' },
+] as const;
 
-const wizardSteps: WizardStepConfig[] = [
+const serviceDateKeys: Record<(typeof typeOptions)[number]['value'], [string, string]> = {
+  hotel: ['check_in', 'check_out'],
+  flight: ['departure_date', 'arrival_date'],
+  car_rental: ['pickup_date', 'dropoff_date'],
+  transport: ['start_date', 'end_date'],
+};
+
+function textValue(value: unknown) {
+  return typeof value === 'string' ? value : '';
+}
+
+function validDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(value);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function bookingDates(data: Record<string, unknown>) {
+  const type = typeOptions.find((option) => option.value === data.booking_type)?.value;
+  if (!type) return { start: '', end: '', outboundEnd: '', data };
+  const keys = serviceDateKeys[type];
+  const [startKey, endKey] = keys;
+  // A restored draft may still contain the dates formerly entered on the basic step.
+  // An explicitly cleared service field stays empty.
+  const start = textValue(data[startKey] ?? data.start_date);
+  const outboundEnd = textValue(data[endKey] ?? data.end_date);
+  const end = data.booking_type === 'flight' && data.is_round_trip === true
+    ? textValue(data.return_arrival_date) : outboundEnd;
+  return {
+    start, end, outboundEnd,
+    data: { ...data, [startKey]: start, [endKey]: outboundEnd },
+  };
+}
+
+const bookingSteps = (canCreateCustomers: boolean): WizardStepConfig[] => [
   {
     title: 'نوع الحجز',
-    validate: (data) => {
-      const errors: Record<string, string> = {};
-      if (!data.booking_type) errors.booking_type = 'يرجى اختيار نوع الحجز';
-      return errors;
-    },
+    validate: (data) => typeOptions.some((option) => option.value === data.booking_type) ? {} : { booking_type: 'يرجى اختيار نوع الحجز' },
   },
   {
     title: 'البيانات الأساسية',
     validate: (data) => {
       const errors: Record<string, string> = {};
-      if (!data.customer_id && !data.customer_name) errors.customer_name = 'يرجى اختيار عميل أو إدخال اسم';
+      if (data.customer_id) return errors;
+      if (!canCreateCustomers) {
+        errors.customer_name = 'اختر عميلًا مسجّلًا. إضافة عميل جديد تحتاج صلاحية إنشاء العملاء.';
+        return errors;
+      }
+      if (!String(data.customer_name ?? '').trim()) errors.customer_name = 'اختر عميلًا مسجّلًا أو أدخل اسم العميل الجديد.';
+      const phone = String(data.customer_phone ?? '').trim();
+      const email = String(data.customer_email ?? '').trim();
+      if (!phone && !email) errors.customer_contact = 'أدخل رقم الهاتف أو البريد الإلكتروني لحفظ العميل الجديد.';
+      if (email && !/^[^\s@]+@[^\s@]+$/.test(email)) errors.customer_email = 'أدخل بريدًا إلكترونيًا صحيحًا.';
       return errors;
     },
   },
@@ -63,10 +101,35 @@ const wizardSteps: WizardStepConfig[] = [
       if (Number(data.cost_price) > 0 && !data.supplier_id) errors.supplier_id = 'اختر المورد لتسجيل المستحقات';
       const policyError = termsError(data.cancellation_terms, Number(data.cost_price), Number(data.selling_price));
       if (policyError) errors.cancellation_terms = policyError;
-      if (data.booking_type === 'hotel' && !data.hotel_name) errors.hotel_name = 'اسم الفندق مطلوب';
-      if (data.booking_type === 'flight' && !data.airline) errors.airline = 'شركة الطيران مطلوبة';
-      if (data.booking_type === 'car_rental' && !data.car_type) errors.car_type = 'نوع السيارة مطلوب';
+      if (data.booking_type === 'hotel' && !data.hotel_name?.trim()) errors.hotel_name = 'اسم الفندق مطلوب';
+      if (data.booking_type === 'flight' && !data.airline?.trim()) errors.airline = 'شركة الطيران مطلوبة';
+      if (data.booking_type === 'car_rental' && !data.car_type?.trim()) errors.car_type = 'نوع السيارة مطلوب';
       if (data.booking_type === 'transport' && !data.vehicle_type) errors.vehicle_type = 'نوع المركبة مطلوب';
+
+      const { start, end, outboundEnd } = bookingDates(data);
+      if (data.booking_type === 'flight') {
+        if (!data.departure_airport?.trim()) errors.departure_airport = 'أدخل مطار المغادرة.';
+        if (!data.arrival_airport?.trim()) errors.arrival_airport = 'أدخل مطار الوصول.';
+        if (!validDate(start)) errors.departure_date = 'أدخل تاريخ مغادرة صحيحًا.';
+        if (!validDate(outboundEnd) || outboundEnd < start) errors.arrival_date = 'أدخل تاريخ وصول صحيحًا في يوم المغادرة أو بعده.';
+        if (data.is_round_trip === true) {
+          const returnDeparture = textValue(data.return_departure_date);
+          if (!data.return_departure_airport?.trim()) errors.return_departure_airport = 'أدخل مطار مغادرة العودة.';
+          if (!data.return_arrival_airport?.trim()) errors.return_arrival_airport = 'أدخل مطار وصول العودة.';
+          if (!validDate(returnDeparture) || returnDeparture < outboundEnd) {
+            errors.return_departure_date = 'أدخل تاريخ مغادرة العودة في يوم وصول الذهاب أو بعده.';
+          }
+          if (!validDate(end) || end < returnDeparture) {
+            errors.return_arrival_date = 'أدخل تاريخ وصول العودة في يوم مغادرتها أو بعده.';
+          }
+        }
+      } else if (!validDate(start) || !validDate(end)) {
+        errors.service_dates = 'أدخل تاريخي بداية الخدمة ونهايتها.';
+      } else if (end < start || (data.booking_type === 'hotel' && end === start)) {
+        errors.service_dates = data.booking_type === 'hotel'
+          ? 'تاريخ تسجيل الخروج لازم يكون بعد تسجيل الدخول.'
+          : 'تاريخ نهاية الخدمة لازم يكون في يوم البداية أو بعده.';
+      }
       return errors;
     },
   },
@@ -85,6 +148,8 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
   const { createBooking, finishCreation } = useUnifiedBookings();
   const { hasAllPermissions } = useSupabasePermissions();
   const canCreate = hasAllPermissions(['bookings_create', 'invoices_create', 'customers_view']);
+  const canCreateCustomers = hasAllPermissions(['customers_create']);
+  const wizardSteps = bookingSteps(canCreateCustomers);
   const submitting = useRef(false);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
@@ -92,7 +157,6 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
   activeScope.current = `${orgId}:${user?.id}`;
   const [customerSelection, setSelectedCustomer] = useState<Customer | null>(initialCustomer ?? null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const wizard = useWizardForm({
     steps: wizardSteps,
@@ -115,25 +179,30 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
   const profit = (Number(wizard.formData.selling_price) || 0) - (Number(wizard.formData.cost_price) || 0);
   const margin = Number(wizard.formData.selling_price) > 0 ? (profit / Number(wizard.formData.selling_price)) * 100 : 0;
   const bookingType = wizard.formData.booking_type as BookingType;
+  const dates = bookingDates(wizard.formData);
+  const serviceData = dates.data;
+  const customerUnavailable = Boolean(wizard.formData.customer_id && !selectedCustomer);
 
   const handleCustomerSelect = (customer: Customer) => {
     setSelectedCustomer(customer);
-    wizard.updateFields({ customer_id: customer.id, customer_name: customer.full_name || customer.name });
+    wizard.updateFields({ customer_id: customer.id, customer_name: customer.full_name || customer.name,
+      customer_phone: '', customer_email: '' });
     setIsSearchOpen(false);
-  };
-
-  const handleQuickAdd = (customer: Customer) => {
-    handleCustomerSelect(customer);
-    setIsAddOpen(false);
   };
 
   const clearCustomer = () => {
     setSelectedCustomer(null);
-    wizard.updateFields({ customer_id: '', customer_name: '' });
+    wizard.updateFields({ customer_id: '', customer_name: '', customer_phone: '', customer_email: '' });
   };
 
   const handleSubmit = async () => {
     if (!orgId || !bookingType || !canCreate || createBooking.isPending || submitting.current) return;
+    const firstIncompleteStep = [1, 2].find((step) => Object.keys(wizardSteps[step].validate?.(wizard.formData) ?? {}).length > 0);
+    if (firstIncompleteStep !== undefined) {
+      wizard.goToStep(firstIncompleteStep);
+      toast.error('راجع البيانات المطلوبة في خطوة الحجز قبل الحفظ.');
+      return;
+    }
     const submittedScope = activeScope.current;
     submitting.current = true;
     try {
@@ -149,32 +218,37 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
       if (!mounted.current || activeScope.current !== submittedScope) return;
 
       // جمع التفاصيل حسب النوع
-      const hotelKeys = ['hotel_name', 'room_type', 'board_type', 'nights', 'check_in', 'check_out', 'rooms', 'star_rating', 'city', 'adults', 'children', 'children_ages', 'meal_plan', 'cancellation_policy', 'booking_reference'];
-      const flightKeys = ['airline', 'flight_number', 'departure_airport', 'arrival_airport', 'departure_date', 'departure_time', 'arrival_date', 'arrival_time', 'pnr', 'ticket_number', 'passengers_count', 'flight_class', 'ticket_price_per_person', 'taxes_and_fees', 'is_round_trip', 'seat_preferences', 'meal_preferences'];
+      const hotelKeys = ['hotel_name', 'room_type', 'board_type', 'nights', 'check_in', 'check_out', 'rooms', 'star_rating', 'city', 'adults', 'children', 'children_ages', 'meal_plan', 'cancellation_policy', 'booking_reference', 'cost_per_night', 'selling_per_night'];
+      const flightKeys = ['airline', 'flight_number', 'departure_airport', 'arrival_airport', 'departure_date', 'departure_time', 'arrival_date', 'arrival_time', 'pnr', 'ticket_number', 'passengers_count', 'flight_class', 'ticket_price_per_person', 'taxes_and_fees', 'is_round_trip', 'seat_preferences', 'meal_preferences', 'return_flight_number', 'return_departure_airport', 'return_arrival_airport', 'return_departure_date', 'return_departure_time', 'return_arrival_date', 'return_arrival_time'];
       const carKeys = ['car_type', 'pickup_location', 'dropoff_location', 'daily_rate', 'pickup_date', 'dropoff_date', 'insurance_included'];
-      const transportKeys = ['vehicle_type', 'route', 'pickup_point', 'dropoff_point', 'passengers'];
+      const transportKeys = ['vehicle_type', 'route', 'pickup_point', 'dropoff_point', 'passengers', 'pickup_time'];
 
       const keyMap: Record<string, string[]> = { hotel: hotelKeys, flight: flightKeys, car_rental: carKeys, transport: transportKeys };
       const detailKeyMap: Record<string, string> = { hotel: 'hotelDetails', flight: 'flightDetails', car_rental: 'carDetails', transport: 'transportDetails' };
 
       const keys = keyMap[bookingType] || [];
       const details: Record<string, unknown> = {};
-      keys.forEach(k => { if (wizard.formData[k] != null && wizard.formData[k] !== '') details[k] = wizard.formData[k]; });
+      for (const key of keys) {
+        if (key.startsWith('return_') && serviceData.is_round_trip !== true) continue;
+        if (key === 'children_ages' && !(Number(serviceData.children) > 0)) continue;
+        const value = serviceData[key];
+        if (value != null && value !== '') details[key] = value;
+      }
 
       const result = await createBooking.mutateAsync({
         booking_type: bookingType,
         customer_id: verifiedCustomer?.id,
-        customer_name: verifiedCustomer?.name || wizard.formData.customer_name || undefined,
-        customer_phone: wizard.formData.customer_id ? undefined : wizard.formData.customer_phone || undefined,
-        customer_email: wizard.formData.customer_id ? undefined : wizard.formData.customer_email || undefined,
+        customer_name: verifiedCustomer?.name || textValue(wizard.formData.customer_name).trim() || undefined,
+        customer_phone: wizard.formData.customer_id ? undefined : textValue(wizard.formData.customer_phone).trim() || undefined,
+        customer_email: wizard.formData.customer_id ? undefined : textValue(wizard.formData.customer_email).trim() || undefined,
         employee_id: wizard.formData.employee_id || undefined,
         supplier_id: wizard.formData.supplier_id || undefined,
         supplier_name: wizard.formData.supplier_name || undefined,
         selling_price: Number(wizard.formData.selling_price),
         cost_price: Number(wizard.formData.cost_price),
         currency: wizard.formData.currency,
-        start_date: wizard.formData.start_date || undefined,
-        end_date: wizard.formData.end_date || undefined,
+        start_date: dates.start,
+        end_date: dates.end,
         notes: wizard.formData.notes || undefined,
         cancellation_terms: wizard.formData.cancellation_terms ?? emptyTerms,
         [detailKeyMap[bookingType]]: Object.keys(details).length > 0 ? details : undefined,
@@ -197,30 +271,38 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
   const reviewLabels: Record<string, string> = {
     hotel_name: 'الفندق', star_rating: 'التصنيف', city: 'المدينة', room_type: 'نوع الغرفة',
     rooms: 'عدد الغرف', check_in: 'الدخول', check_out: 'الخروج', nights: 'الليالي',
-    adults: 'البالغين', children: 'الأطفال', meal_plan: 'الوجبات', booking_reference: 'مرجع المورد',
+    adults: 'البالغين', children: 'الأطفال', children_ages: 'أعمار الأطفال', meal_plan: 'الوجبات', booking_reference: 'مرجع المورد',
+    cost_per_night: 'تكلفة الليلة', selling_per_night: 'بيع الليلة', cancellation_policy: 'ملاحظات الإلغاء',
     airline: 'شركة الطيران', flight_number: 'رقم الرحلة', flight_class: 'درجة السفر',
     departure_airport: 'مطار المغادرة', arrival_airport: 'مطار الوصول',
     departure_date: 'تاريخ المغادرة', departure_time: 'وقت المغادرة',
     arrival_date: 'تاريخ الوصول', arrival_time: 'وقت الوصول',
     passengers_count: 'المسافرين', ticket_price_per_person: 'سعر التذكرة',
     taxes_and_fees: 'الضرائب', pnr: 'PNR', ticket_number: 'رقم التذكرة',
-    is_round_trip: 'ذهاب وعودة',
+    is_round_trip: 'ذهاب وعودة', seat_preferences: 'تفضيل المقعد', meal_preferences: 'تفضيل الوجبة',
+    return_flight_number: 'رقم رحلة العودة', return_departure_airport: 'مطار مغادرة العودة',
+    return_arrival_airport: 'مطار وصول العودة', return_departure_date: 'تاريخ مغادرة العودة',
+    return_departure_time: 'وقت مغادرة العودة', return_arrival_date: 'تاريخ وصول العودة', return_arrival_time: 'وقت وصول العودة',
     car_type: 'نوع السيارة', daily_rate: 'السعر اليومي',
     pickup_location: 'موقع الاستلام', dropoff_location: 'موقع التسليم',
     pickup_date: 'تاريخ الاستلام', dropoff_date: 'تاريخ التسليم',
     insurance_included: 'تأمين شامل',
     vehicle_type: 'نوع المركبة', route: 'المسار',
-    pickup_point: 'نقطة الالتقاط', dropoff_point: 'نقطة التوصيل', passengers: 'الركاب',
+    pickup_point: 'نقطة الالتقاط', dropoff_point: 'نقطة التوصيل', passengers: 'الركاب', pickup_time: 'وقت الالتقاط',
   };
 
   const getReviewFields = () => {
     const keyMap: Record<string, string[]> = {
-      hotel: ['hotel_name', 'star_rating', 'city', 'room_type', 'rooms', 'check_in', 'check_out', 'nights', 'adults', 'children', 'meal_plan', 'booking_reference'],
-      flight: ['airline', 'flight_number', 'flight_class', 'departure_airport', 'arrival_airport', 'departure_date', 'departure_time', 'arrival_date', 'arrival_time', 'passengers_count', 'ticket_price_per_person', 'taxes_and_fees', 'pnr', 'ticket_number', 'is_round_trip'],
-      car_rental: ['car_type', 'daily_rate', 'pickup_location', 'dropoff_location', 'pickup_date', 'dropoff_date', 'insurance_included'],
-      transport: ['vehicle_type', 'route', 'pickup_point', 'dropoff_point', 'passengers'],
+      hotel: ['hotel_name', 'star_rating', 'city', 'room_type', 'rooms', 'nights', 'adults', 'children', 'children_ages', 'meal_plan', 'booking_reference', 'cost_per_night', 'selling_per_night', 'cancellation_policy'],
+      flight: ['airline', 'flight_number', 'flight_class', 'departure_airport', 'arrival_airport', 'departure_date', 'departure_time', 'arrival_date', 'arrival_time', 'passengers_count', 'ticket_price_per_person', 'taxes_and_fees', 'pnr', 'ticket_number', 'is_round_trip', 'seat_preferences', 'meal_preferences', 'return_flight_number', 'return_departure_airport', 'return_arrival_airport', 'return_departure_date', 'return_departure_time', 'return_arrival_date', 'return_arrival_time'],
+      car_rental: ['car_type', 'daily_rate', 'pickup_location', 'dropoff_location', 'insurance_included'],
+      transport: ['vehicle_type', 'route', 'pickup_point', 'dropoff_point', 'passengers', 'pickup_time'],
     };
-    return (keyMap[bookingType] || []).filter(k => wizard.formData[k] != null && wizard.formData[k] !== '' && wizard.formData[k] !== false);
+    return (keyMap[bookingType] || []).filter(key => {
+      if (key.startsWith('return_') && serviceData.is_round_trip !== true) return false;
+      if (key === 'children_ages' && !(Number(serviceData.children) > 0)) return false;
+      return serviceData[key] != null && serviceData[key] !== '';
+    });
   };
 
   const formatReviewValue = (key: string, value: unknown): string => {
@@ -276,7 +358,7 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
           </Card>
         )}
 
-        {/* Step 2: Base Info with CustomerSelection + SupplierSelection */}
+        {/* Step 2: customer and staff */}
         {missingCustomer && <p role="status" className="text-sm text-muted-foreground">تعذر اختيار العميل من الرابط. اختر عميلاً من الشركة الحالية.</p>}
         {wizard.currentStep === 1 && (
           <Card>
@@ -284,39 +366,36 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
             <CardContent className="space-y-4">
               {/* اختيار العميل */}
               <div>
-                <Label>العميل *</Label>
-                <div className="flex gap-2 mt-1">
+                <Label htmlFor="booking-customer-name">العميل *</Label>
+                <div className="mt-1 flex flex-wrap gap-2 sm:flex-nowrap">
                   <Input
+                    id="booking-customer-name"
                     value={wizard.formData.customer_name || ''}
                     onChange={e => wizard.updateFields({ customer_id: '', customer_name: e.target.value })}
-                    placeholder="اسم العميل"
-                    readOnly={!!selectedCustomer}
+                    placeholder={canCreateCustomers ? 'اختر عميلًا أو اكتب اسم عميل جديد' : 'اختر عميلًا مسجّلًا'}
+                    readOnly={!!selectedCustomer || !canCreateCustomers}
+                    aria-invalid={Boolean(wizard.errors.customer_name || (customerUnavailable && !savedCustomer.isLoading))}
                     className={selectedCustomer ? 'bg-muted/50' : ''}
                   />
                   <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" size="icon" type="button"><Search className="h-4 w-4" /></Button>
+                      <Button variant="outline" type="button"><Search className="h-4 w-4" aria-hidden="true" /> بحث عن عميل</Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl">
                       <DialogHeader><DialogTitle>البحث عن عميل</DialogTitle></DialogHeader>
                       <CustomerSearch
                         onCustomerSelect={handleCustomerSelect}
-                        onNewCustomer={() => { setIsSearchOpen(false); setIsAddOpen(true); }}
                         selectedCustomer={selectedCustomer ? { ...selectedCustomer, phone: selectedCustomer.phone || '' } : null}
                       />
                     </DialogContent>
                   </Dialog>
-                  <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="icon" type="button"><Plus className="h-4 w-4" /></Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>إضافة عميل جديد</DialogTitle></DialogHeader>
-                      <QuickCustomerAdd onCustomerAdded={handleQuickAdd} onCancel={() => setIsAddOpen(false)} />
-                    </DialogContent>
-                  </Dialog>
                 </div>
                 <FieldError error={wizard.errors.customer_name} />
+                {customerUnavailable && (
+                  <p role="status" className="mt-2 text-sm text-muted-foreground">
+                    {savedCustomer.isLoading ? 'جاري التحقق من العميل…' : 'تعذر التحقق من العميل في هذه الشركة. اختر السجل من البحث.'}
+                  </p>
+                )}
                 {selectedCustomer && (
                   <div className="mt-2 p-3 rounded-lg border bg-primary/5">
                     <div className="flex items-center justify-between">
@@ -335,38 +414,25 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
                 )}
               </div>
 
-              {!wizard.formData.customer_id && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><Label>هاتف العميل الجديد</Label><Input type="tel" value={wizard.formData.customer_phone || ''} onChange={e => wizard.updateField('customer_phone', e.target.value)} /></div>
-                  <div><Label>بريد العميل الجديد</Label><Input type="email" value={wizard.formData.customer_email || ''} onChange={e => wizard.updateField('customer_email', e.target.value)} /></div>
-                  <p className="text-sm text-muted-foreground md:col-span-2">لو العميل جديد، أدخل هاتفه أو بريده ليتم حفظه مع الحجز.</p>
+              {!wizard.formData.customer_id && canCreateCustomers && (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <p className="text-sm text-muted-foreground md:col-span-2">للعميل الجديد، أدخل هاتفًا أو بريدًا إلكترونيًا. سيتم إنشاء العميل عند حفظ الحجز.</p>
+                  <div>
+                    <Label htmlFor="booking-customer-phone">هاتف العميل الجديد</Label>
+                    <Input id="booking-customer-phone" type="tel" value={wizard.formData.customer_phone || ''} onChange={e => wizard.updateField('customer_phone', e.target.value)} aria-invalid={Boolean(wizard.errors.customer_contact)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="booking-customer-email">بريد العميل الجديد</Label>
+                    <Input id="booking-customer-email" type="email" value={wizard.formData.customer_email || ''} onChange={e => wizard.updateField('customer_email', e.target.value)} aria-invalid={Boolean(wizard.errors.customer_email || wizard.errors.customer_contact)} />
+                    <FieldError error={wizard.errors.customer_email} />
+                  </div>
+                  {wizard.errors.customer_contact && <div className="md:col-span-2"><FieldError error={wizard.errors.customer_contact} /></div>}
                 </div>
               )}
 
-              {/* اختيار المورد */}
-              <SupplierSelection
-                selectedSupplierId={wizard.formData.supplier_id || ''}
-                selectedSupplierName={wizard.formData.supplier_name || ''}
-                onSupplierSelect={(id, name) => wizard.updateFields({ supplier_id: id, supplier_name: name })}
-                supplierType={bookingType === 'hotel' ? 'hotel' : bookingType === 'flight' ? 'airline' : bookingType === 'transport' ? 'transport' : undefined}
-              />
-              <FieldError error={wizard.errors.supplier_id} />
-
-              {/* التواريخ */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>{bookingType === 'flight' ? 'تاريخ المغادرة (Departure Date)' : 'تسجيل الدخول (Check-in)'}</Label>
-                  <Input type="date" value={wizard.formData.start_date} onChange={e => wizard.updateField('start_date', e.target.value)} />
-                </div>
-                <div>
-                  <Label>{bookingType === 'flight' ? 'تاريخ الوصول (Arrival Date)' : 'تسجيل الخروج (Check-out)'}</Label>
-                  <Input type="date" value={wizard.formData.end_date} onChange={e => wizard.updateField('end_date', e.target.value)} />
-                </div>
-              </div>
-
               <BookingSalesStaffSelect value={wizard.formData.employee_id ?? ''} enabled={canCreate}
                 disabled={createBooking.isPending} onChange={value => wizard.updateField('employee_id', value)} />
-              <WizardNavButtons onBack={() => wizard.goBack()} onNext={() => wizard.goNext()} />
+              <WizardNavButtons onBack={() => wizard.goBack()} onNext={() => wizard.goNext()} nextDisabled={!canCreate || customerUnavailable} />
             </CardContent>
           </Card>
         )}
@@ -377,17 +443,31 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
             <CardHeader><CardTitle>تفاصيل {typeOptions.find(t => t.value === bookingType)?.label}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {bookingType === 'hotel' && (
-                <UnifiedHotelFields formData={wizard.formData} updateField={wizard.updateField} updateFields={wizard.updateFields} errors={wizard.errors} />
+                <UnifiedHotelFields formData={serviceData} updateField={wizard.updateField} updateFields={wizard.updateFields} errors={wizard.errors} />
               )}
               {bookingType === 'flight' && (
-                <UnifiedFlightFields formData={wizard.formData} updateField={wizard.updateField} updateFields={wizard.updateFields} errors={wizard.errors} />
+                <UnifiedFlightFields formData={serviceData} updateField={wizard.updateField} updateFields={wizard.updateFields} errors={wizard.errors} />
               )}
               {bookingType === 'car_rental' && (
-                <UnifiedCarFields formData={wizard.formData} updateField={wizard.updateField} updateFields={wizard.updateFields} errors={wizard.errors} />
+                <UnifiedCarFields formData={serviceData} updateField={wizard.updateField} updateFields={wizard.updateFields} errors={wizard.errors} />
               )}
               {bookingType === 'transport' && (
-                <UnifiedTransportFields formData={wizard.formData} updateField={wizard.updateField} updateFields={wizard.updateFields} errors={wizard.errors} />
+                <UnifiedTransportFields formData={serviceData} updateField={wizard.updateField} updateFields={wizard.updateFields} errors={wizard.errors} />
               )}
+
+              {bookingType === 'transport' && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="booking-transport-start">تاريخ بداية النقل *</Label>
+                    <Input id="booking-transport-start" type="date" value={dates.start} onChange={e => wizard.updateField('start_date', e.target.value)} aria-invalid={Boolean(wizard.errors.service_dates)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="booking-transport-end">تاريخ نهاية النقل *</Label>
+                    <Input id="booking-transport-end" type="date" value={dates.end} onChange={e => wizard.updateField('end_date', e.target.value)} aria-invalid={Boolean(wizard.errors.service_dates)} />
+                  </div>
+                </div>
+              )}
+              <FieldError error={wizard.errors.service_dates} />
 
               <div>
                 <Label>ملاحظات</Label>
@@ -410,7 +490,6 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
                     <Label>التكلفة *</Label>
                     <Input type="number" value={wizard.formData.cost_price} onChange={e => wizard.updateField('cost_price', e.target.value)} />
                     <FieldError error={wizard.errors.cost_price} />
-                    <FieldError error={wizard.errors.supplier_id ? `${wizard.errors.supplier_id} (ارجع للخطوة السابقة)` : undefined} />
                   </div>
                   <div>
                     <Label>العملة</Label>
@@ -419,6 +498,16 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
                       onValueChange={v => wizard.updateField('currency', v)}
                     />
                   </div>
+                </div>
+
+                <div className="mt-4">
+                  <SupplierSelection
+                    selectedSupplierId={wizard.formData.supplier_id || ''}
+                    selectedSupplierName={wizard.formData.supplier_name || ''}
+                    onSupplierSelect={(id, name) => wizard.updateFields({ supplier_id: id, supplier_name: name })}
+                    supplierType={bookingType === 'hotel' ? 'hotel' : bookingType === 'flight' ? 'airline' : bookingType === 'transport' ? 'transport' : undefined}
+                  />
+                  <FieldError error={wizard.errors.supplier_id} />
                 </div>
 
                 {/* الربح */}
@@ -442,7 +531,7 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
               <BookingCancellationTermsFields value={wizard.formData.cancellation_terms} currency={wizard.formData.currency}
                 onChange={terms => wizard.updateField('cancellation_terms', terms)} />
               <FieldError error={wizard.errors.cancellation_terms} />
-              <WizardNavButtons onBack={() => wizard.goBack()} onNext={() => wizard.goNext()} nextLabel="مراجعة" />
+              <WizardNavButtons onBack={() => wizard.goBack()} onNext={() => wizard.goNext()} nextDisabled={!canCreate} nextLabel="مراجعة" />
             </CardContent>
           </Card>
         )}
@@ -459,8 +548,12 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
               <div className="grid grid-cols-2 gap-3 p-4 rounded-lg bg-muted/50">
                 <ReviewRow label="العميل" value={wizard.formData.customer_name || '—'} />
                 <ReviewRow label="المورد" value={wizard.formData.supplier_name || '—'} />
-                <ReviewRow label="تاريخ البداية" value={wizard.formData.start_date || '—'} />
-                <ReviewRow label="تاريخ النهاية" value={wizard.formData.end_date || '—'} />
+                {bookingType !== 'flight' && (
+                  <>
+                    <ReviewRow label={bookingType === 'hotel' ? 'تسجيل الدخول' : bookingType === 'car_rental' ? 'تاريخ الاستلام' : 'بداية النقل'} value={dates.start || '—'} />
+                    <ReviewRow label={bookingType === 'hotel' ? 'تسجيل الخروج' : bookingType === 'car_rental' ? 'تاريخ التسليم' : 'نهاية النقل'} value={dates.end || '—'} />
+                  </>
+                )}
               </div>
 
               <div className={`p-4 rounded-lg border-2 ${profit >= 0 ? 'border-green-200 bg-green-50 dark:bg-green-950/20' : 'border-red-200 bg-red-50 dark:bg-red-950/20'}`}>
@@ -487,7 +580,7 @@ export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false
                   <h3 className="font-semibold mb-3">تفاصيل {typeOptions.find(t => t.value === bookingType)?.label}</h3>
                   <div className="grid grid-cols-2 gap-3">
                     {getReviewFields().map(k => (
-                      <ReviewRow key={k} label={reviewLabels[k] || k} value={formatReviewValue(k, wizard.formData[k])} />
+                      <ReviewRow key={k} label={reviewLabels[k] || k} value={formatReviewValue(k, serviceData[k])} />
                     ))}
                   </div>
                 </div>

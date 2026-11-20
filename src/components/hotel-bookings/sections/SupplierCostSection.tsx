@@ -10,6 +10,7 @@ import { Sparkles, TrendingUp, TrendingDown } from "lucide-react";
 import { NewHotelBooking, HotelSupplier, getCurrencySymbol, PAYMENT_METHOD_OPTIONS } from "@/types/hotelBooking";
 import HotelSupplierCombobox from "../HotelSupplierCombobox";
 import CurrencySelector from "@/components/currency/CurrencySelector";
+import { useParentBookingFields } from "@/contexts/ParentBookingContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgId } from "@/hooks/useOrgId";
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ const SupplierCostSection = ({ register, setValue, watch, errors }: SupplierCost
   const orgId = useOrgId();
   const supplierId = watch('supplier_id');
   const supplierName = watch('supplier_name');
+  const { currency: bookingCurrency } = useParentBookingFields();
   const currency = watch('currency') || 'EGP';
   const symbol = getCurrencySymbol(currency);
   const checkIn = watch('check_in_date');
@@ -79,8 +81,12 @@ const SupplierCostSection = ({ register, setValue, watch, errors }: SupplierCost
       if (error) throw error;
       if (data && data.length > 0) {
         const r = data[0];
-        if (r.cost_price) setValue('cost_per_night', Number(r.cost_price));
-        if (r.selling_price) setValue('selling_price_per_night', Number(r.selling_price));
+        if (bookingCurrency && r.currency && r.currency !== bookingCurrency) {
+          toast.error('سعر المورد بعملة مختلفة عن عملة ملف الحجز. أدخل المبلغ بعد تحويله لعملة الحجز.');
+          return;
+        }
+        if (r.cost_price != null) setValue('cost_per_night', Number(r.cost_price));
+        if (r.selling_price != null) setValue('selling_price_per_night', Number(r.selling_price));
         if (r.currency) setValue('currency', r.currency as any);
         toast.success('تم جلب السعر من المورد');
       } else {
@@ -102,7 +108,8 @@ const SupplierCostSection = ({ register, setValue, watch, errors }: SupplierCost
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>العملة</Label>
-          <CurrencySelector value={currency} onValueChange={(v) => setValue('currency', v)} />
+          {bookingCurrency ? <div className="text-sm font-medium" dir="ltr">{bookingCurrency}</div>
+            : <CurrencySelector value={currency} onValueChange={(v) => setValue('currency', v)} />}
         </div>
         <div className="space-y-1.5">
           <Label>مورد الفندق *</Label>

@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Hotel, Calendar, DollarSign, Clock, Users, TrendingUp } from "lucide-react";
 import { HotelBooking } from "@/types/hotelBooking";
 import { useMemo } from "react";
+import { formatSpecializedBookingTotals, hotelBookingStatus } from '@/lib/specializedBookingFinance';
+import { format } from 'date-fns';
 
 interface HotelBookingStatsProps {
   bookings: HotelBooking[];
@@ -19,32 +21,29 @@ const HotelBookingStats = ({ bookings }: HotelBookingStatsProps) => {
       new Date(booking.created_at) >= thisMonth
     ).length;
     
-    const totalRevenue = bookings.reduce((sum, booking) => 
-      sum + (booking.total_cost_customer || 0), 0
-    );
+    const active = bookings.filter(booking => hotelBookingStatus(booking) !== 'cancelled');
+    const totalRevenue = formatSpecializedBookingTotals(active.map(booking => ({ amount: booking.total_cost_customer, currency: booking.currency })));
+    const totalProfit = formatSpecializedBookingTotals(active.map(booking => ({ amount: booking.total_profit, currency: booking.currency })));
+    const todayCode = format(today, 'yyyy-MM-dd');
     
-    const totalProfit = bookings.reduce((sum, booking) => 
-      sum + (booking.total_profit || 0), 0
-    );
-    
-    const checkingInToday = bookings.filter(booking => 
-      booking.check_in_date === today.toISOString().split('T')[0]
+    const checkingInToday = active.filter(booking =>
+      booking.check_in_date === todayCode
     ).length;
     
-    const checkingOutToday = bookings.filter(booking => 
-      booking.check_out_date === today.toISOString().split('T')[0]
+    const checkingOutToday = active.filter(booking =>
+      booking.check_out_date === todayCode
     ).length;
     
     const confirmedBookings = bookings.filter(booking => 
-      booking.status_id && booking.status_id !== 'cancelled'
+      hotelBookingStatus(booking) === 'confirmed'
     ).length;
     
     const pendingBookings = bookings.filter(booking => 
-      !booking.status_id || booking.status_id === 'pending'
+      hotelBookingStatus(booking) === 'pending'
     ).length;
     
     const cancelledBookings = bookings.filter(booking => 
-      booking.status_id === 'cancelled'
+      hotelBookingStatus(booking) === 'cancelled'
     ).length;
     
     const averageNights = totalBookings > 0 
@@ -78,9 +77,9 @@ const HotelBookingStats = ({ bookings }: HotelBookingStatsProps) => {
       bgColor: "bg-blue-50"
     },
     {
-      title: "الإيرادات الإجمالية",
-      value: `${stats.totalRevenue.toLocaleString()} ج.م`,
-      subtitle: `ربح: ${stats.totalProfit.toLocaleString()} ج.م`,
+      title: "قيمة الحجوزات",
+      value: stats.totalRevenue,
+      subtitle: `ربح: ${stats.totalProfit}`,
       icon: DollarSign,
       color: "text-green-600",
       bgColor: "bg-green-50"
@@ -110,7 +109,7 @@ const HotelBookingStats = ({ bookings }: HotelBookingStatsProps) => {
       bgColor: "bg-emerald-50"
     },
     {
-      title: "معدل النجاح",
+      title: "نسبة الحجوزات المؤكدة",
       value: stats.totalBookings > 0 ? `${Math.round((stats.confirmedBookings / stats.totalBookings) * 100)}%` : "0%",
       subtitle: `${stats.cancelledBookings} ملغي`,
       icon: TrendingUp,

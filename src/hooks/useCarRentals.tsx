@@ -9,7 +9,7 @@ import { useParentBookingLink } from '@/contexts/ParentBookingContext';
 export const useCarRentals = () => {
   const queryClient = useQueryClient();
   const orgId = useOrgId();
-  const { withParentBooking, syncParent } = useParentBookingLink();
+  const { withParentBooking } = useParentBookingLink();
 
   const { data, isLoading: rentalsLoading } = useQuery({
     queryKey: ['car-rentals-unified', orgId],
@@ -51,15 +51,18 @@ export const useCarRentals = () => {
         .insert(withParentBooking({ ...rental, currency: rental.currency || 'EGP', organization_id: orgId }))
         .select().single();
       if (error) throw error;
-      await syncParent();
       return data;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['car-rentals'] }); toast({ title: "تم الحفظ بنجاح", description: "تم إضافة عقد إيجار السيارة بنجاح" }); },
+    onSuccess: rental => {
+      void queryClient.invalidateQueries({ queryKey: ['car-rentals'] });
+      void queryClient.invalidateQueries({ queryKey: ['car-rentals-unified', rental.organization_id ?? orgId] });
+      toast({ title: "تم الحفظ بنجاح", description: "تم إضافة عقد إيجار السيارة بنجاح" });
+    },
     onError: (error) => { console.error('Error adding car rental:', error); toast({ title: "خطأ في الحفظ", description: "حدث خطأ أثناء إضافة عقد إيجار السيارة", variant: "destructive" }); },
   });
 
   const addCarRental = (rental: Omit<CarRental, 'id' | 'created_at' | 'updated_at' | 'rental_reference'>) => {
-    addCarRentalMutation.mutate(rental);
+    return addCarRentalMutation.mutateAsync(rental);
   };
 
   return { carRentals: data?.rentals, totalCarRentalCount: data?.totalCount || 0, rentalsLoading, addCarRental, isAddingRental: addCarRentalMutation.isPending };
