@@ -150,6 +150,8 @@ const PlatformAdminDashboard = lazy(() => import("@/pages/platform-admin/Platfor
 const PlatformCompanyFollowup = lazy(() => import("@/pages/platform-admin/PlatformCompanyFollowup"));
 const PlatformDueCompanyFollowups = lazy(() => import("@/pages/platform-admin/PlatformDueCompanyFollowups"));
 const PlatformAdminOrganizations = lazy(() => import("@/pages/platform-admin/PlatformAdminOrganizations"));
+const PlatformCustomPlanInquiries = lazy(() => import("@/pages/platform-admin/PlatformCustomPlanInquiries"));
+const CustomPlanInquiry = lazy(() => import("@/pages/CustomPlanInquiry"));
 const PlatformAdminSubscriptions = lazy(() => import("@/pages/platform-admin/PlatformAdminSubscriptions"));
 const PlatformBillingFollowup = lazy(() => import("@/pages/platform-admin/PlatformBillingFollowup"));
 const PlatformAdminSettings = lazy(() => import("@/pages/platform-admin/PlatformAdminSettings"));
@@ -264,6 +266,7 @@ function App() {
                 {/* Public */}
                 <Route path="/" element={isPlatformAdminHost() ? <Navigate to="/platform" replace /> : <SaaSLanding />} />
                 <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/custom-plan" element={<CustomPlanInquiry />} />
                 <Route path="/booking-request" element={<BookingRequest />} />
                 <Route path="/p/:companySlug/booking-request" element={<PublicBookingSite />} />
                 <Route path="/p/:companySlug/pages/:pageSlug" element={<PublicCmsPage />} />
@@ -308,6 +311,7 @@ function App() {
                             <Route path="subscriptions" element={<PlatformAdminSubscriptions />} />
                             <Route path="subscriptions/followup" element={<PlatformBillingFollowup />} />
                             <Route path="plans" element={<PlatformAdminPlans />} />
+                            <Route path="custom-plan-inquiries" element={<PlatformCustomPlanInquiries />} />
                             <Route path="transfers" element={<PlatformAdminTransfers />} />
                             <Route path="finance" element={<PlatformFinance />} />
                             <Route path="accounts" element={<PlatformAdminAccounts />} />

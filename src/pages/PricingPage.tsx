@@ -31,7 +31,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { CUSTOM_SUBSCRIPTION_PLAN_NAME, SUBSCRIPTION_FEATURE_LABELS } from '@/lib/planFeatures';
+import { CUSTOM_SUBSCRIPTION_PLAN_NAME } from '@/lib/planFeatures';
 
 type PricingPlan = Database['public']['Tables']['subscription_plans']['Row'];
 
@@ -175,10 +175,6 @@ const PLAN_META: Record<string, { description: string; audience: string }> = {
     description: 'تحكم مؤسسي، فروع وهوية مخصصة لعمليات أكبر وأكثر تعقيدًا.',
     audience: 'للمجموعات والشركات متعددة الفروع',
   },
-  [CUSTOM_SUBSCRIPTION_PLAN_NAME]: {
-    description: 'باقة بموديولات وحدود استخدام مخصصة لطريقة شغل شركتك.',
-    audience: 'للشركات اللي تحتاج باقة مخصصة',
-  },
 };
 
 const RECOMMENDED_PLAN = 'Pro';
@@ -242,7 +238,7 @@ const PricingPage = () => {
         .order('price_monthly', { ascending: true })
         .abortSignal(signal);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []).filter((plan) => plan.name !== CUSTOM_SUBSCRIPTION_PLAN_NAME);
     },
   });
 
@@ -314,7 +310,7 @@ const PricingPage = () => {
           {isLoading ? (
             <p role="status" className="py-12 text-center text-muted-foreground">جارٍ تحميل الخطط...</p>
           ) : isError || !plans.length ? (
-            <div role={isError ? 'alert' : 'status'} className="mx-auto max-w-lg rounded-xl border border-border bg-card p-6 text-center">
+            <div role={isError ? 'alert' : 'status'} className="mx-auto mb-6 max-w-lg rounded-xl border border-border bg-card p-6 text-center">
               <h2 className="font-bold">{isError ? 'تعذّر تحميل الخطط' : 'الخطط غير متاحة حاليًا'}</h2>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
                 <Button type="button" variant="outline" disabled={isFetching} onClick={() => refetch()}>
@@ -323,24 +319,24 @@ const PricingPage = () => {
                 <Button variant="ghost" asChild><a href={`tel:${phone}`}>تواصل معنا</a></Button>
               </div>
             </div>
-          ) : (
-            <div className={`grid gap-6 sm:grid-cols-2 lg:items-stretch ${plans.length === 4 ? 'xl:grid-cols-4' : 'lg:grid-cols-3'}`}>
-              {plans.map((plan) => {
+          ) : null}
+          {!isLoading && (
+            <div className={`grid gap-6 sm:grid-cols-2 ${plans.length >= 3 ? 'xl:grid-cols-4' : plans.length === 2 ? 'lg:grid-cols-3' : ''}`}>
+              {!isError && plans.map((plan) => {
                 const features = getFeatures(plan);
-                const isCustom = plan.name === CUSTOM_SUBSCRIPTION_PLAN_NAME;
-                const cardFeatures = isCustom
-                  ? Object.entries(SUBSCRIPTION_FEATURE_LABELS).map(([key, label]) => ({ label, icon: CheckCircle2, keys: [key] }))
-                  : PLAN_CARD_FEATURES;
-                const included = cardFeatures.filter((feature) => hasFeature(features, feature));
+                const included = PLAN_CARD_FEATURES.filter((feature) => hasFeature(features, feature));
                 const recommended = plan.name === RECOMMENDED_PLAN;
                 const monthly = Number(plan.price_monthly);
                 const yearly = Number(plan.price_yearly);
                 const price = isYearly ? yearly : monthly;
                 const available = Number.isFinite(price) && price > 0;
                 const discount = yearlyDiscount(plan);
-                const checkoutUrl = `/payment?plan=${encodeURIComponent(plan.id)}&billing=${isYearly ? 'yearly' : 'monthly'}`;
+                const checkoutUrl = `/payment?${new URLSearchParams({ plan: plan.id, billing: isYearly ? 'yearly' : 'monthly' })}`;
+                const actionUrl = user ? checkoutUrl : `/signup?${new URLSearchParams({ redirect: checkoutUrl })}`;
+                const planTitle = plan.name_ar || plan.name;
+                const titleId = `pricing-plan-${plan.id}`;
                 const baseFeatures = getFeatures(plans[0]);
-                const highlights = included.filter((feature) => isCustom || plan.id === plans[0].id || !hasFeature(baseFeatures, feature));
+                const highlights = included.filter((feature) => plan.id === plans[0].id || !hasFeature(baseFeatures, feature));
                 const meta = PLAN_META[plan.name] ?? {
                   description: 'خطة مرنة لتشغيل شركتك على منصة واحدة.',
                   audience: 'لفرق شركات السياحة',
@@ -349,6 +345,7 @@ const PricingPage = () => {
                 return (
                   <article
                     key={plan.id}
+                    aria-labelledby={titleId}
                     className={`relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm ${recommended ? 'border-brand-gold/70' : 'border-border'}`}
                   >
                     <div className={`min-h-8 px-6 py-2 text-center text-xs font-bold ${recommended ? 'bg-primary text-primary-foreground' : 'hidden lg:block'}`}>
@@ -357,7 +354,7 @@ const PricingPage = () => {
                     <div className="flex flex-1 flex-col p-5 sm:p-6">
                       <div>
                         <p className="text-sm font-semibold text-muted-foreground">{meta.audience}</p>
-                        <h3 className="mt-2 text-3xl font-black text-foreground">{plan.name_ar || plan.name}</h3>
+                        <h3 id={titleId} className="mt-2 break-words text-3xl font-black text-foreground">{planTitle}</h3>
                         <p className="mt-3 text-sm leading-6 text-muted-foreground lg:min-h-[3rem]">{meta.description}</p>
                       </div>
 
@@ -380,21 +377,20 @@ const PricingPage = () => {
                         )}
                       </div>
 
-                      {user && (
-                        <div className="mt-5">
-                          {available ? (
-                            <Button asChild size="lg" className="w-full rounded-xl font-bold"
-                              variant={recommended ? 'default' : 'outline'}>
-                              <Link to={checkoutUrl}>
-                                اشترك الآن
-                                <ArrowLeft className="ms-2 h-4 w-4" aria-hidden="true" />
-                              </Link>
-                            </Button>
-                          ) : (
-                            <Button type="button" size="lg" variant="outline" className="w-full rounded-xl" onClick={() => setIsYearly(false)}>عرض السعر الشهري</Button>
-                          )}
-                        </div>
-                      )}
+                      <div className="mt-5">
+                        {available ? (
+                          <Button asChild size="lg" className="min-h-12 w-full rounded-xl font-bold"
+                            variant={recommended ? 'default' : 'outline'}>
+                            <Link to={actionUrl}>
+                              {user ? 'اشترك الآن' : 'ابدأ الآن'}
+                              <span className="sr-only"> – {planTitle}</span>
+                              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                            </Link>
+                          </Button>
+                        ) : (
+                          <Button type="button" size="lg" variant="outline" className="min-h-12 w-full rounded-xl" onClick={() => setIsYearly(false)}>عرض السعر الشهري</Button>
+                        )}
+                      </div>
 
                       <div className="mt-6 grid grid-cols-3 gap-2 text-center">
                         <div className="min-w-0 rounded-lg border border-border px-1 py-2 sm:px-2">
@@ -429,6 +425,21 @@ const PricingPage = () => {
                   </article>
                 );
               })}
+              <article aria-labelledby="pricing-custom-plan" className="flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6 xl:pt-12">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-primary">
+                  <Building2 className="h-6 w-6" aria-hidden="true" />
+                </div>
+                <h3 id="pricing-custom-plan" className="mt-4 text-3xl font-black text-foreground">باقة مخصصة</h3>
+                <p className="mt-3 max-w-prose text-sm leading-7 text-muted-foreground">
+                  شاركنا عدد الفروع والمستخدمين والمزايا اللي تحتاجها شركتك، عشان الفريق يراجع طلبك ويقترح الباقة المناسبة.
+                </p>
+                <Button asChild size="lg" variant="outline" className="mt-5 min-h-12 w-full rounded-xl font-bold">
+                  <Link to="/custom-plan">
+                    اطلب باقة مخصصة
+                    <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                </Button>
+              </article>
             </div>
           )}
         </section>

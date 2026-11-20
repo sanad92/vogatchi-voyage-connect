@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
@@ -12,12 +11,22 @@ import { toast } from 'sonner';
 import { Building2, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { contactValidationError, normalizeContactPhone, validContactName } from '@/lib/organizationContacts';
+import { readSubscriptionReturn, subscriptionCheckoutPath } from '@/lib/subscriptionOnboarding';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
+import { usePublicSubscriptionPlan } from '@/hooks/usePublicSubscriptionPlan';
 
 const RegisterOrganization = () => {
   const { user, profile } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading, refetchOrganization } = useOrganization();
   const { dir } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selection = readSubscriptionReturn(searchParams.get('redirect'));
+  const checkoutPath = selection ? subscriptionCheckoutPath(selection) : null;
+  const subscriptionPlan = usePublicSubscriptionPlan(selection);
+  const selectedPlan = subscriptionPlan.data;
+  const validSelection = selectedPlan && (selection?.billing !== 'yearly' || selectedPlan.price_yearly > 0);
+  const destination = checkoutPath && validSelection ? checkoutPath : '/dashboard';
   const [loading, setLoading] = useState(false);
   const [ownerName, setOwnerName] = useState<string>();
   const [companyEmail, setCompanyEmail] = useState<string>();
@@ -32,15 +41,14 @@ const RegisterOrganization = () => {
   const contactName = ownerName ?? (profile?.full_name || accountName);
   const email = companyEmail ?? user?.email ?? '';
 
-  // If user already has an organization, redirect to dashboard
-  if (!orgLoading && hasOrganization) {
-    return <Navigate to="/dashboard" replace />;
+  if (!orgLoading && hasOrganization && !loading && (!selection || !subscriptionPlan.isPending)) {
+    return <Navigate to={destination} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = form.name.trim();
-    if (!user?.id || loading) return;
+    if (!user?.id || loading || orgLoading || (selection && !validSelection)) return;
     if (!validContactName(trimmedName)) {
       toast.error('أدخل اسم المؤسسة من حرفين إلى 120 حرفًا.');
       return;
@@ -53,14 +61,19 @@ const RegisterOrganization = () => {
 
     setLoading(true);
     try {
-      const { data: organizationId, error } = await supabase.rpc('create_organization_onboarding', {
+      const contacts = {
         _name: trimmedName,
         _owner_name: contactName.trim(),
         _owner_phone: normalizeContactPhone(form.ownerPhone)!,
         _phone: normalizeContactPhone(form.phone)!,
         _email: email.trim(),
         _address: form.address.trim() || undefined,
-      });
+      };
+      const { data: organizationId, error } = selection
+        ? await callUntypedRpc<string>('create_organization_for_subscription', {
+          ...contacts, _plan_id: selection.planId, _billing_cycle: selection.billing,
+        })
+        : await supabase.rpc('create_organization_onboarding', contacts);
       if (error) {
         if (['22023', '42501', 'P0001'].includes(error.code) && /[\u0600-\u06ff]/.test(error.message)) {
           toast.error(error.message);
@@ -74,7 +87,12 @@ const RegisterOrganization = () => {
       }
 
       toast.success('تم إنشاء المؤسسة بنجاح! 🎉');
-      localStorage.removeItem('org_setup_skipped');
+      try {
+        localStorage.removeItem('org_setup_skipped');
+        localStorage.setItem(`current_org_${user.id}`, organizationId);
+      } catch {
+        // The organization provider can use the refreshed membership without browser storage.
+      }
       await refetchOrganization();
       
       // Trigger welcome email (non-blocking)
@@ -82,7 +100,7 @@ const RegisterOrganization = () => {
         body: { organizationName: form.name.trim() },
       }).catch(() => {/* non-critical */});
       
-      navigate('/dashboard', { replace: true });
+      navigate(destination, { replace: true });
 
     } catch (error: unknown) {
       console.error('Error creating organization:', error);
@@ -107,6 +125,24 @@ const RegisterOrganization = () => {
           <h1 className="text-2xl font-bold text-foreground mb-2">أنشئ مؤسستك</h1>
           <p className="text-muted-foreground">أدخل بيانات شركة السياحة الخاصة بك للبدء</p>
         </div>
+
+        {selection && (
+          <div className="mb-4 space-y-2 rounded-lg border bg-card p-3 text-sm">
+            {subscriptionPlan.isPending ? <p role="status">جاري التحقق من الباقة المختارة…</p> :
+              validSelection ? (
+                <p>اختيارك <strong>{selectedPlan?.name_ar || selectedPlan?.name}</strong>
+                  {' · '}{selection.billing === 'yearly' ? 'سنوي' : 'شهري'}.
+                  هتقدر تراجع الاشتراك بعد إنشاء المؤسسة.
+                </p>
+              ) : (
+                <>
+                  <p role="alert">{subscriptionPlan.isError ? 'تعذّر التحقق من الباقة المختارة.' : 'الباقة المختارة غير متاحة حاليًا.'}</p>
+                  {subscriptionPlan.isError && <Button type="button" variant="outline" size="sm" onClick={() => void subscriptionPlan.refetch()}>إعادة المحاولة</Button>}
+                  <Link className="text-primary underline" to="/pricing">اختيار باقة من الأسعار</Link>
+                </>
+              )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="bg-card p-6 sm:p-8 rounded-2xl shadow-xl border border-border space-y-5">
           <div className="space-y-2">
@@ -185,7 +221,7 @@ const RegisterOrganization = () => {
           <Button
             type="submit"
             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-            disabled={loading || !form.name.trim()}
+            disabled={loading || orgLoading || !form.name.trim() || (!!selection && !validSelection)}
           >
             {loading ? (
               <div className="flex items-center gap-2">

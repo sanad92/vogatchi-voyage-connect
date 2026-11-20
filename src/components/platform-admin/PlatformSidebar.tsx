@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   Building2, CreditCard, BanknoteIcon, Settings, Calculator,
   UserCog, ScrollText, Database, Activity, Package,
-  LayoutDashboard, TrendingUp, Globe, Zap, Workflow, PanelRightClose, PanelRightOpen, LifeBuoy
+  LayoutDashboard, TrendingUp, Globe, Zap, Workflow, PanelRightClose, PanelRightOpen, LifeBuoy, ClipboardList
 } from 'lucide-react';
 import SafarLogo from '@/components/brand/VogantraLogo';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   ownerOnly?: boolean;
   financeOnly?: boolean;
+  accountAdminOnly?: boolean;
 }
 
 interface NavGroup {
@@ -36,6 +37,7 @@ const NAV_GROUPS: NavGroup[] = [
       { title: 'الشركات', href: '/platform/organizations', icon: Building2 },
       { title: 'الاشتراكات', href: '/platform/subscriptions', icon: CreditCard },
       { title: 'خطط الاشتراك', href: '/platform/plans', icon: Package },
+      { title: 'طلبات الباقات المخصصة', href: '/platform/custom-plan-inquiries', icon: ClipboardList, accountAdminOnly: true },
       { title: 'التحويلات البنكية', href: '/platform/transfers', icon: BanknoteIcon },
       { title: 'تذاكر الدعم', href: '/platform/support', icon: LifeBuoy },
     ],
@@ -73,7 +75,7 @@ interface Props {
 
 const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Props) => {
   const location = useLocation();
-  const { isPlatformAdmin, isPlatformOwner } = usePlatformAdmin();
+  const { isPlatformAdmin, isPlatformOwner, platformRole } = usePlatformAdmin();
   const { role: financeRole } = usePlatformFinanceRole();
   const isActive = (href: string) =>
     href === '/platform'
@@ -99,7 +101,8 @@ const PlatformSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: Pro
 
       <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-5">
         {NAV_GROUPS.map(group => {
-          const items = group.items.filter(i => i.financeOnly ? !!financeRole : isPlatformAdmin && (!i.ownerOnly || isPlatformOwner));
+          const items = group.items.filter(i => i.financeOnly ? !!financeRole : isPlatformAdmin && (!i.ownerOnly || isPlatformOwner)
+            && (!i.accountAdminOnly || platformRole === 'platform_admin' || isPlatformOwner));
           if (!items.length) return null;
           return (
             <div key={group.label} className="space-y-1">
