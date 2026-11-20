@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { DocumentsPanel } from '@/components/documents/DocumentsPanel';
 import { bookingVoucherState } from '@/lib/bookingVoucher';
+import { usePermissionCheck } from '@/hooks/usePermissionCheck';
 import { BookingDocumentActions } from './BookingDocumentActions';
 import type { Workspace } from './types';
 
@@ -58,7 +59,21 @@ const inferCategory = (docType?: string, fileName?: string): CategoryKey => {
 export const DocumentsTab = ({ workspace }: Props) => {
   const navigate = useNavigate();
   const bookingId = workspace.booking?.id;
+  const organizationId = workspace.booking?.organization_id;
+  const { hasPermission } = usePermissionCheck();
   const customer = workspace.customer;
+  const bookingPassports = useQuery({
+    queryKey: ['wa-booking-passports', organizationId, bookingId],
+    enabled: !!bookingId && !!organizationId && hasPermission('bookings_view')
+      && hasPermission('documents_view') && hasPermission('whatsapp_view'),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('whatsapp_passport_reviews')
+        .select('message_id, full_name, nationality, expiry_date')
+        .eq('booking_id', bookingId!).eq('organization_id', organizationId!).order('approved_at');
+      if (error) throw error;
+      return data;
+    },
+  });
   const voucherState = bookingVoucherState(workspace.booking);
 
   const generatedDocsQ = useQuery({
@@ -148,8 +163,17 @@ export const DocumentsTab = ({ workspace }: Props) => {
       }
     }
 
+    for (const passport of bookingPassports.data ?? []) {
+      groups.identity.push({
+        id: `wa-passport-${passport.message_id}`,
+        name: passport.full_name,
+        meta: `جواز معتمد من واتساب · ${passport.nationality} · صالح حتى ${passport.expiry_date}`,
+        category: 'identity',
+      });
+    }
+
     return groups;
-  }, [workspace.invoices, workspace.booking, customer, generatedDocsQ.data, voucherState]);
+  }, [workspace.invoices, workspace.booking, customer, generatedDocsQ.data, bookingPassports.data, voucherState]);
 
   return (
     <div className="space-y-4">
@@ -169,6 +193,8 @@ export const DocumentsTab = ({ workspace }: Props) => {
       </div>
 
       <BookingDocumentActions workspace={workspace} />
+
+      {bookingPassports.isError && <p role="alert" className="text-sm text-destructive">تعذّر تحميل مسافري واتساب المرتبطين بهذا الحجز.</p>}
 
       <div className="grid gap-4 md:grid-cols-2">
         {(Object.keys(CATEGORY_META) as CategoryKey[]).map((key) => {
@@ -192,7 +218,7 @@ export const DocumentsTab = ({ workspace }: Props) => {
                     {items.map((it) => (
                       <div key={it.id} className="flex items-center justify-between border rounded-md p-2 text-sm">
                         <div className="min-w-0">
-                          <p className="font-medium truncate">{it.name}</p>
+                          <p className="font-medium truncate" dir="auto">{it.name}</p>
                           <p className="text-xs text-muted-foreground truncate">
                             {it.meta || (it.date ? new Date(it.date).toLocaleDateString('ar-EG') : '')}
                           </p>

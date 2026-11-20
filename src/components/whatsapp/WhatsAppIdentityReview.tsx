@@ -69,13 +69,13 @@ function IdentityReviewDialog({ organizationId, conversationId, messageId, path,
   const nameChanged = name.trim() !== (customer?.name ?? '');
   const nationalityChanged = nationality.trim() !== (customer?.nationality ?? '');
 
-  async function readPhoto() {
-    if (!source || lock.current || !isIdentityImage(source.mime_type) || !lifetime.current) return;
+  async function readAttachment() {
+    if (!source || lock.current || !isIdentityAttachment(source.mime_type) || !lifetime.current) return;
     lock.current = true;
     const dialogSignal = lifetime.current.signal;
     const timeout = new AbortController();
     const stop = () => timeout.abort();
-    const timer = window.setTimeout(stop, 40_000);
+    const timer = window.setTimeout(stop, source.mime_type === 'application/pdf' ? 90_000 : 40_000);
     dialogSignal.addEventListener('abort', stop, { once: true });
     const signal = timeout.signal;
     setOcrRunning(true);
@@ -88,12 +88,24 @@ function IdentityReviewDialog({ organizationId, conversationId, messageId, path,
       signal.throwIfAborted();
       if (error || !data || !data.size || data.size > 8_000_000) throw new Error('identity_image_unavailable');
       const { recognizeIdentityImage } = await import('@/lib/localIdentityOcr');
-      const fields = await recognizeIdentityImage(data, signal);
+      let fields: Awaited<ReturnType<typeof recognizeIdentityImage>> = { name: '', nationality: '' };
+      if (source.mime_type === 'application/pdf') {
+        const { readPdfImages } = await import('@/lib/localPdfImage');
+        for await (const page of readPdfImages(data, signal)) {
+          const candidate = await recognizeIdentityImage(page, signal);
+          if (candidate.name || candidate.nationality) {
+            fields = candidate;
+            break;
+          }
+        }
+      } else {
+        fields = await recognizeIdentityImage(data, signal);
+      }
       signal.throwIfAborted();
       if (fields.name) setName(fields.name);
       if (fields.nationality) setNationality(fields.nationality);
       setNotice(fields.name || fields.nationality
-        ? 'دي بيانات مقترحة من الصورة. راجع الاسم والجنسية قبل الحفظ.'
+        ? 'دي بيانات مقترحة من المستند. راجع الاسم والجنسية قبل الحفظ.'
         : 'ما قدرناش نحدد الاسم أو الجنسية. اقرأ البيانات من المستند واكتبها يدويًا.');
     } catch {
       if (!dialogSignal.aborted) setFailure('تعذّرت القراءة التلقائية. راجع المستند واكتب البيانات يدويًا.');
@@ -161,14 +173,12 @@ function IdentityReviewDialog({ organizationId, conversationId, messageId, path,
                 <img src={preview} alt="مرفق الهوية للمراجعة" className="max-h-60 w-full rounded-md object-contain" />
               </a>
             ) : (
-              <a href={preview} target="_blank" rel="noreferrer" className="block underline">افتح ملف PDF للمراجعة اليدوية</a>
+              <a href={preview} target="_blank" rel="noreferrer" className="block underline">افتح ملف PDF للمراجعة</a>
             )}
-            {isIdentityImage(mime) && (
-              <Button type="button" variant="outline" disabled={ocrRunning || saving} onClick={readPhoto}>
-                {ocrRunning ? <Loader2 className="size-4 animate-spin" /> : <FileSearch className="size-4" />}
-                {ocrRunning ? 'جاري قراءة الصورة على جهازك…' : 'اقرأ الاسم والجنسية من الصورة'}
-              </Button>
-            )}
+            <Button type="button" variant="outline" disabled={ocrRunning || saving} onClick={readAttachment}>
+              {ocrRunning ? <Loader2 className="size-4 animate-spin" /> : <FileSearch className="size-4" />}
+              {ocrRunning ? 'جاري قراءة المستند على جهازك…' : 'اقرأ الاسم والجنسية من المستند'}
+            </Button>
             {notice && <p role="status" className="text-sm text-muted-foreground">{notice}</p>}
             {customer && <p className="text-sm text-muted-foreground">العميل المرتبط بالمحادثة <bdi className="font-medium">{customer.name}</bdi></p>}
             <div className="grid gap-3 sm:grid-cols-2">

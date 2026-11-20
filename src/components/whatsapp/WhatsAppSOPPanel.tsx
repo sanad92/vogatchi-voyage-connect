@@ -62,7 +62,6 @@ const WhatsAppConversationIntake = ({ conversationId, conversation }: Props) => 
   const { data: lead, isLoading, isError } = useSopLeadForConversation(conversationId);
   const { brief, isLoading: briefLoading } = useSalesBrief(conversationId);
   const { hasPermission } = usePermissionCheck();
-  const organizationId = useOrgId();
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState<WhatsAppLeadDraft | null>(null);
   const canCreate = Boolean(orgId && hasPermission('whatsapp_view') && hasPermission('crm_view') && hasPermission('crm_create'));
@@ -128,8 +127,9 @@ const WhatsAppConversationIntake = ({ conversationId, conversation }: Props) => 
   return (
     <div className="p-3 space-y-3">
       <SopLeadPanel leadId={lead.id} compact />
-      {organizationId && hasPermission('whatsapp_view') && hasPermission('documents_view') && hasPermission('documents_create') && (
-        <WhatsAppPassportReview organizationId={organizationId} conversationId={conversationId} />
+      {orgId && hasPermission('whatsapp_view') && hasPermission('documents_view') && hasPermission('documents_create') && (
+        <WhatsAppPassportReview organizationId={orgId} conversationId={conversationId}
+          bookingId={hasPermission('bookings_view') && hasPermission('bookings_edit') ? lead.booking_id : null} />
       )}
     </div>
   );

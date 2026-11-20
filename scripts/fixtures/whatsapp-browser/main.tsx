@@ -57,7 +57,7 @@ async function verify() {
     if (button('مسودة من الرسائل')) throw new Error('An existing lead offered a second draft.');
   } else if (scenario === 'identity') {
     (await waitFor('identity review action', () => button('مراجعة مستند هوية'))).click();
-    (await waitFor('local OCR action', () => button('اقرأ الاسم والجنسية من الصورة'))).click();
+    (await waitFor('local OCR action', () => button('اقرأ الاسم والجنسية من المستند'))).click();
     await waitFor('Arabic OCR output', () =>
       field('الاسم')?.value === 'مسافر تجريبي' && field('الجنسية')?.value === 'مصري');
     const save = await waitFor('identity save action', () => button('حدّث ملف العميل'));
