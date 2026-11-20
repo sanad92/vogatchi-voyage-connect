@@ -17,6 +17,7 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { DocumentsPanel } from '@/components/documents/DocumentsPanel';
+import { bookingVoucherState } from '@/lib/bookingVoucher';
 import { BookingDocumentActions } from './BookingDocumentActions';
 import type { Workspace } from './types';
 
@@ -58,19 +59,22 @@ export const DocumentsTab = ({ workspace }: Props) => {
   const navigate = useNavigate();
   const bookingId = workspace.booking?.id;
   const customer = workspace.customer;
+  const voucherState = bookingVoucherState(workspace.booking);
 
   const generatedDocsQ = useQuery({
-    queryKey: ['workspace-generated-docs', bookingId],
+    queryKey: ['workspace-generated-docs', bookingId, voucherState],
     enabled: !!bookingId,
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data, error } = await supabase
         .from('generated_documents')
         .select('id, document_type, file_path, created_at')
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: false });
-      const rows = (data ?? []) as any[];
+      if (error) throw error;
+      const rows = data ?? [];
       // Short-lived links minted per view; nothing long-lived is stored.
-      const paths = rows.map((r) => r.file_path).filter(Boolean);
+      const paths = rows.filter((row) => row.document_type !== 'voucher')
+        .flatMap((row) => row.file_path ? [row.file_path] : []);
       if (!paths.length) return rows;
       const { data: signed } = await supabase.storage.from('documents').createSignedUrls(paths, 600);
       const byPath = new Map((signed ?? []).map((s: any) => [s.path, s.signedUrl]));
@@ -106,7 +110,8 @@ export const DocumentsTab = ({ workspace }: Props) => {
         id: `gen-${d.id}`,
         name: d.document_type || 'مستند',
         date: d.created_at,
-        url: d.file_url,
+        url: cat === 'vouchers' && voucherState !== 'current' ? undefined : d.file_url,
+        meta: cat === 'vouchers' && voucherState !== 'current' ? 'فاوتشر مؤرشف' : undefined,
         category: cat,
       });
     }
@@ -144,7 +149,7 @@ export const DocumentsTab = ({ workspace }: Props) => {
     }
 
     return groups;
-  }, [workspace.invoices, workspace.booking, customer, generatedDocsQ.data]);
+  }, [workspace.invoices, workspace.booking, customer, generatedDocsQ.data, voucherState]);
 
   return (
     <div className="space-y-4">

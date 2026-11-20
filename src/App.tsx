@@ -40,6 +40,8 @@ const PageLoader = () => (
 // Public pages
 const SaaSLanding = lazy(() => import("@/pages/SaaSLanding"));
 const BookingRequest = lazy(() => import("@/pages/BookingRequest"));
+const PublicBookingSite = lazy(() => import("@/pages/PublicBookingSite"));
+const PublicCmsPage = lazy(() => import("@/pages/PublicCmsPage"));
 const PricingPage = lazy(() => import("@/pages/PricingPage"));
 const PaymentPage = lazy(() => import("@/pages/PaymentPage"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
@@ -262,6 +264,9 @@ function App() {
                 <Route path="/" element={isPlatformAdminHost() ? <Navigate to="/platform" replace /> : <SaaSLanding />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/booking-request" element={<BookingRequest />} />
+                <Route path="/p/:companySlug/booking-request" element={<PublicBookingSite />} />
+                <Route path="/p/:companySlug/pages/:pageSlug" element={<PublicCmsPage />} />
+                <Route path="/p/booking-request" element={<Navigate to="/booking-request" replace />} />
                 <Route path="/contact" element={<Navigate to="/booking-request" replace />} />
                 <Route path="/payment" element={<PaymentPage />} />
                 <Route path="/login" element={isPlatformAdminHost() ? <Navigate to="/platform/login" replace /> : <LoginPage />} />

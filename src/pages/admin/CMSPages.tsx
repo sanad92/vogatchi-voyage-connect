@@ -1,30 +1,72 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useOrgId } from "@/hooks/useOrgId";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import type { Tables } from "@/integrations/supabase/types";
+import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { callUntypedRpc } from "@/lib/supabaseRpc";
+import { publicPageSlugPattern } from "@/lib/publicBooking";
 import { toast } from "sonner";
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, Zap, Plus } from 'lucide-react';
 import CMSGuide from '@/components/cms/CMSGuide';
+import PublicSiteSettings from '@/components/cms/PublicSiteSettings';
 import { getExamplePage } from '@/utils/cmsExamples';
 
-interface PageRow {
-  id: string;
+type PageRow = Pick<Tables<'pages'>, 'id' | 'slug' | 'title' | 'description'>;
+interface CompanyPublications {
   slug: string;
-  name: string;
-  description?: string;
-  is_active: boolean;
-  seo_title?: string;
-  seo_description?: string;
-  created_at: string;
+  enabled: boolean;
+  pages: { pageId: string; slug: string }[];
 }
 
 const CMSPages: React.FC = () => {
+  const orgId = useOrgId();
+  const { orgRole } = useOrganization();
+  if (!orgId) return null;
+  return <CompanyCMSPages key={orgId} orgId={orgId} canManagePublicSite={orgRole === "owner" || orgRole === "admin"} />;
+};
+
+function CompanyCMSPages({ orgId, canManagePublicSite }: { orgId: string; canManagePublicSite: boolean }) {
   const [pages, setPages] = useState<PageRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ name: "", slug: "", is_active: true, seo_title: "", seo_description: "" });
+  const [form, setForm] = useState({ name: '', slug: '', description: '' });
   const navigate = useNavigate();
+  const [publishing, setPublishing] = useState(false);
+  const publication = useQuery({
+    queryKey: ['company-publications', orgId],
+    queryFn: async () => {
+      const { data, error } = await callUntypedRpc<CompanyPublications>('get_company_publications', { _org: orgId });
+      if (error) throw new Error('Unable to load public pages');
+      return data;
+    },
+    enabled: canManagePublicSite,
+    retry: false,
+  });
+
+  const setPublication = async (page: PageRow, publish: boolean) => {
+    if (publishing) return;
+    setPublishing(true);
+    try {
+      const { data, error } = await callUntypedRpc<boolean>('set_company_page_publication', {
+        _org: orgId, _page: page.id, _publish: publish,
+      });
+      if (error?.code === '22023') {
+        toast.error('راجع معرّف الصفحة وحجم العنوان والوصف والأقسام النصية.');
+        return;
+      }
+      if (error || data !== publish) throw new Error('Unable to change page publication');
+      await publication.refetch();
+      toast.success(publish ? 'تم نشر النسخة النصية' : 'تم إلغاء النشر');
+    } catch {
+      toast.error(publish ? 'تعذّر نشر الصفحة' : 'تعذّر إلغاء نشر الصفحة');
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   const addExamplePage = async (slug: string, pageName: string) => {
     const exampleBlocks = getExamplePage(slug);
@@ -34,80 +76,79 @@ const CMSPages: React.FC = () => {
     }
 
     try {
-      const { data: pageData, error: pageError } = await (supabase
+      const { data: pageData, error: pageError } = await supabase
         .from("pages")
-        .insert([{
+        .insert({
+          organization_id: orgId,
           title: pageName,
-          slug: slug,
-          description: `صفحة ${pageName} في موقع SafarERP`
-        }])
-        .select()
-        .single() as any);
+          slug,
+          description: `صفحة ${pageName} في SafarERP`,
+          is_published: false,
+        })
+        .select("id")
+        .single();
 
       if (pageError) throw pageError;
 
       const blocksToInsert = exampleBlocks.map(block => ({
         page_id: pageData.id,
+        organization_id: orgId,
         type: block.type,
         title: block.title,
-        content: JSON.stringify(block.content),
-        layout_settings: JSON.stringify(block.layout_settings),
-        style_settings: JSON.stringify(block.style_settings),
+        content: block.content,
         is_active: block.is_active,
         order_index: block.order_index,
-        section: block.section
       }));
 
       const { error: blocksError } = await supabase
         .from("blocks")
         .insert(blocksToInsert);
 
-      if (blocksError) throw blocksError;
-
-      toast.success(`تم إنشاء صفحة ${pageName} مع أمثلة جاهزة`);
-      loadPages();
+      await loadPages();
+      if (blocksError) return toast.error('تم حفظ مسودة الصفحة وتعذر إضافة الأقسام');
+      toast.success(`تم حفظ مسودة ${pageName} وأقسامها`);
     } catch (error) {
       console.error('Error creating example page:', error);
       toast.error("فشل في إنشاء الصفحة");
     }
   };
 
-  const loadPages = async () => {
+  const loadPages = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("pages").select("*").order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("pages")
+      .select("id,slug,title,description")
+      .eq("organization_id", orgId)
+      .order("created_at", { ascending: false });
     if (error) {
       toast.error("فشل في جلب الصفحات");
     } else {
-      setPages((data || []) as unknown as PageRow[]);
+      setPages(data ?? []);
     }
     setLoading(false);
-  };
+  }, [orgId]);
 
   useEffect(() => {
-    loadPages();
-  }, []);
+    void loadPages();
+  }, [loadPages]);
 
   const createPage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.slug) return toast.error("الاسم والـ slug مطلوبان");
+    const title = form.name.trim();
+    const slug = form.slug.trim();
+    if (!title || !publicPageSlugPattern.test(slug) || creating) return;
     setCreating(true);
-    const { error } = await (supabase.from("pages").insert([{
-      title: form.name,
-      slug: form.slug,
-      description: form.seo_description || null,
-    }]) as any);
+    const { error } = await supabase.from("pages").insert({
+      organization_id: orgId,
+      title,
+      slug,
+      description: form.description.trim() || null,
+      is_published: false,
+    });
     setCreating(false);
-    if (error) return toast.error("تعذر إنشاء الصفحة");
-    toast.success("تم إنشاء الصفحة");
-    setForm({ name: "", slug: "", is_active: true, seo_title: "", seo_description: "" });
-    loadPages();
-  };
-
-  const toggleActive = async (id: string, next: boolean) => {
-    const { error } = await (supabase.from("pages").update({ is_published: next } as any).eq("id", id) as any);
-    if (error) return toast.error("تعذر التحديث");
-    setPages(prev => prev.map(p => (p.id === id ? { ...p, is_active: next } : p)));
-    toast.success("تم تحديث الحالة");
+    if (error) return toast.error("تعذر حفظ مسودة الصفحة");
+    toast.success("تم حفظ مسودة الصفحة");
+    setForm({ name: "", slug: "", description: "" });
+    await loadPages();
   };
 
   return (
@@ -120,6 +161,7 @@ const CMSPages: React.FC = () => {
         </div>
       </div>
 
+      {canManagePublicSite && <PublicSiteSettings orgId={orgId} />}
       <Tabs defaultValue="pages" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pages">الصفحات</TabsTrigger>
@@ -129,38 +171,37 @@ const CMSPages: React.FC = () => {
 
         <TabsContent value="pages" className="space-y-6">
           <section className="mb-8">
-            <h2 className="text-lg font-semibold mb-3">إنشاء صفحة جديدة</h2>
+            <h2 className="text-lg font-semibold mb-3">إنشاء مسودة صفحة</h2>
             <form onSubmit={createPage} className="grid gap-3 md:grid-cols-2">
               <input
                 className="border rounded-md bg-card px-3 py-2"
                 placeholder="الاسم"
+                required
+                maxLength={140}
+                aria-label="اسم الصفحة"
                 value={form.name}
                 onChange={e => setForm({ ...form, name: e.target.value })}
               />
               <input
                 className="border rounded-md bg-card px-3 py-2"
-                placeholder="slug"
+                placeholder="معرّف الصفحة"
+                required
+                aria-label="معرّف الصفحة"
+                title="من 3 إلى 80 حرفًا إنجليزيًا صغيرًا أو رقمًا"
+                pattern="[a-z0-9][a-z0-9\-]{1,78}[a-z0-9]"
+                maxLength={80}
                 value={form.slug}
                 onChange={e => setForm({ ...form, slug: e.target.value })}
               />
               <input
                 className="border rounded-md bg-card px-3 py-2 md:col-span-2"
-                placeholder="عنوان SEO (اختياري)"
-                value={form.seo_title}
-                onChange={e => setForm({ ...form, seo_title: e.target.value })}
+                placeholder="وصف الصفحة (اختياري)"
+                aria-label="وصف الصفحة"
+                value={form.description}
+                onChange={e => setForm({ ...form, description: e.target.value })}
               />
-              <input
-                className="border rounded-md bg-card px-3 py-2 md:col-span-2"
-                placeholder="وصف SEO (اختياري)"
-                value={form.seo_description}
-                onChange={e => setForm({ ...form, seo_description: e.target.value })}
-              />
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked })} />
-                <span>فعّالة</span>
-              </label>
               <button disabled={creating} className="border rounded-md px-4 py-2 bg-primary text-primary-foreground md:justify-self-start">
-                {creating ? "يتم الإنشاء..." : "إنشاء"}
+                {creating ? "جارٍ الحفظ..." : "حفظ المسودة"}
               </button>
             </form>
           </section>
@@ -173,20 +214,47 @@ const CMSPages: React.FC = () => {
             <div className="grid gap-3">
               {loading && <div className="text-muted-foreground">جاري التحميل...</div>}
               {!loading && pages.length === 0 && <div className="text-muted-foreground">لا توجد صفحات بعد</div>}
-              {pages.map((p) => (
-                <div key={p.id} className="rounded-lg border bg-card p-4 flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="font-semibold">{p.name} <span className="text-xs text-muted-foreground">/{p.slug}</span></div>
-                    {p.seo_title && <div className="text-sm text-muted-foreground">{p.seo_title}</div>}
+              {canManagePublicSite && publication.isError && (
+                <p role="alert" className="text-sm text-destructive">تعذّر تحميل حالة النشر العامة.</p>
+              )}
+              {publication.data?.enabled && (
+                <p className="text-sm text-muted-foreground">
+                  النسخة العامة تعرض العنوان والوصف وأقسام النص المخصص المفعّلة وقت النشر. اضغط تحديث النشر بعد تعديل المسودة.
+                </p>
+              )}
+              {pages.map((page) => {
+                const published = publication.data?.pages.find(entry => entry.pageId === page.id);
+                const publicPath = published && publication.data?.enabled
+                  ? `/p/${publication.data.slug}/pages/${published.slug}`
+                  : null;
+
+                return (
+                  <div key={page.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-4">
+                    <div className="space-y-1">
+                      <div className="font-semibold">{page.title}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {page.slug} · {published ? (publicPath ? 'نسخة عامة منشورة' : 'نسخة عامة متوقفة') : 'مسودة'}
+                      </div>
+                      {page.description && <div className="text-sm text-muted-foreground">{page.description}</div>}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/admin/cms/pages/${page.id}/blocks`)}>الأقسام</Button>
+                      {publication.data?.enabled && (
+                        <Button variant="outline" size="sm" disabled={publishing || !publicPageSlugPattern.test(page.slug)}
+                          onClick={() => void setPublication(page, true)}>
+                          {published ? 'تحديث النشر' : 'نشر نسخة نصية'}
+                        </Button>
+                      )}
+                      {published && (
+                        <Button variant="outline" size="sm" disabled={publishing} onClick={() => void setPublication(page, false)}>
+                          إلغاء النشر
+                        </Button>
+                      )}
+                      {publicPath && <Link className="text-sm text-primary underline" to={publicPath} target="_blank" rel="noopener">عرض الرابط العام</Link>}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => navigate(`/admin/cms/pages/${p.id}/blocks`)} className="border rounded-md px-3 py-1">الأقسام</button>
-                    <button onClick={() => toggleActive(p.id, !p.is_active)} className="border rounded-md px-3 py-1">
-                      {p.is_active ? "تعطيل" : "تفعيل"}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         </TabsContent>
@@ -270,6 +338,6 @@ const CMSPages: React.FC = () => {
       </Tabs>
     </div>
   );
-};
+}
 
 export default CMSPages;

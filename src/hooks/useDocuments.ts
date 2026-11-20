@@ -46,6 +46,7 @@ export function useDocuments() {
   const generateAndSave = useMutation({
     mutationFn: async (docData: DocumentData) => {
       if (!orgId) throw new Error('No organization');
+      if (docData.documentType === 'voucher') throw new Error('يصدر الفاوتشر من داخل الحجز المؤكد.');
       const { data: user } = await supabase.auth.getUser();
 
       // Apply template settings
@@ -62,28 +63,18 @@ export function useDocuments() {
       // Generate PDF blob
       const blob = await generateDocumentPDF(docData);
 
-      // Upload to storage
       const filePath = `${orgId}/${docData.documentType}/${docData.documentNumber.replace(/[^a-zA-Z0-9-]/g, '_')}.pdf`;
-      const { error: uploadErr } = await supabase.storage
-        .from('documents')
-        .upload(filePath, blob, { contentType: 'application/pdf', upsert: true });
-      if (uploadErr) throw uploadErr;
 
-      // Get signed URL (valid 7 days)
-      const { data: urlData } = await supabase.storage
-        .from('documents')
-        .createSignedUrl(filePath, 3600);
-
-      // Save record
+      // Storage authorization depends on the metadata record existing first.
       const { data: doc, error: docErr } = await supabase
         .from('generated_documents')
         .insert({
           organization_id: orgId,
           document_type: docData.documentType,
           document_number: docData.documentNumber,
-          title: `${docData.documentType === 'invoice' ? 'فاتورة' : docData.documentType === 'voucher' ? 'إيصال حجز' : 'إيصال دفع'} - ${docData.customerName}`,
+          title: `${docData.documentType === 'invoice' ? 'فاتورة' : 'إيصال دفع'} - ${docData.customerName}`,
           customer_name: docData.customerName,
-          file_url: urlData?.signedUrl || null,
+          file_url: null,
           file_path: filePath,
           total_amount: docData.totalAmount,
           currency: docData.currency,
@@ -97,7 +88,13 @@ export function useDocuments() {
         .single();
       if (docErr) throw docErr;
 
-      return { doc, blob, url: urlData?.signedUrl };
+      const { error: uploadError } = await supabase.storage
+        .from('documents').upload(filePath, blob, { contentType: 'application/pdf' });
+      if (uploadError) {
+        await supabase.from('generated_documents').delete().eq('id', doc.id);
+        throw uploadError;
+      }
+      return { doc, blob };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['generated-documents', orgId] });
@@ -126,17 +123,24 @@ export function useDocuments() {
 
   const deleteDocument = useMutation({
     mutationFn: async (id: string) => {
-      const doc = documentsQuery.data?.find(d => d.id === id);
-      if (doc?.file_path) {
-        await supabase.storage.from('documents').remove([doc.file_path]);
+      if (!orgId) throw new Error('اختر المؤسسة أولًا.');
+      const { data: doc, error: lookupError } = await supabase.from('generated_documents')
+        .select('file_path').eq('organization_id', orgId).eq('id', id).single();
+      if (lookupError) throw lookupError;
+      if (doc.file_path) {
+        const { data: removed, error } = await supabase.storage.from('documents').remove([doc.file_path]);
+        if (error) throw error;
+        if (!removed?.length) throw new Error('تعذّر تأكيد حذف الملف من التخزين.');
       }
-      const { error } = await supabase.from('generated_documents').delete().eq('id', id);
+      const { error } = await supabase.from('generated_documents').delete()
+        .eq('organization_id', orgId).eq('id', id).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['generated-documents', orgId] });
       toast.success('تم حذف المستند');
     },
+    onError: (error) => toast.error(error.message || 'تعذّر حذف المستند.'),
   });
 
   const saveTemplate = useMutation({
