@@ -14,14 +14,16 @@ const NewHotelBooking = () => {
   const { currentEmployee, isLoading } = useCurrentEmployeeEnhanced();
   const { toast } = useToast();
 
-  const handleSuccess = (bookingData?: any) => {
+  const handleSuccess = (bookingData?: { id: string; parentId?: string | null }) => {
     toast({
       title: "تم إنشاء الحجز بنجاح",
       description: "تم حفظ حجز الفندق الجديد بنجاح",
     });
     
     // إعادة التوجيه إلى صفحة تفاصيل الحجز إذا كانت متوفرة، وإلا إلى قائمة الحجوزات
-    if (bookingData?.id) {
+    if (bookingData?.parentId) {
+      navigate(`/bookings/${bookingData.parentId}`);
+    } else if (bookingData?.id) {
       navigate(`/hotel-bookings/${bookingData.id}`);
     } else {
       navigate('/hotel-bookings');

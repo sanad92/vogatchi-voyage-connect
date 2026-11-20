@@ -71,15 +71,18 @@ export default function IncomeStatement() {
   };
 
   const reportColumns = ['القسم', 'كود الحساب', 'اسم الحساب', 'المبلغ', 'العملة'];
+  const selectedCostCenter = costCenters.find((center) => center.id === costCenterId);
   const reportScope = [
     currentOrganization?.name ?? '',
     `الفترة المحاسبية: ${start} – ${end}`,
     `العملة: ${currency}`,
-    `مركز التكلفة: ${costCenters.find((center) => center.id === costCenterId)?.code ?? 'كل المراكز'}`,
+    `مركز التكلفة: ${costCenterId === 'all' ? 'كل المراكز' : selectedCostCenter?.code ?? 'غير متاح'}`,
     `نوع الحجز: ${bookingTypeLabels[bookingType] ?? 'كل الأنواع'}`,
   ];
-  const hasExportScope = hasPermission('reports_export') && getPermissionScope('reports_export') === 'organization';
-  const canExport = hasExportScope && !invalidPeriod && !isFetching && !error && rows.length > 0;
+  const canExportScope = hasPermission('reports_export') && getPermissionScope('reports_export') === 'organization'
+    && hasPermission('financial_view') && getPermissionScope('financial_view') === 'organization';
+  const canExport = canExportScope && !invalidPeriod && !isFetching && !error && rows.length > 0
+    && (costCenterId === 'all' || Boolean(selectedCostCenter && !costCentersLoading));
   const buildExportRows = () => {
     const data: (string | number)[][] = [];
     appendCsvSection(data, 'الإيرادات', report.revenue);
@@ -122,10 +125,12 @@ export default function IncomeStatement() {
               </SelectContent>
             </Select>
           </div>
-          <Button variant="outline" onClick={() => downloadCsv(`income-statement-${start}_${end}-${currency}.csv`, reportColumns, buildExportRows())} disabled={!canExport}>
+          <Button variant="outline" onClick={() => {
+            if (canExport) downloadCsv(`income-statement-${start}_${end}-${currency}.csv`, reportColumns, buildExportRows());
+          }} disabled={!canExport}>
             <Download className="h-4 w-4 ml-2" />تصدير CSV
           </Button>
-          {hasExportScope && <ReportDownloadButtons
+          {canExportScope && <ReportDownloadButtons
             key={JSON.stringify([currentOrganization?.id, start, end, currency, costCenterId, bookingType])}
             title="قائمة الدخل" scope={reportScope} columns={reportColumns}
             loadRows={async () => buildExportRows()} disabled={!canExport}

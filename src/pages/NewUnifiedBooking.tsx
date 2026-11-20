@@ -12,7 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Hotel, Plane, Car, Truck, TrendingUp, TrendingDown, Search, Plus, User } from 'lucide-react';
+import { toast } from 'sonner';
 import { useOrgId } from '@/hooks/useOrgId';
+import { readActiveCustomer, useCustomerContext, type CustomerContext } from '@/hooks/useCustomerContext';
 import StepWizard, { WizardNavButtons, FieldError } from '@/components/wizard/StepWizard';
 import { useWizardForm, WizardStepConfig } from '@/hooks/useWizardForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -71,7 +73,10 @@ const wizardSteps: WizardStepConfig[] = [
   { title: 'مراجعة' },
 ];
 
-export const NewUnifiedBookingForm = () => {
+export const NewUnifiedBookingForm = ({ initialCustomer, missingCustomer = false }: {
+  initialCustomer?: CustomerContext | null;
+  missingCustomer?: boolean;
+}) => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const initialType = typeOptions.find(option => option.value === params.get('type'))?.value ?? '';
@@ -85,20 +90,28 @@ export const NewUnifiedBookingForm = () => {
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const activeScope = useRef('');
   activeScope.current = `${orgId}:${user?.id}`;
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerSelection, setSelectedCustomer] = useState<Customer | null>(initialCustomer ?? null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   const wizard = useWizardForm({
     steps: wizardSteps,
-    draftKey: orgId && user?.id ? `draft_booking_${orgId}_${user.id}` : undefined,
+    draftKey: orgId && user?.id ? `draft_booking_${orgId}_${user.id}${initialCustomer ? `_${initialCustomer.id}` : ''}` : undefined,
     initialData: {
-      booking_type: initialType, employee_id: '', customer_id: '', customer_name: '', supplier_id: '', supplier_name: '',
+      booking_type: initialType, employee_id: '', customer_id: initialCustomer?.id ?? '',
+      customer_name: initialCustomer?.name ?? '', supplier_id: '', supplier_name: '',
       selling_price: 0, cost_price: 0, currency: 'EGP',
       start_date: '', end_date: '', notes: '',
     },
   });
 
+  const savedCustomer = useCustomerContext(
+    orgId,
+    customerSelection?.id === wizard.formData.customer_id ? null : wizard.formData.customer_id,
+  );
+  const selectedCustomer: Customer | null | undefined = customerSelection?.id && customerSelection.id === wizard.formData.customer_id
+    ? customerSelection
+    : savedCustomer.data;
   const profit = (Number(wizard.formData.selling_price) || 0) - (Number(wizard.formData.cost_price) || 0);
   const margin = Number(wizard.formData.selling_price) > 0 ? (profit / Number(wizard.formData.selling_price)) * 100 : 0;
   const bookingType = wizard.formData.booking_type as BookingType;
@@ -120,10 +133,20 @@ export const NewUnifiedBookingForm = () => {
   };
 
   const handleSubmit = async () => {
-    if (!bookingType || !canCreate || createBooking.isPending || submitting.current) return;
+    if (!orgId || !bookingType || !canCreate || createBooking.isPending || submitting.current) return;
     const submittedScope = activeScope.current;
     submitting.current = true;
     try {
+      let verifiedCustomer: CustomerContext | null = null;
+      if (wizard.formData.customer_id) {
+        try {
+          verifiedCustomer = await readActiveCustomer(orgId, wizard.formData.customer_id);
+        } catch {
+          return toast.error('تعذر التحقق من العميل المرتبط بالحجز');
+        }
+        if (!verifiedCustomer) return toast.error('اختر عميلاً متاحًا في الشركة الحالية');
+      }
+      if (!mounted.current || activeScope.current !== submittedScope) return;
 
       // جمع التفاصيل حسب النوع
       const hotelKeys = ['hotel_name', 'room_type', 'board_type', 'nights', 'check_in', 'check_out', 'rooms', 'star_rating', 'city', 'adults', 'children', 'children_ages', 'meal_plan', 'cancellation_policy', 'booking_reference'];
@@ -140,8 +163,8 @@ export const NewUnifiedBookingForm = () => {
 
       const result = await createBooking.mutateAsync({
         booking_type: bookingType,
-        customer_id: wizard.formData.customer_id || undefined,
-        customer_name: wizard.formData.customer_name || undefined,
+        customer_id: verifiedCustomer?.id,
+        customer_name: verifiedCustomer?.name || wizard.formData.customer_name || undefined,
         customer_phone: wizard.formData.customer_id ? undefined : wizard.formData.customer_phone || undefined,
         customer_email: wizard.formData.customer_id ? undefined : wizard.formData.customer_email || undefined,
         employee_id: wizard.formData.employee_id || undefined,
@@ -254,6 +277,7 @@ export const NewUnifiedBookingForm = () => {
         )}
 
         {/* Step 2: Base Info with CustomerSelection + SupplierSelection */}
+        {missingCustomer && <p role="status" className="text-sm text-muted-foreground">تعذر اختيار العميل من الرابط. اختر عميلاً من الشركة الحالية.</p>}
         {wizard.currentStep === 1 && (
           <Card>
             <CardHeader><CardTitle>البيانات الأساسية</CardTitle></CardHeader>
@@ -264,7 +288,7 @@ export const NewUnifiedBookingForm = () => {
                 <div className="flex gap-2 mt-1">
                   <Input
                     value={wizard.formData.customer_name || ''}
-                    onChange={e => wizard.updateField('customer_name', e.target.value)}
+                    onChange={e => wizard.updateFields({ customer_id: '', customer_name: e.target.value })}
                     placeholder="اسم العميل"
                     readOnly={!!selectedCustomer}
                     className={selectedCustomer ? 'bg-muted/50' : ''}
@@ -504,7 +528,17 @@ const ReviewRow = ({ label, value }: { label: string; value: string }) => (
 const NewUnifiedBooking = () => {
   const orgId = useOrgId();
   const { user } = useOptimizedAuth();
-  return <NewUnifiedBookingForm key={`${orgId}:${user?.id}`} />;
+  const [params] = useSearchParams();
+  const customerId = params.get('customer_id') ?? params.get('customer');
+  const customer = useCustomerContext(orgId, customerId);
+  if (customer.isLoading) return <p className="p-6 text-center">جاري التحقق من العميل...</p>;
+  return (
+    <NewUnifiedBookingForm
+      key={`${orgId}:${user?.id}:${params.get('type') ?? ''}:${customerId ?? ''}`}
+      initialCustomer={customer.data}
+      missingCustomer={Boolean(customerId && !customer.data)}
+    />
+  );
 };
 
 export default NewUnifiedBooking;

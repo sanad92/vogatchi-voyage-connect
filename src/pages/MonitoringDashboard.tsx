@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { getMonitoringReadState } from '@/lib/monitoringReadState';
 
 const severityConfig: Record<string, { color: string; icon: any }> = {
   warning: { color: 'text-yellow-600 bg-yellow-100', icon: AlertTriangle },
@@ -29,60 +30,64 @@ const MonitoringDashboard = () => {
   const [activeTab, setActiveTab] = useState('errors');
 
   // Error logs
-  const { data: errors, isLoading: errorsLoading } = useQuery({
+  const errorsRead = useQuery({
     queryKey: ['monitoring-errors', orgId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('error_logs')
         .select('*')
         .eq('organization_id', orgId!)
         .order('created_at', { ascending: false })
         .limit(100);
+      if (error) throw error;
       return data ?? [];
     },
     enabled: !!orgId,
   });
 
   // Performance logs
-  const { data: perfLogs, isLoading: perfLoading } = useQuery({
+  const perfRead = useQuery({
     queryKey: ['monitoring-performance', orgId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('performance_logs')
         .select('*')
         .eq('organization_id', orgId!)
         .order('created_at', { ascending: false })
         .limit(100);
+      if (error) throw error;
       return data ?? [];
     },
     enabled: !!orgId,
   });
 
   // API logs
-  const { data: apiLogs, isLoading: apiLoading } = useQuery({
+  const apiRead = useQuery({
     queryKey: ['monitoring-api', orgId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('api_logs')
         .select('*')
         .eq('organization_id', orgId!)
         .order('created_at', { ascending: false })
         .limit(100);
+      if (error) throw error;
       return data ?? [];
     },
     enabled: !!orgId,
   });
 
   // Audit logs
-  const { data: auditLogs, isLoading: auditLoading } = useQuery({
+  const auditRead = useQuery({
     queryKey: ['monitoring-audit', orgId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('admin_audit_log')
         .select('*')
         .eq('organization_id', orgId!)
         .order('created_at', { ascending: false })
         .limit(100);
+      if (error) throw error;
       return data ?? [];
     },
     enabled: !!orgId,
@@ -95,30 +100,37 @@ const MonitoringDashboard = () => {
         .from('error_logs')
         .update({ resolved: true, resolved_at: new Date().toISOString() })
         .eq('id', errorId)
-        .eq('organization_id', orgId!);
+        .eq('organization_id', orgId!)
+        .select('id').single();
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success('تم تعليم الخطأ كمحلول');
-      queryClient.invalidateQueries({ queryKey: ['monitoring-errors'] });
+      queryClient.invalidateQueries({ queryKey: ['monitoring-errors', orgId] });
     },
+    onError: () => toast.error('تعذّر تحديث حالة الخطأ'),
   });
 
-  const refreshAll = () => {
-    queryClient.invalidateQueries({ queryKey: ['monitoring-errors'] });
-    queryClient.invalidateQueries({ queryKey: ['monitoring-performance'] });
-    queryClient.invalidateQueries({ queryKey: ['monitoring-api'] });
-    queryClient.invalidateQueries({ queryKey: ['monitoring-audit'] });
-    toast.success('تم تحديث البيانات');
+  const refreshAll = async () => {
+    if (!orgId) return;
+    const results = await Promise.all([errorsRead.refetch(), perfRead.refetch(), apiRead.refetch(), auditRead.refetch()]);
+    if (results.some(result => result.isError)) toast.error('تعذّر تحديث بعض سجلات المراقبة');
+    else toast.success('تم تحديث البيانات');
   };
 
-  // Stats
-  const unresolvedErrors = errors?.filter((e: any) => !e.resolved).length ?? 0;
-  const criticalErrors = errors?.filter((e: any) => e.severity === 'critical' && !e.resolved).length ?? 0;
-  const avgLoadTime = perfLogs?.length
-    ? Math.round((perfLogs as any[]).reduce((sum: number, p: any) => sum + (p.load_time_ms || 0), 0) / perfLogs.length)
-    : 0;
-  const failedApis = apiLogs?.filter((a: any) => a.status_code && a.status_code >= 400).length ?? 0;
+  const errors = errorsRead.data ?? [];
+  const perfLogs = perfRead.data ?? [];
+  const apiLogs = apiRead.data ?? [];
+  const auditLogs = auditRead.data ?? [];
+  const loadTimes = perfLogs.flatMap(row => row.load_time_ms == null ? [] : [row.load_time_ms]);
+  const apiStatuses = apiLogs.flatMap(row => row.status_code == null ? [] : [row.status_code]);
+  const unresolvedErrors = errors.filter(row => !row.resolved).length;
+  const criticalErrors = errors.filter(row => row.severity === 'critical' && !row.resolved).length;
+  const avgLoadTime = loadTimes.length ? Math.round(loadTimes.reduce((sum, duration) => sum + duration, 0) / loadTimes.length) : 0;
+  const failedApis = apiStatuses.filter(status => status >= 400).length;
+  const queryState = (read: { status: 'error' | 'pending' | 'success'; data?: unknown[] }) =>
+    getMonitoringReadState(read.status, read.data?.length ?? 0);
+  const refreshing = [errorsRead, perfRead, apiRead, auditRead].some(read => read.isFetching);
 
   const filterBySearch = (items: any[], fields: string[]) => {
     if (!searchTerm) return items;
@@ -135,83 +147,39 @@ const MonitoringDashboard = () => {
           <h1 className="text-3xl font-bold text-foreground">مراقبة النظام</h1>
           <p className="text-muted-foreground mt-1">تتبع الأخطاء والأداء وسجل العمليات</p>
         </div>
-        <Button variant="outline" onClick={refreshAll}>
+        <Button variant="outline" onClick={() => void refreshAll()} disabled={!orgId || refreshing}>
           <RefreshCw className="h-4 w-4 ml-2" />
           تحديث
         </Button>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">أخطاء غير محلولة</p>
-                <p className="text-3xl font-bold text-foreground">{unresolvedErrors}</p>
-              </div>
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${unresolvedErrors > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                {unresolvedErrors > 0 ? <Bug className="h-6 w-6" /> : <CheckCircle2 className="h-6 w-6" />}
-              </div>
-            </div>
-            {criticalErrors > 0 && (
-              <Badge variant="destructive" className="mt-2">{criticalErrors} حرجة</Badge>
+        <MetricCard title="أخطاء غير محلولة" state={queryState(errorsRead)} value={unresolvedErrors}
+          icon={unresolvedErrors > 0 ? <Bug className="h-6 w-6" /> : <CheckCircle2 className="h-6 w-6" />}
+          tone={unresolvedErrors > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}>
+          {criticalErrors > 0 && <Badge variant="destructive" className="mt-2">{criticalErrors} حرجة</Badge>}
+        </MetricCard>
+
+        <MetricCard title="متوسط وقت التحميل" state={getMonitoringReadState(perfRead.status, loadTimes.length)}
+          value={avgLoadTime} suffix=" ms" icon={<Gauge className="h-6 w-6" />}
+          tone={avgLoadTime >= 3000 ? 'bg-red-100 text-red-600' : avgLoadTime >= 1500 ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'}>
+          <div className="flex items-center gap-1 mt-2 text-sm">
+            {avgLoadTime < 1500 ? (
+              <><TrendingUp className="h-3 w-3 text-green-600" /><span className="text-green-600">ممتاز</span></>
+            ) : avgLoadTime < 3000 ? (
+              <><Clock className="h-3 w-3 text-yellow-600" /><span className="text-yellow-600">مقبول</span></>
+            ) : (
+              <><TrendingDown className="h-3 w-3 text-red-600" /><span className="text-red-600">بطيء</span></>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </MetricCard>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">متوسط وقت التحميل</p>
-                <p className="text-3xl font-bold text-foreground">{avgLoadTime}<span className="text-sm font-normal text-muted-foreground"> ms</span></p>
-              </div>
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${avgLoadTime > 3000 ? 'bg-red-100 text-red-600' : avgLoadTime > 1500 ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'}`}>
-                <Gauge className="h-6 w-6" />
-              </div>
-            </div>
-            {avgLoadTime > 0 && (
-              <div className="flex items-center gap-1 mt-2 text-sm">
-                {avgLoadTime < 1500 ? (
-                  <><TrendingUp className="h-3 w-3 text-green-600" /><span className="text-green-600">ممتاز</span></>
-                ) : avgLoadTime < 3000 ? (
-                  <><Clock className="h-3 w-3 text-yellow-600" /><span className="text-yellow-600">مقبول</span></>
-                ) : (
-                  <><TrendingDown className="h-3 w-3 text-red-600" /><span className="text-red-600">بطيء</span></>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <MetricCard title="طلبات API فاشلة" state={getMonitoringReadState(apiRead.status, apiStatuses.length)}
+          value={failedApis} icon={<Globe className="h-6 w-6" />}
+          tone={failedApis > 0 ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'} />
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">طلبات API فاشلة</p>
-                <p className="text-3xl font-bold text-foreground">{failedApis}</p>
-              </div>
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${failedApis > 0 ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'}`}>
-                <Globe className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">سجلات التدقيق</p>
-                <p className="text-3xl font-bold text-foreground">{auditLogs?.length ?? 0}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full flex items-center justify-center bg-primary/10 text-primary">
-                <Shield className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <MetricCard title="سجلات التدقيق" state={queryState(auditRead)} value={auditLogs.length}
+          icon={<Shield className="h-6 w-6" />} tone="bg-primary/10 text-primary" />
       </div>
 
       {/* Search */}
@@ -256,11 +224,15 @@ const MonitoringDashboard = () => {
               <CardTitle className="text-lg">سجل الأخطاء</CardTitle>
             </CardHeader>
             <CardContent>
-              {errorsLoading ? (
-                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              {errorsRead.isError ? (
+                <LogReadError retry={() => void errorsRead.refetch()} />
+              ) : errorsRead.isPending ? (
+                <div role="status" className="flex justify-center gap-2 py-8 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" /> جارٍ التحميل
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {filterBySearch(errors || [], ['error_message', 'component_name', 'url']).map((err: any) => {
+                  {filterBySearch(errors, ['error_message', 'component_name', 'url']).map((err: any) => {
                     const config = severityConfig[err.severity] || severityConfig.error;
                     const SevIcon = config.icon;
                     return (
@@ -301,10 +273,10 @@ const MonitoringDashboard = () => {
                       </div>
                     );
                   })}
-                  {(!errors || errors.length === 0) && (
+                  {errors.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
-                      <CheckCircle2 className="h-10 w-10 mx-auto mb-2 text-green-500" />
-                      لا توجد أخطاء مسجلة 🎉
+                      <Bug className="h-10 w-10 mx-auto mb-2" />
+                      لا توجد سجلات أخطاء
                     </div>
                   )}
                 </div>
@@ -320,8 +292,12 @@ const MonitoringDashboard = () => {
               <CardTitle className="text-lg">سجل الأداء</CardTitle>
             </CardHeader>
             <CardContent>
-              {perfLoading ? (
-                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              {perfRead.isError ? (
+                <LogReadError retry={() => void perfRead.refetch()} />
+              ) : perfRead.isPending ? (
+                <div role="status" className="flex justify-center gap-2 py-8 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" /> جارٍ التحميل
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -336,12 +312,12 @@ const MonitoringDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filterBySearch(perfLogs || [], ['page_url']).map((p: any) => (
+                      {filterBySearch(perfLogs, ['page_url']).map((p: any) => (
                         <tr key={p.id} className="border-b border-border hover:bg-muted/30">
                           <td className="py-3 px-3 font-mono text-xs">{p.page_url}</td>
                           <td className="py-3 px-3 text-center">
                             <Badge variant={p.load_time_ms < 1500 ? 'default' : p.load_time_ms < 3000 ? 'secondary' : 'destructive'}>
-                              {p.load_time_ms}ms
+                              {p.load_time_ms == null ? '—' : `${p.load_time_ms}ms`}
                             </Badge>
                           </td>
                           <td className="py-3 px-3 text-center text-foreground">{p.ttfb_ms ?? '-'}ms</td>
@@ -354,7 +330,7 @@ const MonitoringDashboard = () => {
                       ))}
                     </tbody>
                   </table>
-                  {(!perfLogs || perfLogs.length === 0) && (
+                  {perfLogs.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">لا توجد بيانات أداء بعد</div>
                   )}
                 </div>
@@ -370,8 +346,12 @@ const MonitoringDashboard = () => {
               <CardTitle className="text-lg">سجل طلبات API</CardTitle>
             </CardHeader>
             <CardContent>
-              {apiLoading ? (
-                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              {apiRead.isError ? (
+                <LogReadError retry={() => void apiRead.refetch()} />
+              ) : apiRead.isPending ? (
+                <div role="status" className="flex justify-center gap-2 py-8 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" /> جارٍ التحميل
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -385,7 +365,7 @@ const MonitoringDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filterBySearch(apiLogs || [], ['function_name', 'error_message']).map((a: any) => (
+                      {filterBySearch(apiLogs, ['function_name', 'error_message']).map((a: any) => (
                         <tr key={a.id} className="border-b border-border hover:bg-muted/30">
                           <td className="py-3 px-3 font-mono text-xs">{a.function_name}</td>
                           <td className="py-3 px-3 text-center">
@@ -404,7 +384,7 @@ const MonitoringDashboard = () => {
                       ))}
                     </tbody>
                   </table>
-                  {(!apiLogs || apiLogs.length === 0) && (
+                  {apiLogs.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">لا توجد سجلات API بعد</div>
                   )}
                 </div>
@@ -420,11 +400,15 @@ const MonitoringDashboard = () => {
               <CardTitle className="text-lg">سجل التدقيق</CardTitle>
             </CardHeader>
             <CardContent>
-              {auditLoading ? (
-                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              {auditRead.isError ? (
+                <LogReadError retry={() => void auditRead.refetch()} />
+              ) : auditRead.isPending ? (
+                <div role="status" className="flex justify-center gap-2 py-8 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" /> جارٍ التحميل
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {filterBySearch(auditLogs || [], ['action', 'target_table']).map((log: any) => (
+                  {filterBySearch(auditLogs, ['action', 'target_table']).map((log: any) => (
                     <div key={log.id} className="border border-border rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -449,7 +433,7 @@ const MonitoringDashboard = () => {
                       )}
                     </div>
                   ))}
-                  {(!auditLogs || auditLogs.length === 0) && (
+                  {auditLogs.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">لا توجد سجلات تدقيق بعد</div>
                   )}
                 </div>
@@ -461,5 +445,49 @@ const MonitoringDashboard = () => {
     </div>
   );
 };
+
+function MetricCard({ title, state, value, suffix, icon, tone, children }: {
+  title: string;
+  state: ReturnType<typeof getMonitoringReadState>;
+  value: number;
+  suffix?: string;
+  icon: ReactNode;
+  tone: string;
+  children?: ReactNode;
+}) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <p className="text-sm text-muted-foreground">{title}</p>
+        {state === 'ready' ? (
+          <>
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold text-foreground">
+                {value}{suffix && <span className="text-sm font-normal text-muted-foreground">{suffix}</span>}
+              </p>
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${tone}`}>{icon}</div>
+            </div>
+            {children}
+          </>
+        ) : state === 'error' ? (
+          <p role="alert" className="text-sm text-destructive mt-2">تعذّر تحميل المؤشر</p>
+        ) : state === 'loading' ? (
+          <p role="status" className="text-sm text-muted-foreground mt-2">جارٍ التحميل</p>
+        ) : (
+          <p className="text-sm text-muted-foreground mt-2">لا توجد بيانات</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LogReadError({ retry }: { retry: () => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <p role="alert" className="text-sm text-destructive">تعذّر تحميل السجل.</p>
+      <Button variant="outline" size="sm" onClick={retry}>إعادة المحاولة</Button>
+    </div>
+  );
+}
 
 export default MonitoringDashboard;

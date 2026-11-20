@@ -57,7 +57,8 @@ const BookingWorkspace = () => {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const workspace = useBookingWorkspace(id);
-  const staff = useBookingStaff(id);
+  const verifiedBookingId = workspace.booking?.id;
+  const staff = useBookingStaff(verifiedBookingId);
   const [cancellationOpen, setCancellationOpen] = useState(false);
   const { getPermissionScope } = useSupabasePermissions();
   const canSettleCancellation = (['bookings_view', 'bookings_cancel', 'financial_view', 'payments_process'] as const)
@@ -66,11 +67,11 @@ const BookingWorkspace = () => {
   const pilgrimageBooking = isPilgrimageBookingType(workspace.booking?.booking_type);
   const departurePath = workspace.pilgrimageDeparture
     ? `/pilgrimage?program=${workspace.pilgrimageDeparture.program_id}&type=${workspace.booking?.booking_type}` : null;
-  const cockpit = useBookingProfitCockpit(canViewFinance ? id : undefined);
-  const vouchers = useWorkspaceVouchers(id);
+  const cockpit = useBookingProfitCockpit(canViewFinance ? verifiedBookingId : undefined);
+  const vouchers = useWorkspaceVouchers(verifiedBookingId);
   const canEditBooking = getPermissionScope('bookings_edit') === 'organization';
   const cancelled = workspace.booking?.workflow_stage === 'cancelled' || ['cancelled', 'canceled'].includes(workspace.booking?.status);
-  const cancellation = useBookingCancellation(id, canSettleCancellation && (cancellationOpen || cancelled));
+  const cancellation = useBookingCancellation(verifiedBookingId, canSettleCancellation && (cancellationOpen || cancelled));
 
   const activeTab: TabKey = useMemo(() => {
     const t = params.get('tab') as TabKey | null;
