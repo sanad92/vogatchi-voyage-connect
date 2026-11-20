@@ -39,6 +39,7 @@ export const useConversationFollowups = (conversationId?: string) => {
         .from('whatsapp_followups' as any)
         .select('*')
         .eq('conversation_id', conversationId)
+        .eq('organization_id', orgId)
         .order('remind_at', { ascending: true }) as any);
       if (error) throw error;
       return (data as WhatsAppFollowup[]) || [];
@@ -96,12 +97,18 @@ export const useConversationFollowups = (conversationId?: string) => {
 
   const complete = useMutation({
     mutationFn: async (id: string) => {
+      if (!orgId || !conversationId) throw new Error('السياق ناقص');
       const { error } = await (supabase.from('whatsapp_followups' as any).update({
         status: 'done',
         completed_at: new Date().toISOString(),
         completed_by: user?.id,
-      }).eq('id', id) as any);
+      }).eq('id', id).eq('organization_id', orgId).eq('conversation_id', conversationId)
+        .eq('status', 'pending').select('id').single() as any);
       if (error) throw error;
+    },
+    onError: () => {
+      toast.error('تعذّر تحديث المتابعة. راجع حالتها الحالية.');
+      void qc.invalidateQueries({ queryKey: ['whatsapp-followups', orgId, conversationId] });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['whatsapp-followups'] });
@@ -111,10 +118,16 @@ export const useConversationFollowups = (conversationId?: string) => {
 
   const cancel = useMutation({
     mutationFn: async (id: string) => {
+      if (!orgId || !conversationId) throw new Error('السياق ناقص');
       const { error } = await (supabase.from('whatsapp_followups' as any).update({
         status: 'cancelled',
-      }).eq('id', id) as any);
+      }).eq('id', id).eq('organization_id', orgId).eq('conversation_id', conversationId)
+        .eq('status', 'pending').select('id').single() as any);
       if (error) throw error;
+    },
+    onError: () => {
+      toast.error('تعذّر تحديث المتابعة. راجع حالتها الحالية.');
+      void qc.invalidateQueries({ queryKey: ['whatsapp-followups', orgId, conversationId] });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['whatsapp-followups'] }),
   });
@@ -122,11 +135,17 @@ export const useConversationFollowups = (conversationId?: string) => {
   const snooze = useMutation({
     mutationFn: async ({ id, minutes }: { id: string; minutes: number }) => {
       const newTime = new Date(Date.now() + minutes * 60_000).toISOString();
+      if (!orgId || !conversationId) throw new Error('السياق ناقص');
       const { error } = await (supabase.from('whatsapp_followups' as any).update({
         remind_at: newTime,
         status: 'pending',
-      }).eq('id', id) as any);
+      }).eq('id', id).eq('organization_id', orgId).eq('conversation_id', conversationId)
+        .eq('status', 'pending').select('id').single() as any);
       if (error) throw error;
+    },
+    onError: () => {
+      toast.error('تعذّر تحديث المتابعة. راجع حالتها الحالية.');
+      void qc.invalidateQueries({ queryKey: ['whatsapp-followups', orgId, conversationId] });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['whatsapp-followups'] });
@@ -137,6 +156,8 @@ export const useConversationFollowups = (conversationId?: string) => {
   return {
     followups: query.data || [],
     isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
     create: create.mutate,
     complete: complete.mutate,
     cancel: cancel.mutate,

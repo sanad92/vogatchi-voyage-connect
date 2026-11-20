@@ -42,6 +42,7 @@ import CustomerCommunicationLog from "@/components/customers/CustomerCommunicati
 import CustomerQuickActions from "@/components/customers/CustomerQuickActions";
 import LoyaltyPointsDisplay from "@/components/customers/LoyaltyPointsDisplay";
 import CustomerWhatsAppChat from "@/components/customers/CustomerWhatsAppChat";
+import { CustomerMarketingPermissions } from '@/components/customers/CustomerMarketingPermissions';
 import { DocumentsPanel as CustomerDocumentsPanel } from "@/components/documents/DocumentsPanel";
 import { divideCurrencyTotals, formatCurrencyTotals, getCustomerSpend, parseCurrencyTotals } from "@/lib/customerMetrics";
 import { useSupabasePermissions } from "@/hooks/useSupabasePermissions";
@@ -347,6 +348,11 @@ const CustomerDetails = () => {
               </CardContent>
             </Card>
           </div>
+
+          {!customerData.is_demo && getPermissionScope('customers_view') === 'organization' && (
+            <CustomerMarketingPermissions customerId={customerId} organizationId={customerData.organization_id}
+              canEdit={getPermissionScope('customers_edit') === 'organization'} />
+          )}
 
           {/* Recent Activity Summary */}
           <Card>

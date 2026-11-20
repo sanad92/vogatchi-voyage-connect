@@ -54,7 +54,7 @@ const TransportBookingForm = ({ onSuccess }: TransportBookingFormProps) => {
     vehicle_plate_number: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const bookingData = {
@@ -67,8 +67,12 @@ const TransportBookingForm = ({ onSuccess }: TransportBookingFormProps) => {
       currency: formData.currency as string
     };
 
-    addTransportBooking(bookingData);
-    onSuccess();
+    try {
+      await addTransportBooking(bookingData);
+      onSuccess();
+    } catch {
+      // The booking mutation reports the save error and keeps the form open.
+    }
   };
 
   const customerOptions = customers?.map(customer => ({

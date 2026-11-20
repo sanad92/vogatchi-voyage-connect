@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,59 +9,113 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
+import { isRecordId, readActiveCustomer, useActiveCustomerOptions, useCustomerContext, type CustomerContext } from '@/hooks/useCustomerContext';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Save, FileText } from 'lucide-react';
 import { calculateFinancialBreakdown } from '@/utils/calculationHelpers';
 import { useCurrencyHelper } from '@/hooks/useCurrencyHelper';
 
+async function readInvoiceBooking(orgId: string, id: string) {
+  const { data, error } = await supabase.from('bookings')
+    .select('id, booking_type, booking_number, customer_id, currency')
+    .eq('organization_id', orgId)
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 const NewInvoice = () => {
+  const orgId = useOrgId();
+  const [params] = useSearchParams();
+  const id = params.get('booking_id');
+  const booking = useQuery({
+    queryKey: ['new-invoice-booking', orgId, id],
+    enabled: Boolean(orgId && isRecordId(id)),
+    queryFn: () => readInvoiceBooking(orgId!, id!),
+  });
+  const customerId = id ? booking.data?.customer_id : params.get('customer_id');
+  const customer = useCustomerContext(orgId, customerId);
+  if (!orgId) return null;
+  if (booking.isLoading || customer.isLoading) return <p className="p-6 text-center">جاري التحقق من بيانات الفاتورة...</p>;
+  if (id && !booking.data) return <p role="alert" className="p-6 text-center">تعذر فتح الحجز في الشركة الحالية لإنشاء الفاتورة.</p>;
+  if (id && !customer.data) return <p role="alert" className="p-6 text-center">يلزم ربط الحجز بعميل متاح في الشركة الحالية قبل إنشاء الفاتورة.</p>;
+  return (
+    <InvoiceForm
+      key={`${orgId}:${id ?? ''}:${customerId ?? ''}`}
+      orgId={orgId}
+      initialCustomer={customer.data}
+      missingCustomer={Boolean(customerId && !customer.data)}
+      booking={booking.data}
+    />
+  );
+};
+
+type InvoiceBooking = {
+  id: string;
+  booking_type: string;
+  booking_number: string;
+  currency: string | null;
+};
+
+function InvoiceForm({ orgId, initialCustomer, missingCustomer, booking }: {
+  orgId: string;
+  initialCustomer?: CustomerContext | null;
+  missingCustomer: boolean;
+  booking?: InvoiceBooking | null;
+}) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const orgId = useOrgId();
   const { ensureSupportedCurrency } = useCurrencyHelper();
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   
   const [formData, setFormData] = useState({
-    customer_id: '',
-    booking_type: '',
-    booking_id: '',
+    customer_id: initialCustomer?.id ?? '',
+    booking_type: booking?.booking_type ?? '',
     amount: '',
-    currency: 'EGP',
+    currency: booking?.currency || 'EGP',
     description: '',
     notes: ''
   });
 
-  // Fetch customers for dropdown
-  const { data: customers } = useQuery({
-    queryKey: ['customers-select', orgId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('customers')
-        .select('id, name, phone')
-        .order('name')
-        .limit(500);
-      return data || [];
-    },
-    enabled: !!orgId,
-    staleTime: 5 * 60 * 1000,
-  });
+  const customers = useActiveCustomerOptions(orgId, initialCustomer);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading || !orgId) return;
+    if (submitting.current || !orgId) return;
 
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+    const amount = Number(formData.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
       toast({ title: 'خطأ', description: 'المبلغ مطلوب ويجب أن يكون أكبر من صفر', variant: 'destructive' });
       return;
     }
 
+    submitting.current = true;
     setLoading(true);
 
     try {
+      if (formData.customer_id && !await readActiveCustomer(orgId, formData.customer_id)) {
+        throw new Error('اختر عميلاً متاحًا في الشركة الحالية');
+      }
+      if (booking) {
+        const current = await readInvoiceBooking(orgId, booking.id);
+        if (!current || current.customer_id !== formData.customer_id
+          || current.booking_type !== booking.booking_type || current.currency !== booking.currency) {
+          throw new Error('اتغيّرت بيانات الحجز. افتحه من جديد قبل إنشاء الفاتورة.');
+        }
+      }
+      if (!mounted.current) return;
       // Generate invoice number via RPC
       const { data: invoiceNumber } = await supabase.rpc('generate_invoice_number');
+      if (!mounted.current) return;
       const financialBreakdown = calculateFinancialBreakdown({
-        subtotal: parseFloat(formData.amount),
+        subtotal: amount,
         discountAmount: 0,
         vatRate: 0,
       });
@@ -73,7 +127,7 @@ const NewInvoice = () => {
           organization_id: orgId,
           customer_id: formData.customer_id || null,
           booking_type: formData.booking_type || null,
-          booking_id: formData.booking_id || null,
+          booking_id: booking?.id ?? null,
           subtotal: financialBreakdown.subtotal,
           total_amount: financialBreakdown.totalAmount,
           final_amount: financialBreakdown.totalAmount,
@@ -87,6 +141,7 @@ const NewInvoice = () => {
         .single();
 
       if (error) throw error;
+      if (!mounted.current) return;
 
       toast({
         title: "تم إنشاء الفاتورة بنجاح",
@@ -95,6 +150,7 @@ const NewInvoice = () => {
 
       navigate('/invoices');
     } catch (error: any) {
+      if (!mounted.current) return;
       console.error('Error creating invoice:', error);
       toast({
         title: "خطأ في إنشاء الفاتورة",
@@ -102,7 +158,8 @@ const NewInvoice = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      submitting.current = false;
+      if (mounted.current) setLoading(false);
     }
   };
 
@@ -138,7 +195,8 @@ const NewInvoice = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>العميل *</Label>
-                  <Select value={formData.customer_id} onValueChange={(value) => handleChange('customer_id', value)}>
+                  {missingCustomer && <p role="status" className="text-sm text-muted-foreground">تعذر اختيار العميل من الرابط.</p>}
+                  <Select value={formData.customer_id} disabled={!!booking} onValueChange={(value) => handleChange('customer_id', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر العميل" />
                     </SelectTrigger>
@@ -154,6 +212,7 @@ const NewInvoice = () => {
 
                 <div className="space-y-2">
                   <Label>نوع الحجز</Label>
+                  {booking ? <p className="text-sm">{booking.booking_number}</p> : (
                   <Select value={formData.booking_type} onValueChange={(value) => handleChange('booking_type', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر نوع الحجز" />
@@ -166,6 +225,7 @@ const NewInvoice = () => {
                       <SelectItem value="other">أخرى</SelectItem>
                     </SelectContent>
                   </Select>
+                  )}
                 </div>
               </div>
 
@@ -185,7 +245,7 @@ const NewInvoice = () => {
 
                 <div className="space-y-2">
                   <Label>العملة *</Label>
-                  <Select value={formData.currency} onValueChange={(value) => handleChange('currency', value)} required>
+                  <Select value={formData.currency} disabled={!!booking} onValueChange={(value) => handleChange('currency', value)} required>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -247,6 +307,6 @@ const NewInvoice = () => {
       </div>
     </div>
   );
-};
+}
 
 export default NewInvoice;

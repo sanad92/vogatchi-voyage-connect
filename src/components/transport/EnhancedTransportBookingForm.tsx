@@ -119,11 +119,6 @@ const EnhancedTransportBookingForm = ({ onSuccess }: EnhancedTransportBookingFor
 
     try {
       await addTransportBooking(bookingData);
-      toast({
-        title: "تمت الإضافة بنجاح",
-        description: "تم إضافة حجز النقل بنجاح.",
-      });
-      
       if (onSuccess) {
         onSuccess();
       }

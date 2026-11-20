@@ -42,6 +42,7 @@ const SaaSLanding = lazy(() => import("@/pages/SaaSLanding"));
 const BookingRequest = lazy(() => import("@/pages/BookingRequest"));
 const PublicBookingSite = lazy(() => import("@/pages/PublicBookingSite"));
 const PublicCmsPage = lazy(() => import("@/pages/PublicCmsPage"));
+const PublicCompanyPage = lazy(() => import("@/pages/PublicCompanyPage"));
 const PricingPage = lazy(() => import("@/pages/PricingPage"));
 const PaymentPage = lazy(() => import("@/pages/PaymentPage"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
@@ -267,7 +268,8 @@ function App() {
                 <Route path="/p/:companySlug/booking-request" element={<PublicBookingSite />} />
                 <Route path="/p/:companySlug/pages/:pageSlug" element={<PublicCmsPage />} />
                 <Route path="/p/booking-request" element={<Navigate to="/booking-request" replace />} />
-                <Route path="/contact" element={<Navigate to="/booking-request" replace />} />
+                <Route path="/about" element={<PublicCompanyPage page="about" />} />
+                <Route path="/contact" element={<PublicCompanyPage page="contact" />} />
                 <Route path="/payment" element={<PaymentPage />} />
                 <Route path="/login" element={isPlatformAdminHost() ? <Navigate to="/platform/login" replace /> : <LoginPage />} />
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />

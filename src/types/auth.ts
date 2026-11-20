@@ -21,7 +21,7 @@ export interface AuthContextType {
   loading: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: unknown | null }>;
-  signUp: (email: string, password: string, fullName?: string, redirectTo?: string) => Promise<{ error: unknown | null }>;
+  signUp: (email: string, password: string, fullName?: string, redirectTo?: string) => Promise<{ error: unknown | null; confirmationRequired?: boolean }>;
   signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
   setOrgRole: (role: string | null) => void;

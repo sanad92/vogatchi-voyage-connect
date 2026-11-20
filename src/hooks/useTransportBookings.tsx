@@ -143,7 +143,7 @@ export const useTransportBookings = () => {
   };
 
   const addTransportBooking = (booking: Omit<TransportBooking, 'id' | 'created_at' | 'updated_at' | 'booking_reference'>) => {
-    addTransportBookingMutation.mutate(booking);
+    return addTransportBookingMutation.mutateAsync(booking);
   };
 
   return {

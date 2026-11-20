@@ -21,8 +21,9 @@ interface Props {
 
 /** One screen for everything waiting to be received or accepted. */
 export const HandoverInbox = ({ onOpenLead }: Props) => {
-  const { data: inbox } = useHandoverInbox();
-  const { data: pendingAssignments } = useMyPendingAssignments();
+  const handovers = useHandoverInbox();
+  const assignmentQuery = useMyPendingAssignments();
+  const inbox = handovers.data;
   const { members } = useOrgMembers();
   const accept = useAcceptHandover();
   const ack = useAcknowledgeAssignment();
@@ -35,7 +36,7 @@ export const HandoverInbox = ({ onOpenLead }: Props) => {
 
   const incoming = inbox?.incoming || [];
   const outgoing = inbox?.outgoing || [];
-  const assignments = pendingAssignments || [];
+  const assignments = assignmentQuery.data || [];
   const waitingCount = incoming.length + assignments.length;
 
   return (
@@ -44,11 +45,20 @@ export const HandoverInbox = ({ onOpenLead }: Props) => {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
             <Inbox className="h-4 w-4" /> بانتظار استلامك
-            {waitingCount > 0 && <Badge variant="destructive">{waitingCount}</Badge>}
+            {handovers.isSuccess && assignmentQuery.isSuccess && waitingCount > 0 && <Badge variant="destructive">{waitingCount}</Badge>}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {waitingCount === 0 && (
+          {(handovers.isPending || assignmentQuery.isPending) && (
+            <p role="status" className="text-sm text-muted-foreground">جاري تحميل التسليمات والإسنادات…</p>
+          )}
+          {handovers.isError && (
+            <InboxLoadError label="تعذّر تحميل التسليمات" retry={() => void handovers.refetch()} />
+          )}
+          {assignmentQuery.isError && (
+            <InboxLoadError label="تعذّر تحميل الإسنادات" retry={() => void assignmentQuery.refetch()} />
+          )}
+          {handovers.isSuccess && assignmentQuery.isSuccess && waitingCount === 0 && (
             <p className="text-sm text-muted-foreground flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" /> مفيش حاجة مستنية استلامك.
             </p>
@@ -68,7 +78,7 @@ export const HandoverInbox = ({ onOpenLead }: Props) => {
                 المهلة: {a.ack_deadline_at ? new Date(a.ack_deadline_at).toLocaleString('ar-EG') : '—'}
               </div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => ack.mutate(a.lead_id)}>استلام</Button>
+                <Button size="sm" onClick={() => ack.mutate(a.lead_id)} disabled={ack.isPending}>استلام</Button>
                 {onOpenLead && a.lead_id && (
                   <Button size="sm" variant="ghost" onClick={() => onOpenLead(a.lead_id)}>فتح الملف</Button>
                 )}
@@ -107,11 +117,17 @@ export const HandoverInbox = ({ onOpenLead }: Props) => {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
             <Send className="h-4 w-4" /> سلّمتها وبانتظار الطرف الآخر
-            {outgoing.length > 0 && <Badge variant="secondary">{outgoing.length}</Badge>}
+            {handovers.isSuccess && outgoing.length > 0 && <Badge variant="secondary">{outgoing.length}</Badge>}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {outgoing.length === 0 && (
+          {handovers.isPending && (
+            <p role="status" className="text-sm text-muted-foreground">جاري تحميل التسليمات…</p>
+          )}
+          {handovers.isError && (
+            <InboxLoadError label="تعذّر تحميل التسليمات" retry={() => void handovers.refetch()} />
+          )}
+          {handovers.isSuccess && outgoing.length === 0 && (
             <p className="text-sm text-muted-foreground">مفيش تسليمات معلّقة من عندك.</p>
           )}
           {outgoing.map((h) => (
@@ -135,5 +151,14 @@ export const HandoverInbox = ({ onOpenLead }: Props) => {
     </div>
   );
 };
+
+function InboxLoadError({ label, retry }: { label: string; retry: () => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <p role="alert" className="text-sm text-destructive">{label}</p>
+      <Button size="sm" variant="ghost" onClick={retry}>إعادة المحاولة</Button>
+    </div>
+  );
+}
 
 export default HandoverInbox;

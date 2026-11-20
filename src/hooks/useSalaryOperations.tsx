@@ -112,6 +112,9 @@ export const useSalaryOperations = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monthly-salaries-improved'] });
+      queryClient.invalidateQueries({ queryKey: ['bank-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['bank-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['treasury-accounts'] });
       toast.success('تم تحديث حالة الراتب بنجاح');
     },
     onError: (error: any) => {

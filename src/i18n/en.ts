@@ -343,6 +343,8 @@ export const EN_DICTIONARY: Record<string, string> = {
   'حفظ رقم الفندق': 'Save hotel room number',
   'حفظ التسكين': 'Save rooming assignment',
   'تم تحديث التسكين': 'Rooming updated',
+  'مكتمل ماليًا': 'Financially complete',
+  'تسوية مفتوحة': 'Open settlement',
   'تعذر تحديث التسكين': 'Rooming could not be updated',
   'إلغاء الحجز وتسوية الحسابات': 'Cancel booking and settle accounts',
   'سجّل شروط الإلغاء المؤكدة. عند الاعتماد، يسوّي النظام الفواتير وأوامر الدفع وأرصدة الاسترداد.': 'Enter the confirmed cancellation terms. Approval settles invoices, payment orders, and refund balances.',

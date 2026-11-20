@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useCustomerContext } from "@/hooks/useCustomerContext";
 import { useOrgId } from "@/hooks/useOrgId";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,8 +15,8 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useInitialInvoices } from "@/hooks/useInitialInvoices";
 import { useInvoicesManagement } from "@/hooks/useInvoicesManagement";
+import { ListLoadError } from "@/components/common/ListLoadError";
 import CreateInvoiceDialog from "@/components/invoices/CreateInvoiceDialog";
 import InvoiceDetailsDialog from "@/components/invoices/InvoiceDetailsDialog";
 import EditInvoiceDialog from "@/components/invoices/EditInvoiceDialog";
@@ -23,19 +24,24 @@ import PageHeader from "@/components/layout/PageHeader";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 const Invoices = () => {
-  useInitialInvoices();
   usePageTitle('الفواتير');
 
   const orgId = useOrgId();
   const [params, setParams] = useSearchParams();
   const invoiceId = params.get("id");
+  const customerId = params.get("customer_id");
+  const customerContext = useCustomerContext(orgId, customerId);
+  const scopedCustomerId = customerId === null ? undefined : (customerContext.isSuccess ? customerContext.data?.id ?? null : null);
   const { data: linkedInvoice } = useQuery({
-    queryKey: ["invoices", "by-id", orgId, invoiceId],
-    enabled: Boolean(orgId && invoiceId),
+    queryKey: ["invoices", "by-id", orgId, invoiceId, scopedCustomerId],
+    enabled: Boolean(orgId && invoiceId) && scopedCustomerId !== null,
     queryFn: async () => {
-      const { data, error } = await supabase.from("invoices")
+      if (!orgId || !invoiceId || scopedCustomerId === null) return null;
+      let query = supabase.from("invoices")
         .select("*, customer:customers(id, name, email, phone)")
-        .eq("organization_id", orgId).eq("id", invoiceId).maybeSingle();
+        .eq("organization_id", orgId).eq("id", invoiceId);
+      if (scopedCustomerId) query = query.eq("customer_id", scopedCustomerId);
+      const { data, error } = await query.maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -55,7 +61,10 @@ const Invoices = () => {
 
   const {
     invoices,
-    isLoading,
+    isLoading: invoicesLoading,
+    error: invoicesError,
+    refetch: refetchInvoices,
+    isFetching: invoicesFetching,
     updateStatus,
     deleteInvoice,
     updateInvoice,
@@ -65,12 +74,15 @@ const Invoices = () => {
     invoiceStats,
   } = useInvoicesManagement({
     organizationId: orgId,
+    customerId: scopedCustomerId,
     searchTerm: debouncedSearchTerm,
     status: filterStatus,
     bookingType: filterType,
     dateFrom,
     dateTo,
   });
+
+  const isLoading = customerContext.isLoading || invoicesLoading;
 
   useEffect(() => {
     if (invoiceId && linkedInvoice?.id === invoiceId) {
@@ -80,6 +92,7 @@ const Invoices = () => {
   }, [invoiceId, linkedInvoice]);
 
   const displayedInvoice = selectedInvoice?.organization_id === orgId
+    && (scopedCustomerId === undefined || (scopedCustomerId && selectedInvoice.customer_id === scopedCustomerId))
     ? invoices?.find((invoice) => invoice.id === selectedInvoice.id) ?? selectedInvoice
     : null;
 
@@ -193,6 +206,9 @@ const Invoices = () => {
   };
 
   const clearFilters = () => {
+    const next = new URLSearchParams(params);
+    next.delete('customer_id');
+    setParams(next, { replace: true });
     setSearchTerm("");
     setFilterStatus("all");
     setFilterType("all");
@@ -366,7 +382,10 @@ const Invoices = () => {
             </div>
           </div>
 
-          {(searchTerm || filterStatus !== 'all' || filterType !== 'all' || dateFrom || dateTo) && (
+          {customerId !== null && !customerContext.isLoading && !customerContext.isError && <p role="status" className="mt-4">
+            {customerContext.data ? `فواتير العميل ${customerContext.data.name}` : 'العميل الموجود في الرابط غير متاح في الشركة الحالية.'}
+          </p>}
+          {(customerId !== null || searchTerm || filterStatus !== 'all' || filterType !== 'all' || dateFrom || dateTo) && (
             <div className="mt-4">
               <Button variant="outline" onClick={clearFilters}>
                 مسح الفلاتر
@@ -402,14 +421,18 @@ const Invoices = () => {
                   </div>
                 ))}
             </div>
-          ) : invoices?.length === 0 ? (
+          ) : customerContext.isError ? (
+            <ListLoadError message="تعذر التحقق من العميل" retry={() => void customerContext.refetch()} pending={customerContext.isFetching} />
+          ) : invoicesError ? (
+            <ListLoadError message="تعذر تحميل الفواتير" retry={() => void refetchInvoices()} pending={invoicesFetching} />
+          ) : !invoices?.length ? (
             <div className="text-center py-10 space-y-4">
               <div className="text-muted-foreground">
                 لا توجد فواتير تطابق معايير البحث
               </div>
-              <Button onClick={() => setShowCreateDialog(true)}>
+              {scopedCustomerId === undefined && <Button onClick={() => setShowCreateDialog(true)}>
                 إنشاء أول فاتورة
-              </Button>
+              </Button>}
             </div>
           ) : (
             <div className="overflow-x-auto">

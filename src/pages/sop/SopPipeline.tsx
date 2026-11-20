@@ -30,6 +30,7 @@ import {
   buildLeadPipelineStats,
   CLOSED_LEAD_STAGES,
   formatLeadDateTime,
+  getLeadCampaignLabel,
   isFollowUpOverdue,
   LEAD_SOURCE_LABELS,
   OPEN_LEAD_STAGES,
@@ -60,6 +61,7 @@ const LeadCard = ({
   lead, ownerName, canEdit, canClaim, onOpen, onEdit, onClaim, claimPending,
 }: LeadCardProps) => {
   const overdue = isFollowUpOverdue(lead);
+  const campaign = getLeadCampaignLabel(lead.campaign);
 
   return (
     <Card className="cursor-pointer transition hover:border-primary/50 hover:shadow-sm" onClick={onOpen}>
@@ -85,6 +87,9 @@ const LeadCard = ({
           )}
           {lead.customer_id && <Badge variant="outline" className="text-[10px]">مرتبط بعميل</Badge>}
         </div>
+        {campaign && <div className="truncate text-xs text-muted-foreground" title={campaign}>
+          الحملة <bdi>{campaign}</bdi>
+        </div>}
 
         <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
           <span className="truncate">المسؤول: {ownerName || 'بانتظار التوزيع'}</span>
@@ -256,7 +261,7 @@ const SopPipeline = () => {
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
             <div className="relative xl:col-span-2">
               <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="بحث بالاسم أو الهاتف أو البريد أو رقم الطلب أو الوجهة" className="pr-9" />
+              <Input value={search} onChange={(event) => setSearch(event.target.value)} aria-label="بحث في العملاء المحتملين" placeholder="بحث بالاسم أو رقم الطلب أو الحملة أو بيانات التواصل" className="pr-9" />
             </div>
             <Select value={owner} onValueChange={setOwner}>
               <SelectTrigger><SelectValue placeholder="المسؤول" /></SelectTrigger>
@@ -285,7 +290,7 @@ const SopPipeline = () => {
               </SelectContent>
             </Select>
           </div>
-          <p className="text-[11px] text-muted-foreground">المؤشرات والقوائم تتحدث حسب الفلاتر الحالية.</p>
+          <p className="text-[11px] text-muted-foreground">المؤشرات محسوبة من النتائج المعروضة حسب الفلاتر الحالية.{leads.length === 500 ? ' وصل العرض إلى 500 نتيجة. استخدم الفلاتر لتضييق البحث.' : ''}</p>
         </CardContent>
       </Card>
 

@@ -6,7 +6,7 @@ import { useInvoiceStats } from './invoices/useInvoiceStats';
 export type { InvoiceFilters } from './invoices/useInvoicesData';
 
 export const useInvoicesManagement = (filters?: import('./invoices/useInvoicesData').InvoiceFilters) => {
-  const { data: invoices, isLoading, error } = useInvoicesData(filters);
+  const { data: invoices, isLoading, error, refetch, isFetching } = useInvoicesData(filters);
   const { 
     updateStatus, 
     deleteInvoice, 
@@ -21,6 +21,8 @@ export const useInvoicesManagement = (filters?: import('./invoices/useInvoicesDa
     invoices,
     isLoading,
     error,
+    refetch,
+    isFetching,
     updateStatus,
     deleteInvoice,
     updateInvoice,
