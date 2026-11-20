@@ -21,6 +21,8 @@ jobs:
         run: |
           npm install --global bun@1.4.4 --no-audit --no-fund
           bun install --frozen-lockfile
+      - name: Verify WhatsApp lead intake and image review in Chrome
+        run: node --experimental-strip-types scripts/verify-whatsapp-browser.mjs
       - name: Verify organization boundaries, staff, and platform flows
         run: |
           node scripts/verify-saas-core.mjs
@@ -85,5 +87,3 @@ jobs:
         run: bun run build
       - name: Verify packaged OCR models with synthetic images
         run: node --experimental-strip-types scripts/verify-whatsapp-image-ocr.mjs
-      - name: Verify WhatsApp lead intake and image review in Chrome
-        run: node --experimental-strip-types scripts/verify-whatsapp-browser.mjs

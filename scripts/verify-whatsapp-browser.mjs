@@ -167,6 +167,9 @@ async function serve(request, response) {
     return reply(response, 200, lead ? [lead] : []);
   }
   if (pathname.startsWith('/rest/v1/')) return reply(response, 200, []);
+  if (request.method === 'GET' && pathname === '/realtime/v1/websocket') {
+    return reply(response, 503, { message: 'Realtime is unavailable in the browser fixture.' });
+  }
   if (pathname.replace(mediaPrefix, '') === photoPath) {
     calls.media++;
     return reply(response, 200, fixturePhoto, 'image/png');
