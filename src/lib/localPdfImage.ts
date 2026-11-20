@@ -19,7 +19,8 @@ export async function* readPdfImages(file: Blob, signal: AbortSignal) {
       const original = page.getViewport({ scale: 1 });
       const dimension = Math.max(original.width, original.height);
       if (!Number.isFinite(dimension) || dimension <= 0) throw new Error('invalid_pdf_dimensions');
-      const viewport = page.getViewport({ scale: 2000 / dimension });
+      const scale = Math.min(2000 / dimension, dimension < 1000 ? 2 : 1);
+      const viewport = page.getViewport({ scale });
       const canvas = document.createElement('canvas');
       canvas.width = Math.max(1, Math.ceil(viewport.width));
       canvas.height = Math.max(1, Math.ceil(viewport.height));
