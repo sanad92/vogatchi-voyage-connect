@@ -1,6 +1,6 @@
 # F01 — Aging and refund-balance settlement reconciliation contract
 
-Status: **review required; no production migration applied**. Tracking: #145.
+Status: **draft for review; no production migration applied**. Tracking: #145.
 
 ## Verified code paths (main, 2026-11-20)
 
@@ -14,8 +14,8 @@ Status: **review required; no production migration applied**. Tracking: #145.
 |---|---:|---:|---:|---:|
 | Customer EGP before settlement | 1,000 | 500 | future 100 | 500 |
 | Customer EGP on/after settlement | 1,000 | 500 | 100 | **400** |
-| Supplier SAR before settlement | 1,000 | 350 | future 100 | 650 |
-| Supplier SAR on/after settlement | 1,000 | 350 | 100 | **550** |
+| Supplier SAR before settlement | 1,000 | 300 | future 150 | 700 |
+| Supplier SAR on/after settlement | 1,000 | 300 | 150 | **550** |
 | Settlement already represented in allocation | 1,000 | 500 (including settlement) | same event 100 | 500, not 400 |
 | Other tenant or other currency | 1,000 | 500 | 100 outside scope | 500 |
 | Reversed/unposted settlement | 1,000 | 500 | invalid 100 | 500 |
@@ -30,6 +30,13 @@ For every row compare detail RPC, aggregate aging RPC, invoice balance, journal 
 4. Add integration fixtures for two organizations and EGP/SAR. Run complete migration chain in a disposable database; verify SQL function signatures, security-definer authorization, control totals and reporting UI.
 5. Submit a separate SQL migration and tests for review. Do not mutate production or auto-merge without a passing integration run.
 
-## Handoff
+## Reproducing the core regression
 
-This branch documents a reproducible **code-level discrepancy**, not a verified production defect. The initial implementation is intentionally gated on inspecting the latest RPC definitions and executing disposable-DB integration tests. The issue remains open until the numeric acceptance cases pass.
+Run both commands from the project root. The harness uses PGlite and selected project SQL with synthetic parties, invoices, payments and posted settlements.
+
+    node scripts/verify-aging-wallet-settlement.mjs --baseline
+    node scripts/verify-aging-wallet-settlement.mjs supabase/migrations/20261120171656_account_for_wallet_settlements_in_aging.sql
+
+The baseline reports 500 EGP and 700 SAR after the two settlements, while the invoices and control accounts show 400 EGP and 550 SAR. The candidate reports 400 and 550 on the settlement date and preserves 500 and 700 before it. The core regression also covers repeat requests, currency and tenant boundaries, and unchanged treasury movements.
+
+The change covers the two detailed aging RPCs and totals that call them. The selected SQL harness requires separate integration verification against the complete migration deployment and reporting flows. Standalone statements and historical cancellation coverage are follow-up work. See #149 for dated invoice cancellation and credit evidence.
