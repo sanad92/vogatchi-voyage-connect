@@ -19658,6 +19658,15 @@ export type Database = {
         Args: { p_subscription_id: string; p_days: number }
         Returns: string
       }
+      get_subscription_checkout_return: {
+        Args: {
+          _organization_id: string
+          _checkout_id?: string
+          _order_id?: string
+          _transaction_id?: string
+        }
+        Returns: Json
+      }
       prepare_subscription_checkout: {
         Args: {
           _billing_cycle: string

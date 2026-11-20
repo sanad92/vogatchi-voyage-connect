@@ -181,14 +181,14 @@ export const useRecordSupplierPayment = () => {
   return useMutation({
     mutationFn: async (args: {
       po_id: string; amount: number; currency?: string; exchange_rate?: number;
-      method?: string; treasury_account_id?: string | null; payment_date?: string;
+      method?: string; treasury_account_id: string; payment_date?: string;
       reference?: string | null; notes?: string | null;
     }) => {
       const payload = {
         _po_id: args.po_id, _amount: args.amount,
         _currency: args.currency ?? 'EGP', _exchange_rate: args.exchange_rate ?? 1,
         _method: args.method ?? 'bank_transfer',
-        _treasury_account_id: args.treasury_account_id ?? null,
+        _treasury_account_id: args.treasury_account_id,
         _payment_date: args.payment_date ?? new Date().toISOString().slice(0, 10),
         _reference: args.reference ?? null, _notes: args.notes ?? null,
       };

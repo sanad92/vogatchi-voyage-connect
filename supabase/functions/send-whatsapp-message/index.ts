@@ -110,13 +110,24 @@ Deno.serve(async (req) => {
     }
 
 
+    const permission = async (organizationId: string, key: string) => {
+      const { data, error } = await authClient.rpc('has_org_permission', {
+        _org_id: organizationId, _permission: key,
+      });
+      if (error) throw error;
+      return data === true;
+    };
+    const canSend = async (organizationId: string, isManager: boolean) =>
+      await permission(organizationId, 'whatsapp_view')
+        && (isManager || await permission(organizationId, 'customer_service_edit'));
+
     // ---------- resolve conversation (or create it from a customer/phone) ----------
     let conversationId: string | null =
       rawConversationId && UUID_RE.test(rawConversationId) ? rawConversationId : null;
     let conversation: any = null;
 
     if (conversationId) {
-      const { data } = await admin
+      const { data } = await authClient
         .from('whatsapp_conversations')
         .select('id, phone_number, organization_id, whatsapp_settings_id, customer_id')
         .eq('id', conversationId)
@@ -162,6 +173,9 @@ Deno.serve(async (req) => {
       if (!preMember) {
         return fail('FORBIDDEN', 'ليس لديك صلاحية على هذه المؤسسة | You do not have access to this organization', 403);
       }
+      if (!await canSend(orgId, await permission(orgId, 'whatsapp_admin'))) {
+        return fail('FORBIDDEN', 'لا تملك صلاحية إرسال رسائل واتساب', 403);
+      }
       {
         const { data: orgCustomers } = await admin.from('customers').select('id, phone')
           .eq('organization_id', orgId)
@@ -181,6 +195,10 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (existing) {
+        const { data: visible, error } = await authClient.from('whatsapp_conversations')
+          .select('id').eq('id', existing.id).eq('organization_id', orgId).maybeSingle();
+        if (error) throw error;
+        if (!visible) return fail('FORBIDDEN', 'لا تملك صلاحية الوصول لهذه المحادثة', 403);
         conversation = existing;
         if (!existing.customer_id && customerId) {
           await admin.from('whatsapp_conversations').update({ customer_id: customerId }).eq('id', existing.id);
@@ -218,13 +236,8 @@ Deno.serve(async (req) => {
       return fail('FORBIDDEN', 'ليس لديك صلاحية على هذه المؤسسة | You do not have access to this organization', 403);
     }
 
-    const permission = async (key: string) => {
-      const { data, error } = await authClient.rpc('has_org_permission', { _org_id: conversation.organization_id, _permission: key });
-      if (error) throw error;
-      return data === true;
-    };
-    const isManager = await permission('whatsapp_admin');
-    if (!await permission('whatsapp_view') || (!isManager && !await permission('customer_service_edit'))) {
+    const isManager = await permission(conversation.organization_id, 'whatsapp_admin');
+    if (!await canSend(conversation.organization_id, isManager)) {
       return fail('FORBIDDEN', 'لا تملك صلاحية إرسال رسائل واتساب', 403);
     }
     const { data: callerProfile } = await admin.from('profiles').select('linked_employee_id').eq('id', user.id).single();
@@ -301,7 +314,7 @@ Deno.serve(async (req) => {
         return fail('FORBIDDEN_MEDIA', 'الملف غير تابع لهذه الشركة | Media file does not belong to this organization', 403);
       }
       if (mediaStoragePath) {
-        const uploadedId = await uploadMediaToMeta(admin, settings, mediaStoragePath, mediaMimeType, mediaFileName);
+        const uploadedId = await uploadMediaToMeta(authClient, settings, mediaStoragePath, mediaMimeType, mediaFileName);
         mediaRef = { id: uploadedId };
       }
       if (messageType === 'image') payload.image = { ...mediaRef, caption: mediaCaption || undefined };
@@ -478,13 +491,13 @@ function normalizeVars(templateVariables: any, templateParameters: any) {
 }
 
 async function uploadMediaToMeta(
-  admin: any,
+  userClient: ReturnType<typeof createClient>,
   settings: { phone_number_id: string; access_token: string; api_version: string | null },
   storagePath: string,
   mime?: string,
   fileName?: string,
 ): Promise<string> {
-  const { data: file, error } = await admin.storage.from('whatsapp-media').download(storagePath);
+  const { data: file, error } = await userClient.storage.from('whatsapp-media').download(storagePath);
   if (error || !file) throw new WaError('MEDIA_READ_FAILED', 'تعذر قراءة الملف المرفوع | Could not read uploaded media');
 
   const contentType = mime || file.type || 'application/octet-stream';

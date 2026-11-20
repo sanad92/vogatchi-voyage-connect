@@ -77,7 +77,7 @@ serve(async (req) => {
     // 1. Queue confirmation email if customer has email
     if (customer?.email) {
       try {
-        await supabase.from('email_queue').insert({
+        const { error } = await supabase.from('email_queue').insert({
           email_type: 'booking_confirmation',
           recipient_email: customer.email,
           recipient_name: customerName,
@@ -95,6 +95,7 @@ serve(async (req) => {
           organization_id: booking.organization_id,
           status: 'pending',
         });
+        if (error) throw error;
         results.email = 'queued';
       } catch (e) {
         console.error('Email queue error:', e);
@@ -107,12 +108,24 @@ serve(async (req) => {
       try {
         const message = `✅ تأكيد حجز\n\nعزيزي ${customerName}،\nتم تأكيد حجزك رقم: ${bookingRef}\n\nشكراً لاختياركم خدماتنا.`;
 
-        await supabase.functions.invoke('send-whatsapp-message', {
+        const { data, error } = await anonClient.functions.invoke('send-whatsapp-message', {
+          headers: { Authorization: authHeader },
           body: {
+            organizationId: booking.organization_id,
+            customerId: booking.customer_id,
             to: customer.phone,
-            message,
+            messageType: 'text',
+            content: message,
+            idempotencyKey: `booking-confirmation:${bookingType}:${bookingId}`,
           }
         });
+        if (error) throw error;
+        const providerAccepted = data?.providerMessageId || (
+          data?.message?.message_id && ['sent', 'delivered', 'read'].includes(data.message.status)
+        );
+        if (data?.success !== true || !providerAccepted) {
+          throw new Error('WhatsApp provider acceptance is unconfirmed');
+        }
         results.whatsapp = 'sent';
       } catch (e) {
         console.error('WhatsApp send error:', e);
@@ -120,13 +133,11 @@ serve(async (req) => {
       }
     }
 
-    // 3. Mark voucher_sent on the booking
-    await supabase.from(tableName).update({
-      voucher_sent: true,
-      voucher_sent_date: new Date().toISOString(),
-    }).eq('id', bookingId);
-
-    return new Response(JSON.stringify({ success: true, results }), {
+    // Neither channel sends a voucher; its delivery is recorded by the voucher workflow.
+    const channels = Object.values(results);
+    const success = channels.length > 0 && channels.every(result => result !== 'failed');
+    return new Response(JSON.stringify({ success, results }), {
+      status: success ? 200 : channels.length ? 502 : 422,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
