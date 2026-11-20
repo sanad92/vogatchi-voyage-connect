@@ -1,4 +1,4 @@
-CREATE FUNCTION public.preview_booking_financial_gaps(_org_id uuid)
+CREATE OR REPLACE FUNCTION public.preview_booking_financial_gaps(_org_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
 AS $$

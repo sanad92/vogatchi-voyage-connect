@@ -24,6 +24,8 @@ try {
     CREATE FUNCTION public._org_permission_state(uuid, uuid, text)
     RETURNS TABLE(granted boolean, data_scope text) LANGUAGE sql STABLE AS
       $$ SELECT $1 = '${org}'::uuid AND $2 = auth.uid() AND $3 = 'financial_edit', 'organization'::text $$;
+    CREATE FUNCTION public.reconcile_bookings_for_org(_org_id uuid) RETURNS jsonb LANGUAGE sql AS
+      $$ SELECT '{"mode":"legacy"}'::jsonb $$;
 
     INSERT INTO public.bookings VALUES
       ('${booking}', '${org}', 900, 300, '${supplier}'),
@@ -33,6 +35,10 @@ try {
     INSERT INTO public.supplier_payments VALUES ('${invoicedBooking}', '${org}');
   `);
   await db.exec(migration);
+  await db.exec(migration);
+  await db.exec('SET ROLE anon');
+  await assert.rejects(() => db.query('SELECT public.reconcile_bookings_for_org($1)', [org]), { code: '42501' });
+  await assert.rejects(() => db.query('SELECT public.preview_booking_financial_gaps($1)', [org]), { code: '42501' });
   await db.exec('SET ROLE authenticated');
   const preview = await db.query('SELECT public.preview_booking_financial_gaps($1) AS result', [org]);
   assert.deepEqual(preview.rows[0].result, { bookings_missing_invoice: 1, bookings_missing_supplier_payment: 1 });
