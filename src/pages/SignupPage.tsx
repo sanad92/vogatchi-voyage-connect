@@ -14,6 +14,8 @@ import { getPasswordPolicyError, PASSWORD_MIN_LENGTH } from '@/lib/passwordRules
 import { getSafeInternalRedirect } from '@/lib/safeRedirect';
 import { isFreeEmail, BUSINESS_EMAIL_MESSAGE } from '@/lib/business-email';
 import { getSignupAuthError } from '@/lib/authErrorMessage';
+import { usePublicSubscriptionPlan } from '@/hooks/usePublicSubscriptionPlan';
+import { readSubscriptionReturn } from '@/lib/subscriptionOnboarding';
 
 const signupFields = ['name', 'email', 'password'] as const;
 type SignupField = typeof signupFields[number];
@@ -39,6 +41,9 @@ const SignupPage = () => {
   const { hasOrganization, loading: orgLoading } = useOrganization();
   const [searchParams] = useSearchParams();
   const requestedRedirect = getSafeInternalRedirect(searchParams.get('redirect'));
+  const selection = readSubscriptionReturn(requestedRedirect);
+  const { data: chosenPlan } = usePublicSubscriptionPlan(selection);
+  const availablePlan = chosenPlan && (selection?.billing !== 'yearly' || chosenPlan.price_yearly > 0) ? chosenPlan : null;
   const isAgency = requestedRedirect === '/pilgrimage/agency';
   const isInvitation = requestedRedirect?.startsWith('/accept-invite') ?? false;
   const loggedIn = isLoggedIn();
@@ -153,6 +158,13 @@ const SignupPage = () => {
               : 'سجّل شركتك وابدأ تجربتك المجانية لمدة 7 أيام.'}
           </p>
         </div>
+
+        {selection && availablePlan && (
+          <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+            الباقة المختارة <strong>{availablePlan.name_ar || availablePlan.name}</strong>
+            {' · '}{selection.billing === 'yearly' ? 'سنوي' : 'شهري'}
+          </p>
+        )}
 
         {confirmationEmail ? (
           <Alert role="status">

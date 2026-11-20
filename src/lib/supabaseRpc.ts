@@ -13,6 +13,7 @@ type RpcResponse<T> = {
 };
 
 type RpcQuery<T> = PromiseLike<RpcResponse<T>> & {
+  abortSignal(signal: AbortSignal): RpcQuery<T>;
   gt(column: string, value: unknown): RpcQuery<T>;
   gte(column: string, value: unknown): RpcQuery<T>;
   lt(column: string, value: unknown): RpcQuery<T>;

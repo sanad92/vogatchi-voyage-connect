@@ -16,6 +16,8 @@ import { TablePager, paginate, PLATFORM_TABLE_CONTAINER } from '@/components/pla
 import { companyProfilePath, loadPlatformContactGaps } from '@/lib/platformCompanyFollowup';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { allRows } from '@/lib/pagedRows';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 
 type OrgSort = 'newest' | 'oldest' | 'name' | 'bookings' | 'members' | 'expiry';
 
@@ -38,6 +40,7 @@ interface OrgRow {
 const PlatformAdminOrganizations = () => {
   const qc = useQueryClient();
   const { user } = useOptimizedAuth();
+  const { platformRole } = usePlatformAdmin();
   const [params, setParams] = useSearchParams();
   const missingOnly = params.get('contacts') === 'incomplete';
   const contactGaps = useQuery({
@@ -177,6 +180,19 @@ const PlatformAdminOrganizations = () => {
     });
 
   const pager = paginate(visibleOrgs ?? [], page);
+  const pageIds = pager.pageRows.map(org => org.id);
+  const selections = useQuery({
+    queryKey: ['platform-onboarding-plan-selections', user?.id, pageIds],
+    enabled: !!user && (platformRole === 'platform_owner' || platformRole === 'platform_admin') && pageIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await callUntypedRpc<{ organization_id: string; plan_name: string; billing_cycle: string }[]>(
+        'list_organization_subscription_selections', { _organization_ids: pageIds },
+      );
+      if (error) throw error;
+      return new Map((data ?? []).map(row => [row.organization_id, row]));
+    },
+    gcTime: 0,
+  });
 
   return (
     <div className="p-4 lg:p-6 space-y-6" dir="rtl">
@@ -239,6 +255,9 @@ const PlatformAdminOrganizations = () => {
             <p className="p-6 text-sm text-muted-foreground">{missingOnly && !term ? 'لا توجد شركات ببيانات تواصل ناقصة.' : 'لا توجد شركات مطابقة.'}</p>
           ) : (
             <>
+              {selections.isError && (
+                <p role="alert" className="px-4 py-2 text-sm text-muted-foreground">تعذّر تحميل اختيارات الباقات وقت التسجيل.</p>
+              )}
               <Table containerClassName={PLATFORM_TABLE_CONTAINER}>
                 <TableHeader>
                   <TableRow>
@@ -253,12 +272,19 @@ const PlatformAdminOrganizations = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pager.pageRows.map((org) => (
-                    <TableRow key={org.id}>
+                  {pager.pageRows.map((org) => {
+                    const signupSelection = selections.data?.get(org.id);
+                    return <TableRow key={org.id}>
                       <TableCell>
                         <div>
                           <Link to={companyProfilePath(org.id)} className="font-medium text-primary underline-offset-4 hover:underline" data-no-translate>{org.name}</Link>
                           <p className="text-xs text-muted-foreground">{org.email || org.slug}</p>
+                          {signupSelection && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              اختيار التسجيل <bdi className="font-medium">{signupSelection.plan_name}</bdi>
+                              {' · '}{signupSelection.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}
+                            </p>
+                          )}
                           {missingIds.has(org.id) && <Badge variant="outline" className="mt-1">بيانات التواصل ناقصة</Badge>}
                         </div>
                       </TableCell>
@@ -370,8 +396,8 @@ const PlatformAdminOrganizations = () => {
                           />
                         </div>
                       </TableCell>
-                    </TableRow>
-                  ))}
+                    </TableRow>;
+                  })}
                   {!visibleOrgs.length && (
                     <TableRow>
                       <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">

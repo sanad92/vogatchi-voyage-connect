@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { rememberSubscriptionCheckout } from '@/lib/subscriptionCheckoutReturn';
+import { usePublicSubscriptionPlan } from '@/hooks/usePublicSubscriptionPlan';
+import { readSubscriptionSelection, subscriptionCheckoutPath } from '@/lib/subscriptionOnboarding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -36,32 +38,17 @@ interface PreparedSubscriptionCheckout extends SubscriptionPriceQuote {
 
 const PaymentPage = () => {
   const [searchParams] = useSearchParams();
-  const planId = searchParams.get('plan');
-  const billing = searchParams.get('billing') === 'yearly' ? 'yearly' : 'monthly';
-  const { user } = useOptimizedAuth();
-  const { organizationId: orgId, orgRole } = useOrganization();
+  const selection = readSubscriptionSelection(searchParams);
+  const planId = selection?.planId;
+  const billing = selection?.billing ?? 'monthly';
+  const { user, loading: authLoading } = useOptimizedAuth();
+  const { organizationId: orgId, orgRole, loading: organizationLoading } = useOrganization();
   const canPurchase = orgRole === 'owner' || orgRole === 'manager';
   const [isProcessing, setIsProcessing] = useState(false);
   const [discountInput, setDiscountInput] = useState('');
   const [discountCode, setDiscountCode] = useState('');
 
-  // Fetch plan details
-  const { data: plan, isLoading, isError, refetch: refetchPlan } = useQuery({
-    queryKey: ['payment-plan', planId],
-    queryFn: async () => {
-      if (!planId) return null;
-      const { data, error } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('id', planId)
-        .eq('is_active', true)
-        .gt('price_monthly', 0)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!planId,
-  });
+  const { data: plan, isLoading, isError, refetch: refetchPlan } = usePublicSubscriptionPlan(selection);
 
   // Fetch current subscription
   const { data: currentSub } = useQuery({
@@ -220,7 +207,7 @@ const PaymentPage = () => {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || authLoading || (user && organizationLoading)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -228,7 +215,7 @@ const PaymentPage = () => {
     );
   }
 
-  if (isError || !plan) {
+  if (isError || !plan || price <= 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
         <Card className="max-w-md w-full text-center">
@@ -243,6 +230,29 @@ const PaymentPage = () => {
         </Card>
       </div>
     );
+  }
+
+  if (selection && !user) {
+    const query = new URLSearchParams({ redirect: subscriptionCheckoutPath(selection) });
+    return (
+      <div className="min-h-dvh grid place-items-center bg-background p-4" dir="rtl">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>تابع مع باقة {plan.name_ar || plan.name}</CardTitle>
+            <CardDescription>سجّل شركتك أو سجّل دخولك للمتابعة بنفس الباقة والفوترة {billing === 'yearly' ? 'السنوية' : 'الشهرية'}.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button asChild><Link to={`/signup?${query}`}>إنشاء حساب</Link></Button>
+            <Button asChild variant="outline"><Link to={`/login?${query}`}>تسجيل الدخول</Link></Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (selection && !orgId) {
+    const query = new URLSearchParams({ redirect: subscriptionCheckoutPath(selection) });
+    return <Navigate to={`/create-organization?${query}`} replace />;
   }
 
   return (
