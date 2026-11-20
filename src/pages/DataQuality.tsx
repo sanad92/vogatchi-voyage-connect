@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, ExternalLink, Wand2, Loader2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ExternalLink, Loader2, Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,15 @@ import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
 import { useDataQuality, useIncompleteBookings, IncompleteBooking } from '@/hooks/useDataQuality';
 import DuplicateCustomersPanel from '@/components/data-quality/DuplicateCustomersPanel';
 import { useOrgId } from '@/hooks/useOrgId';
-import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
+import { useQuery } from '@tanstack/react-query';
 
 type IssueFilter = 'all' | 'dates' | 'prices' | 'supplier' | 'customer' | 'negative_profit';
+type BookingFinancialGaps = {
+  bookings_missing_invoice: number;
+  bookings_missing_supplier_payment: number;
+};
 
 const issueLabel = (b: IncompleteBooking) => {
   const issues: string[] = [];
@@ -34,25 +38,17 @@ const DataQualityPage: React.FC = () => {
   const [filter, setFilter] = useState<IssueFilter>('all');
   const [q, setQ] = useState('');
   const orgId = useOrgId();
-  const queryClient = useQueryClient();
-  const [reconciling, setReconciling] = useState(false);
-
-  const runReconcile = async () => {
-    if (!orgId) return;
-    setReconciling(true);
-    try {
-      const { data, error } = await (supabase as any).rpc('reconcile_bookings_for_org', { _org_id: orgId });
-      if (error) throw error;
-      const inv = data?.invoices_created ?? 0;
-      const pay = data?.payments_created ?? 0;
-      toast.success(`تمت التسوية — ${inv} فاتورة و ${pay} سداد مورد`);
-      queryClient.invalidateQueries();
-    } catch (e: any) {
-      toast.error(e.message || 'فشل التسوية');
-    } finally {
-      setReconciling(false);
-    }
-  };
+  const { hasPermission, getPermissionScope } = useSupabasePermissions();
+  const canPreviewFinancialGaps = hasPermission('financial_edit') && getPermissionScope('financial_edit') === 'organization';
+  const financialGaps = useQuery({
+    queryKey: ['booking-financial-gaps', orgId],
+    enabled: false,
+    queryFn: async () => {
+      const { data, error } = await callUntypedRpc<BookingFinancialGaps>('preview_booking_financial_gaps', { _org_id: orgId });
+      if (error || !data) throw new Error(error?.message ?? 'تعذر عرض المعاينة المالية');
+      return data;
+    },
+  });
 
   const filtered = useMemo(() => {
     return bookings.filter((b) => {
@@ -103,12 +99,28 @@ const DataQualityPage: React.FC = () => {
               <CheckCircle2 className="h-3.5 w-3.5" /> كل البيانات مكتملة
             </Badge>
           )}
-          <Button onClick={runReconcile} disabled={reconciling || !orgId} className="gap-2">
-            {reconciling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            تسوية تلقائية للحجوزات (فواتير + سداد موردين)
-          </Button>
+          {canPreviewFinancialGaps && (
+            <Button onClick={() => void financialGaps.refetch()} disabled={financialGaps.isFetching || !orgId} className="gap-2">
+              {financialGaps.isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              معاينة النواقص المالية للحجوزات
+            </Button>
+          )}
         </div>
       </header>
+
+      {canPreviewFinancialGaps && financialGaps.isError && (
+        <p role="alert" className="text-sm text-destructive">{financialGaps.error.message}</p>
+      )}
+      {canPreviewFinancialGaps && !financialGaps.isError && financialGaps.data && (
+        <Card className="space-y-2 p-4" aria-live="polite">
+          <h2 className="font-medium">نتيجة المعاينة المالية</h2>
+          <p className="text-sm">حجوزات بدون فاتورة: {financialGaps.data.bookings_missing_invoice}</p>
+          <p className="text-sm">حجوزات بتكلفة مورد بدون سجل سداد: {financialGaps.data.bookings_missing_supplier_payment}</p>
+          <p className="text-sm text-muted-foreground">
+            راجع مستندات الحجز، ثم استخدم شاشة الفواتير أو أوامر الدفع لتسجيل أي إجراء مالي مثبت.
+          </p>
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {[
