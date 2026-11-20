@@ -19461,6 +19461,16 @@ export type Database = {
           target_table: string
         }[]
       }
+      get_subscription_checkout_status: {
+        Args: { p_checkout_id: string }
+        Returns: {
+          status: string
+          amount_cents: number
+          currency: string
+          transaction_id: string | null
+          activated_at: string | null
+        }[]
+      }
       platform_billing_followup: {
         Args: never
         Returns: {

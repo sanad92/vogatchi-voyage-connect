@@ -65,6 +65,28 @@ export const useTransportBookings = () => {
     enabled: !!orgId,
   });
 
+  const notifyBookingConfirmation = async (bookingId: string) => {
+    try {
+      const { data: confirmation, error: confirmationError } = await supabase.functions.invoke(
+        'send-booking-confirmation',
+        { body: { bookingId, bookingType: 'transport' } },
+      );
+      if (confirmationError || !confirmation?.status || confirmation.status === 'failed') {
+        throw confirmationError ?? new Error('Booking confirmation was unsuccessful');
+      }
+      if (confirmation.status === 'partial') {
+        toast({ title: 'تأكيد الحجز', description: 'تعذّر التأكيد بإحدى طرق الإرسال. راجع حالة إشعارات الحجز.' });
+      } else if (confirmation.status === 'pending') {
+        toast({ title: 'تأكيد الحجز', description: 'رسالة التأكيد قيد المعالجة.' });
+      } else if (confirmation.status === 'skipped') {
+        toast({ title: 'تأكيد الحجز', description: 'لا توجد وسيلة اتصال متاحة لإرسال التأكيد.' });
+      }
+    } catch (e) {
+      console.warn('Confirmation send failed (non-blocking):', e);
+      toast({ title: 'تأكيد الحجز', description: 'تم حفظ الحجز وتعذّر إرسال التأكيد.' });
+    }
+  };
+
   const addTransportBookingMutation = useMutation({
     mutationFn: async (booking: Omit<TransportBooking, 'id' | 'created_at' | 'updated_at' | 'booking_reference'>) => {
       const { data, error } = await supabase.from('transport_bookings')
@@ -72,21 +94,12 @@ export const useTransportBookings = () => {
         .select().single();
       if (error) throw error;
       await syncParent();
-
-      // Trigger confirmation notification
-      try {
-        await supabase.functions.invoke('send-booking-confirmation', {
-          body: { bookingId: data.id, bookingType: 'transport' }
-        });
-      } catch (e) {
-        console.warn('Confirmation send failed (non-blocking):', e);
-      }
-
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transport-bookings'] });
+    onSuccess: ({ id }) => {
+      void queryClient.invalidateQueries({ queryKey: ['transport-bookings-unified', orgId] });
       toast({ title: "تم الحفظ بنجاح", description: "تم إضافة حجز النقل بنجاح" });
+      void notifyBookingConfirmation(id);
     },
     onError: (error) => {
       console.error('Error adding transport booking:', error);

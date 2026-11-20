@@ -4,6 +4,14 @@ import { useQuery } from '@tanstack/react-query';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
 
 const confirmationFormat = /^(?:[0-9a-f]{32}|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$/i;
+const statusMessages = {
+  received: 'تم تسجيل طلب حذف البيانات وهو بانتظار المراجعة.',
+  in_review: 'طلب حذف البيانات قيد المراجعة.',
+  verification_required: 'الطلب بانتظار التحقق من هوية صاحب البيانات ونطاق الطلب. تواصل معنا بالبريد واذكر رمز التأكيد.',
+  completed: 'اكتملت معالجة طلب حذف البيانات.',
+};
+type DeletionStatus = keyof typeof statusMessages;
+
 const DataDeletion: React.FC = () => {
   const [params] = useSearchParams();
   const code = params.get('code');
@@ -12,11 +20,10 @@ const DataDeletion: React.FC = () => {
     queryKey: ['meta-deletion-confirmation', code],
     enabled: validCode,
     retry: false,
-    gcTime: 0,
     queryFn: async () => {
-      const { data, error } = await callUntypedRpc<boolean>('verify_meta_deletion_confirmation', { _confirmation_code: code });
+      const { data, error } = await callUntypedRpc<DeletionStatus | null>('get_meta_deletion_request_status', { _confirmation_code: code });
       if (error) throw error;
-      return data === true;
+      return data && Object.prototype.hasOwnProperty.call(statusMessages, data) ? data : null;
     },
   });
 
@@ -27,7 +34,7 @@ const DataDeletion: React.FC = () => {
 
         {code && confirmation.isSuccess && confirmation.data ? (
           <div className="mb-6 rounded-md border bg-card p-4 text-sm" role="status">
-            تم تسجيل طلب حذف البيانات وهو بانتظار المراجعة.
+            {statusMessages[confirmation.data]}
             <div className="mt-2 break-all font-mono text-xs" dir="ltr">{code}</div>
           </div>
         ) : code && (

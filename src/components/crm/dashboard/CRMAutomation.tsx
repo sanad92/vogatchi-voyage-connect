@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Zap, CheckCircle2, XCircle, Clock } from 'lucide-react';
-import { useAutomationRules, useAutomationLogs, TRIGGER_LABELS, type TriggerType } from '@/hooks/useAutomationRules';
+import { useAutomationRules, useAutomationLogs, supportsCustomAutomation, TRIGGER_LABELS, type TriggerType } from '@/hooks/useAutomationRules';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -11,7 +11,7 @@ const CRMAutomation = () => {
   const { data: logs = [] } = useAutomationLogs();
   const navigate = useNavigate();
 
-  const activeRules = rules.filter(r => r.is_active).length;
+  const activeRules = rules.filter(r => r.is_active && supportsCustomAutomation(r)).length;
   const completedLogs = (logs as any[]).filter((l: any) => l.status === 'completed').length;
   const failedLogs = (logs as any[]).filter((l: any) => l.status === 'failed').length;
   const recentLogs = (logs as any[]).slice(0, 5);

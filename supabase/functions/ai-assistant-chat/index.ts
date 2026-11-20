@@ -2,6 +2,7 @@
 // AI Assistant chat endpoint. Non-streaming, tool-calling loop.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/ai-gateway.ts";
+import { getFinancialSummary } from "./financial-summary.ts";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const DEFAULT_MODEL = "google/gemini-2.5-flash";
@@ -21,7 +22,7 @@ const tools = [
     type: "function",
     function: {
       name: "get_financial_summary",
-      description: "ملخص مالي للمؤسسة خلال فترة: إجمالي المبيعات، تكلفة الموردين، الربح، المدفوعات المستلمة، المدفوعات للموردين، المصروفات، الذمم المدينة والدائنة.",
+      description: "ملخص مالي للمؤسسة خلال فترة: قيمة الحجوزات وتكلفتها، التحصيل والمدفوعات والمصروفات المعتمدة أو المسددة، والأرصدة الحالية للفواتير المستحقة، موزعة حسب العملة.",
       parameters: {
         type: "object",
         properties: {
@@ -120,36 +121,7 @@ async function runTool(name: string, args: any, ctx: { supabase: any; orgId: str
 
   try {
     if (name === "get_financial_summary") {
-      const [bk, pay, sup, exp, inv] = await Promise.all([
-        supabase.from("bookings").select("id, selling_price, cost_price, status, created_at")
-          .eq("organization_id", orgId).gte("created_at", from).lte("created_at", to + "T23:59:59"),
-        supabase.from("payment_transactions").select("amount, status, created_at")
-          .eq("organization_id", orgId).eq("status", "completed").gte("created_at", from).lte("created_at", to + "T23:59:59"),
-        supabase.from("supplier_payments").select("amount, status, payment_date")
-          .eq("organization_id", orgId).gte("payment_date", from).lte("payment_date", to),
-        supabase.from("expense_transactions").select("amount, expense_date")
-          .eq("organization_id", orgId).gte("expense_date", from).lte("expense_date", to),
-        supabase.from("invoices").select("final_amount, total_paid_amount, status")
-          .eq("organization_id", orgId),
-      ]);
-      const sum = (arr: any[], k: string) => (arr || []).reduce((a, b) => a + Number(b[k] || 0), 0);
-      const sales = sum(bk.data || [], "selling_price");
-      const cost = sum(bk.data || [], "cost_price");
-      const collected = sum(pay.data || [], "amount");
-      const paidToSuppliers = sum(sup.data || [], "amount");
-      const expenses = sum(exp.data || [], "amount");
-      const ar = (inv.data || []).reduce((a: number, b: any) =>
-        a + Math.max(0, Number(b.final_amount || 0) - Number(b.total_paid_amount || 0)), 0);
-      return {
-        period: { from, to },
-        sales, supplier_cost: cost, gross_profit: sales - cost,
-        collected_from_customers: collected,
-        paid_to_suppliers: paidToSuppliers,
-        expenses,
-        net_cash_flow: collected - paidToSuppliers - expenses,
-        outstanding_receivables: ar,
-        bookings_count: (bk.data || []).length,
-      };
+      return await getFinancialSummary(supabase, orgId, from, to);
     }
 
     if (name === "search_bookings") {
@@ -343,7 +315,7 @@ Deno.serve(async (req) => {
 - استخدم الأدوات المتاحة لجلب البيانات الحقيقية قبل الإجابة على أي سؤال يتعلق بأرقام أو حالة النظام. لا تخترع أرقامًا أبدًا.
 - لا تكشف عن SQL أو أسماء جداول داخلية.
 - ردودك بالعربية، مركزة، بتنسيق Markdown (نقاط، جداول عند الحاجة).
-- عند غياب البيانات، قل ذلك صراحة واقترح الخطوة التالية.
+- عند غياب البيانات أو فشل أداة، قل ذلك صراحة. اذكر عملة كل رقم مالي، ولا تجمع عملات مختلفة. أرصدة الفواتير في الملخص حالية.
 - التاريخ اليوم: ${today()}.
 - المؤسسة: ${organization_id}.`;
     const safeContext = context && typeof context === "object"

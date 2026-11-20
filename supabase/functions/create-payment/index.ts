@@ -42,11 +42,13 @@ async function createIntention(
   integrationIds: number[],
   billingData: BillingData,
   expirationSeconds: number,
+  checkoutId: string,
 ): Promise<{ clientSecret: string; orderId: number }> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const siteUrl = Deno.env.get("SITE_URL") || "https://safarerp.com";
   const response = await fetch("https://accept.paymob.com/v1/intention/", {
     method: "POST",
+    signal: AbortSignal.timeout(12_000),
     headers: { "Content-Type": "application/json", Authorization: `Token ${secretKey}` },
     body: JSON.stringify({
       amount: amountCents,
@@ -69,15 +71,14 @@ async function createIntention(
       special_reference: specialReference,
       expiration: expirationSeconds,
       notification_url: `${supabaseUrl}/functions/v1/paymob-webhook`,
-      redirection_url: `${siteUrl}/payment-success`,
+      redirection_url: new URL(`/payment-success/${checkoutId}`, siteUrl).href,
     }),
   });
-  const text = await response.text();
   if (!response.ok) {
-    console.error("Paymob intention failed", response.status, text.slice(0, 500));
+    console.error("Paymob intention failed", response.status);
     throw new Error("Paymob intention creation failed");
   }
-  const data = JSON.parse(text);
+  const data = await response.json();
   const orderId = Number(data.intention_order_id);
   if (!data.client_secret || !Number.isSafeInteger(orderId) || orderId <= 0) {
     throw new Error("Invalid Paymob intention response");
@@ -201,89 +202,73 @@ Deno.serve(async (request) => {
       country: "EG",
     };
 
-    const { data: preparedCheckout } = body.checkout_session_id
-      ? await admin
+    const checkoutId = body.checkout_session_id ?? crypto.randomUUID();
+    const checkoutQuery = body.checkout_session_id
+      ? admin
         .from("payment_checkout_sessions")
-        .select("*")
-        .eq("id", body.checkout_session_id)
+        .select("id,amount_cents,merchant_order_id,expires_at")
+        .eq("id", checkoutId)
         .eq("organization_id", body.organization_id)
         .eq("plan_id", plan.id)
         .eq("billing_cycle", body.billing_cycle)
         .eq("created_by", user.id)
-        .eq("status", "pending")
-        .gte("expires_at", new Date().toISOString())
         .maybeSingle()
-      : { data: null };
-    if (body.checkout_session_id && !preparedCheckout) {
-      return new Response(JSON.stringify({ error: "جلسة الدفع غير صالحة أو منتهية" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const amountCents = preparedCheckout ? Number(preparedCheckout.amount_cents) : planAmountCents;
-    if (!Number.isSafeInteger(amountCents) || amountCents < 100) {
-      throw new Error("Invalid prepared checkout amount");
-    }
-
-    const attempt = crypto.randomUUID().slice(0, 8);
-    // Paymob requires a unique special_reference per intention, so retries get a fresh reference.
-    const merchantOrderId = preparedCheckout && !preparedCheckout.paymob_order_id
-      ? preparedCheckout.merchant_order_id
-      : `org_${body.organization_id}_plan_${plan.id}_${body.billing_cycle}_${attempt}`;
-    const itemName = `SafarERP ${plan.name_ar || plan.name} - ${body.billing_cycle === "yearly" ? "yearly" : "monthly"}`;
-
-    const expirationSeconds = preparedCheckout
-      ? Math.min(3600, Math.floor((Date.parse(preparedCheckout.expires_at) - Date.now()) / 1000))
-      : 3600;
-    if (expirationSeconds < 1) throw new Error("Checkout expired");
-
-    const { clientSecret, orderId } = await createIntention(
-      secretKey, amountCents, merchantOrderId, itemName, integrationIds, billingData, expirationSeconds,
-    );
-
-    const checkoutResult = preparedCheckout
-      ? await admin
-        .from("payment_checkout_sessions")
-        .update({
-          paymob_order_id: String(orderId),
-          merchant_order_id: merchantOrderId,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", preparedCheckout.id)
-        .eq("status", "pending")
-        .select("id")
-        .single()
-      : await admin
+      : admin
         .from("payment_checkout_sessions")
         .insert({
+          id: checkoutId,
           organization_id: body.organization_id,
           plan_id: plan.id,
           billing_cycle: body.billing_cycle,
-          amount_cents: amountCents,
+          amount_cents: planAmountCents,
           currency: "EGP",
-          merchant_order_id: merchantOrderId,
-          paymob_order_id: String(orderId),
+          merchant_order_id: `org_${body.organization_id}_plan_${plan.id}_${body.billing_cycle}_${checkoutId.slice(0, 8)}`,
           created_by: user.id,
         })
-        .select("id")
+        .select("id,amount_cents,merchant_order_id,expires_at")
         .single();
-    const { data: checkout, error: checkoutError } = checkoutResult;
-    if (checkoutError || !checkout) {
-      console.error("Checkout session save failed", checkoutError);
-      throw new Error("Checkout session could not be saved");
+    const { data: checkout, error: checkoutError } = await checkoutQuery;
+    if (checkoutError) throw checkoutError;
+    if (!checkout) {
+      return Response.json({ error: "جلسة الدفع غير صالحة أو منتهية" }, { status: 400, headers: corsHeaders });
+    }
+    const amountCents = Number(checkout.amount_cents);
+    if (!Number.isSafeInteger(amountCents) || amountCents < 100) throw new Error("Invalid checkout amount");
+
+    const { data: intention, error: claimError } = await admin.rpc("claim_paymob_checkout_intention", {
+      p_checkout_id: checkoutId,
+    });
+    if (claimError) throw claimError;
+    let clientSecret: string;
+    let orderId: number;
+    if (intention?.state === "ready") {
+      clientSecret = intention.client_secret;
+      orderId = Number(intention.order_id);
+    } else if (intention?.state === "claimed") {
+      const expirationSeconds = Math.min(3600, Math.floor((Date.parse(checkout.expires_at) - Date.now()) / 1000));
+      if (expirationSeconds < 1) throw new Error("Checkout expired");
+      const itemName = `SafarERP ${plan.name_ar || plan.name} - ${body.billing_cycle}`;
+      const result = await createIntention(secretKey, amountCents, checkout.merchant_order_id,
+        itemName, integrationIds, billingData, expirationSeconds, checkoutId);
+      clientSecret = result.clientSecret;
+      orderId = result.orderId;
+      const { error: completionError } = await admin.rpc("complete_paymob_checkout_intention", {
+        p_checkout_id: checkoutId,
+        p_paymob_order_id: String(orderId),
+        p_client_secret: clientSecret,
+      });
+      if (completionError) throw completionError;
+    } else {
+      return Response.json({ error: "جلسة الدفع بدأت بالفعل أو أُغلقت" }, { status: 409, headers: corsHeaders });
     }
 
     const iframeUrl = `https://accept.paymob.com/unifiedcheckout/?publicKey=${encodeURIComponent(publicKey)}&clientSecret=${encodeURIComponent(clientSecret)}`;
-
-    return new Response(JSON.stringify({
+    return Response.json({
       success: true,
       iframe_url: iframeUrl,
       order_id: orderId,
-      checkout_id: checkout.id,
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+      checkout_id: checkoutId,
+    }, { headers: corsHeaders });
   } catch (error: unknown) {
     console.error("Subscription checkout failed:", (error as Error).message);
     return new Response(JSON.stringify({ error: "فشل في بدء عملية الدفع" }), {

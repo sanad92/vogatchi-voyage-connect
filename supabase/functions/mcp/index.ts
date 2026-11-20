@@ -7,10 +7,11 @@ import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@3.5.0";
 
 // src/lib/mcp/tools/search-customers.ts
 import { defineTool } from "npm:@lovable.dev/mcp-js@3.5.0";
-import { z } from "npm:zod@^4.6.7";
+import { z as z2 } from "npm:zod@^4.6.7";
 
 // src/lib/mcp/supabase.ts
 import { createClient } from "npm:@supabase/supabase-js@2.95.3";
+import { z } from "npm:zod@^4.6.7";
 function runtimeEnv(name) {
   const runtime = globalThis;
   return runtime.Deno?.env?.get?.(name) ?? runtime.process?.env?.[name];
@@ -72,23 +73,43 @@ function rows(data) {
     structuredContent: { data: JSON.parse(JSON.stringify(data ?? [])) }
   };
 }
+var organizationInput = z.string().uuid().describe("Organization ID returned by list_organizations. Required for accounts with more than one organization.").optional();
+function activeMemberships(supabase, userId) {
+  return supabase.from("organization_members").select("organization_id, organizations!inner(name)").eq("user_id", userId).eq("is_active", true).eq("organizations.is_active", true);
+}
+async function scopedOrganization(ctx, organizationId) {
+  const userId = ctx.getUserId();
+  if (!ctx.isAuthenticated() || !userId) return { error: unauthenticated() };
+  const supabase = supabaseForUser(ctx);
+  const memberships = activeMemberships(supabase, userId);
+  if (organizationId) memberships.eq("organization_id", organizationId);
+  const { data, error } = await memberships.limit(2);
+  if (error) return { error: failure("Could not check organization access.") };
+  if (!data.length) return { error: failure("Organization is unavailable to this account. Use list_organizations.") };
+  if (data.length > 1) return { error: failure("Choose an organization with list_organizations and pass its organization_id.") };
+  return { supabase, organizationId: data[0].organization_id };
+}
 
 // src/lib/mcp/tools/search-customers.ts
 var search_customers_default = defineTool({
   name: "search_customers",
   title: "Search customers",
-  description: "Search the travel agency's customers by name, email, or phone.",
+  description: "Find customer records in one organization by name, email, or phone fragment.",
   inputSchema: {
-    query: z.string().trim().describe("Name, email, or phone fragment to search for."),
-    limit: z.number().int().describe("Maximum number of customers to return (default 20).").optional()
+    organization_id: organizationInput,
+    query: z2.string().trim().min(2).max(120).describe("Name, email, or phone fragment to search for."),
+    limit: z2.number().int().describe("Maximum number of customers to return (default 20).").optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ query, limit }, ctx) => {
-    if (!ctx.isAuthenticated()) return unauthenticated();
+  handler: async ({ organization_id, query, limit }, ctx) => {
+    const scope = await scopedOrganization(ctx, organization_id);
+    if (scope.error) return scope.error;
+    const { supabase, organizationId } = scope;
     const take = Math.min(Math.max(limit ?? 20, 1), 50);
-    const supabase = supabaseForUser(ctx);
-    const like = `%${query.replace(/[%,]/g, "")}%`;
-    const { data, error } = await supabase.from("customers").select("id, name, email, phone, nationality, total_bookings, total_spent, last_booking_date").or(`name.ilike.${like},email.ilike.${like},phone.ilike.${like}`).order("last_booking_date", { ascending: false, nullsFirst: false }).limit(take);
+    const term = query.replace(/[^\p{L}\p{M}\p{N}\s@.+-]/gu, "").trim();
+    if (term.length < 2) return failure("Enter at least two search characters.");
+    const like = `%${term}%`;
+    const { data, error } = await supabase.from("customers").select("id, name, last_booking_date").eq("organization_id", organizationId).or(`name.ilike.${like},email.ilike.${like},phone.ilike.${like}`).order("last_booking_date", { ascending: false, nullsFirst: false }).limit(take);
     if (error) return failure(error.message);
     return rows(data);
   }
@@ -96,25 +117,27 @@ var search_customers_default = defineTool({
 
 // src/lib/mcp/tools/list-bookings.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@3.5.0";
-import { z as z2 } from "npm:zod@^4.6.7";
+import { z as z3 } from "npm:zod@^4.6.7";
 var list_bookings_default = defineTool2({
   name: "list_bookings",
   title: "List bookings",
   description: "List bookings for the signed-in user's organization, optionally filtered by status or travel start date range.",
   inputSchema: {
-    status: z2.string().trim().describe("Booking status filter, e.g. pending, confirmed, cancelled.").optional(),
-    start_from: z2.string().trim().describe("Only bookings starting on or after this ISO date (YYYY-MM-DD).").optional(),
-    start_to: z2.string().trim().describe("Only bookings starting on or before this ISO date (YYYY-MM-DD).").optional(),
-    limit: z2.number().int().describe("Maximum number of bookings to return (default 20).").optional()
+    organization_id: organizationInput,
+    status: z3.string().trim().describe("Booking status filter, e.g. pending, confirmed, cancelled.").optional(),
+    start_from: z3.string().trim().describe("Only bookings starting on or after this ISO date (YYYY-MM-DD).").optional(),
+    start_to: z3.string().trim().describe("Only bookings starting on or before this ISO date (YYYY-MM-DD).").optional(),
+    limit: z3.number().int().describe("Maximum number of bookings to return (default 20).").optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ status, start_from, start_to, limit }, ctx) => {
-    if (!ctx.isAuthenticated()) return unauthenticated();
+  handler: async ({ organization_id, status, start_from, start_to, limit }, ctx) => {
+    const scope = await scopedOrganization(ctx, organization_id);
+    if (scope.error) return scope.error;
+    const { supabase, organizationId } = scope;
     const take = Math.min(Math.max(limit ?? 20, 1), 50);
-    const supabase = supabaseForUser(ctx);
     let query = supabase.from("bookings").select(
-      "id, booking_number, booking_type, status, workflow_stage, customer_name, supplier_name, start_date, end_date, selling_price, currency, created_at"
-    ).order("start_date", { ascending: true, nullsFirst: false }).limit(take);
+      "id, booking_number, booking_type, status, workflow_stage, customer_name, start_date, end_date, selling_price, currency, created_at"
+    ).eq("organization_id", organizationId).order("start_date", { ascending: true, nullsFirst: false }).limit(take);
     if (status) query = query.eq("status", status);
     if (start_from) query = query.gte("start_date", start_from);
     if (start_to) query = query.lte("start_date", start_to);
@@ -126,23 +149,25 @@ var list_bookings_default = defineTool2({
 
 // src/lib/mcp/tools/get-booking.ts
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@3.5.0";
-import { z as z3 } from "npm:zod@^4.6.7";
+import { z as z4 } from "npm:zod@^4.6.7";
 var get_booking_default = defineTool3({
   name: "get_booking",
   title: "Get booking",
   description: "Fetch one booking by its booking number (e.g. BK-123456) or its id.",
   inputSchema: {
-    booking_number: z3.string().trim().describe("Booking number such as BK-1783866510972.").optional(),
-    id: z3.string().trim().describe("Booking UUID.").optional()
+    organization_id: organizationInput,
+    booking_number: z4.string().trim().describe("Booking number such as BK-1783866510972.").optional(),
+    id: z4.string().trim().describe("Booking UUID.").optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ booking_number, id }, ctx) => {
-    if (!ctx.isAuthenticated()) return unauthenticated();
+  handler: async ({ organization_id, booking_number, id }, ctx) => {
+    const scope = await scopedOrganization(ctx, organization_id);
+    if (scope.error) return scope.error;
+    const { supabase, organizationId } = scope;
     if (!booking_number && !id) return failure("Provide either booking_number or id.");
-    const supabase = supabaseForUser(ctx);
     let query = supabase.from("bookings").select(
-      "id, booking_number, booking_type, status, workflow_stage, customer_id, customer_name, supplier_name, start_date, end_date, selling_price, cost_price, profit, currency, payment_policy, deposit_percent, notes, created_at, updated_at"
-    ).limit(1);
+      "id, booking_number, booking_type, status, workflow_stage, customer_name, start_date, end_date, selling_price, currency, created_at, updated_at"
+    ).eq("organization_id", organizationId).limit(1);
     query = id ? query.eq("id", id) : query.eq("booking_number", booking_number);
     const { data, error } = await query.maybeSingle();
     if (error) return failure(error.message);
@@ -153,24 +178,26 @@ var get_booking_default = defineTool3({
 
 // src/lib/mcp/tools/list-leads.ts
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@3.5.0";
-import { z as z4 } from "npm:zod@^4.6.7";
+import { z as z5 } from "npm:zod@^4.6.7";
 var list_leads_default = defineTool4({
   name: "list_leads",
   title: "List sales leads",
   description: "List sales pipeline leads (SOP leads) for the signed-in user's organization, newest arrivals first.",
   inputSchema: {
-    stage: z4.string().trim().describe("Pipeline stage filter, e.g. new, assigned, qualified, pricing_requested, quoted, lost.").optional(),
-    destination: z4.string().trim().describe("Filter by destination fragment.").optional(),
-    limit: z4.number().int().describe("Maximum number of leads to return (default 20).").optional()
+    organization_id: organizationInput,
+    stage: z5.string().trim().describe("Pipeline stage filter, e.g. new, assigned, qualified, pricing_requested, quoted, lost.").optional(),
+    destination: z5.string().trim().describe("Filter by destination fragment.").optional(),
+    limit: z5.number().int().describe("Maximum number of leads to return (default 20).").optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ stage, destination, limit }, ctx) => {
-    if (!ctx.isAuthenticated()) return unauthenticated();
+  handler: async ({ organization_id, stage, destination, limit }, ctx) => {
+    const scope = await scopedOrganization(ctx, organization_id);
+    if (scope.error) return scope.error;
+    const { supabase, organizationId } = scope;
     const take = Math.min(Math.max(limit ?? 20, 1), 50);
-    const supabase = supabaseForUser(ctx);
     let query = supabase.from("sop_leads").select(
-      "id, lead_number, stage, contact_name, contact_phone, contact_email, destination, city, check_in, check_out, adults, children_count, budget_amount, budget_currency, lead_source, current_owner_id, arrived_at"
-    ).order("arrived_at", { ascending: false }).limit(take);
+      "id, lead_number, stage, contact_name, destination, city, check_in, check_out, adults, children_count, lead_source, arrived_at"
+    ).eq("organization_id", organizationId).order("arrived_at", { ascending: false }).limit(take);
     if (stage) query = query.eq("stage", stage);
     if (destination) query = query.ilike("destination", `%${destination.replace(/[%,]/g, "")}%`);
     const { data, error } = await query;
@@ -181,29 +208,51 @@ var list_leads_default = defineTool4({
 
 // src/lib/mcp/tools/list-quotes.ts
 import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@3.5.0";
-import { z as z5 } from "npm:zod@^4.6.7";
+import { z as z6 } from "npm:zod@^4.6.7";
 var list_quotes_default = defineTool5({
   name: "list_quotes",
   title: "List quotes",
   description: "List customer quotations for the signed-in user's organization, newest first.",
   inputSchema: {
-    status: z5.string().trim().describe("Quote status filter, e.g. draft, sent, accepted, rejected.").optional(),
-    customer_name: z5.string().trim().describe("Filter by customer name fragment.").optional(),
-    limit: z5.number().int().describe("Maximum number of quotes to return (default 20).").optional()
+    organization_id: organizationInput,
+    status: z6.string().trim().describe("Quote status filter, e.g. draft, sent, accepted, rejected.").optional(),
+    customer_name: z6.string().trim().describe("Filter by customer name fragment.").optional(),
+    limit: z6.number().int().describe("Maximum number of quotes to return (default 20).").optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ status, customer_name, limit }, ctx) => {
-    if (!ctx.isAuthenticated()) return unauthenticated();
+  handler: async ({ organization_id, status, customer_name, limit }, ctx) => {
+    const scope = await scopedOrganization(ctx, organization_id);
+    if (scope.error) return scope.error;
+    const { supabase, organizationId } = scope;
     const take = Math.min(Math.max(limit ?? 20, 1), 50);
-    const supabase = supabaseForUser(ctx);
     let query = supabase.from("quotes").select(
       "id, quote_number, status, customer_name, destination, travel_date, return_date, number_of_travelers, total_amount, valid_until, created_at"
-    ).order("created_at", { ascending: false }).limit(take);
+    ).eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(take);
     if (status) query = query.eq("status", status);
     if (customer_name) query = query.ilike("customer_name", `%${customer_name.replace(/[%,]/g, "")}%`);
     const { data, error } = await query;
     if (error) return failure(error.message);
     return rows(data);
+  }
+});
+
+// src/lib/mcp/tools/list-organizations.ts
+import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@3.5.0";
+import { z as z7 } from "npm:zod@^4.6.7";
+var list_organizations_default = defineTool6({
+  name: "list_organizations",
+  title: "List organizations",
+  description: "Find active organizations available to the signed-in user and their organization IDs.",
+  inputSchema: {
+    offset: z7.number().int().min(0).optional().describe("Number of organizations to skip (pages contain up to 50).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ offset = 0 }, ctx) => {
+    const userId = ctx.getUserId();
+    if (!ctx.isAuthenticated() || !userId) return unauthenticated();
+    const { data, error } = await activeMemberships(supabaseForUser(ctx), userId).order("organization_id").range(offset, offset + 49);
+    if (error) return failure("Could not list your organizations.");
+    return rows(data.map(({ organization_id, organizations }) => ({ organization_id, name: organizations.name })));
   }
 });
 
@@ -213,12 +262,12 @@ var mcp_default = defineMcp({
   name: "vogatchi-voyage-connect",
   title: "vogatchi-voyage-connect",
   version: "0.1.0",
-  instructions: "Read-only tools for the Vogatchi travel concierge platform. Use search_customers to find a client, list_leads for the sales pipeline, list_quotes for quotations, and list_bookings / get_booking for reservations. All data is scoped to the signed-in user's organization.",
+  instructions: "Read-only tools for the Vogatchi travel concierge platform. Use search_customers to find a client, list_leads for the sales pipeline, list_quotes for quotations, and list_bookings / get_booking for reservations. Use list_organizations to find the user's active organizations and pass organization_id when more than one is available. Each query is limited to one organization.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
   }),
-  tools: [search_customers_default, list_leads_default, list_quotes_default, list_bookings_default, get_booking_default]
+  tools: [list_organizations_default, search_customers_default, list_leads_default, list_quotes_default, list_bookings_default, get_booking_default]
 });
 
 // lovable-mcp-supabase-entry.ts

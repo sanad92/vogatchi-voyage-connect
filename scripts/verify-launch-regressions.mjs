@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import ts from 'typescript';
+import * as React from 'react';
+import * as jsxRuntime from 'react/jsx-runtime';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 async function load(path, imports = {}) {
   const source = await readFile(new URL(path, import.meta.url), 'utf8');
@@ -9,7 +12,7 @@ async function load(path, imports = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
   }).outputText;
   const exports = {};
-  vm.runInNewContext(code, { exports, require: name => {
+  vm.runInNewContext(code, { exports, URL, URLSearchParams, require: name => {
     assert.ok(name in imports, `Unexpected import ${name}`);
     return imports[name];
   } });
@@ -32,8 +35,7 @@ const finance = await load('../src/hooks/finance/useFinanceRpcs.ts', {
   '@/integrations/supabase/client': { supabase: {} },
   '@/hooks/useOrgId': { useOrgId: () => org },
   '@/hooks/use-toast': { toast: () => {} },
-  '@/lib/supabaseRpc': {},
-  react: {},
+  '@/lib/supabaseRpc': {}, react: React,
 });
 for (const name of ['useCustomerLedgerRpc', 'useSupplierLedgerRpc']) {
   org = 'org-a'; const first = finance[name]('record-1');
@@ -72,4 +74,71 @@ const { useInvoiceStats } = await load('../src/hooks/invoices/useInvoiceStats.ts
 const stats = useInvoiceStats([{ payment_status: 'paid' }, { payment_status: 'partial' }, { payment_status: 'unpaid' }]);
 assert.equal(stats.paidInvoices, 1, "database 'paid' status counts as fully paid");
 assert.equal(stats.partiallyPaidInvoices, 1, "database 'partial' status counts as partly paid");
-console.log('Launch regressions passed: real financial helpers, company-isolated ledger caches and quote-booking reads.');
+
+const redirects = await load('../src/lib/safeRedirect.ts');
+const plan = '10000000-0000-4000-8000-000000000001';
+const checkout = `/payment?plan=${plan}&billing=yearly`;
+assert.equal(redirects.getSubscriptionCheckoutContinuation(`${checkout}&amount=1&booking_id=ignored#fragment`), checkout);
+assert.equal(redirects.getSubscriptionCheckoutContinuation(`/payment?plan=${plan}`), `/payment?plan=${plan}&billing=monthly`);
+for (const path of ['/payment?plan=bad', '/bookings/one?plan=' + plan, 'https://other.example' + checkout, '//other.example' + checkout]) {
+  assert.equal(redirects.getSubscriptionCheckoutContinuation(path), null);
+}
+
+let actor = null;
+let company = null;
+let role = null;
+let capabilitiesError = false;
+const planData = { id: plan, name: 'Basic', name_ar: 'أساسية', price_monthly: 100, price_yearly: 1000 };
+class FunctionsHttpError extends Error {}
+const Container = ({ children }) => React.createElement('div', null, children);
+const Button = ({ children, asChild, disabled, type }) => asChild ? children : React.createElement('button', { disabled, type }, children);
+const Link = ({ to, children }) => React.createElement('a', { href: to }, children);
+const icon = () => null;
+const paymentView = await load('../src/pages/PaymentPage.tsx', {
+  react: React, 'react/jsx-runtime': jsxRuntime,
+  'react-router-dom': { Link, useNavigate: () => () => {}, useSearchParams: () => [new URL(checkout, 'https://safarerp.com').searchParams] },
+  '@supabase/supabase-js': { FunctionsHttpError },
+  '@tanstack/react-query': { useQuery: ({ queryKey }) => ({
+    data: queryKey[0] === 'payment-plan' ? planData : null,
+    isError: capabilitiesError && queryKey[0] === 'subscription-checkout-capabilities',
+  }) },
+  '@/integrations/supabase/client': { supabase: {} },
+  '@/hooks/useOptimizedAuth': { useOptimizedAuth: () => ({ user: actor, isLoggedIn: () => Boolean(actor) }) },
+  '@/contexts/OrganizationContext': { useOrganization: () => ({ organizationId: company, orgRole: role }) },
+  '@/lib/safeRedirect': redirects,
+  '@/components/ui/card': { Card: Container, CardContent: Container, CardHeader: Container, CardTitle: Container },
+  '@/components/ui/button': { Button }, '@/components/ui/input': { Input: icon }, '@/components/ui/label': { Label: Container },
+  '@/components/ui/badge': { Badge: Container }, '@/components/ui/separator': { Separator: icon }, sonner: {},
+  'lucide-react': { CreditCard: icon, ArrowRight: icon, Shield: icon, Clock: icon, CheckCircle2: icon, Loader2: icon, AlertTriangle: icon, Sparkles: icon },
+});
+const renderPayment = () => renderToStaticMarkup(React.createElement(paymentView.default));
+const continuation = new URLSearchParams({ redirect: checkout }).toString();
+assert.ok(renderPayment().includes(`/login?${continuation}`));
+assert.ok(renderPayment().includes(`/signup?${continuation}`));
+actor = { id: 'buyer' };
+assert.ok(renderPayment().includes(`/register-organization?${continuation}`));
+company = 'org-a'; role = 'viewer';
+assert.match(renderPayment(), /شراء الاشتراك متاح لمالك المؤسسة أو مديرها/);
+assert.match(renderPayment(), /<button disabled=""[^>]*>ادفع/);
+role = 'owner'; capabilitiesError = true;
+assert.match(renderPayment(), /تعذّر التحقق من بيانات الاشتراك/);
+assert.match(renderPayment(), /إعادة المحاولة/);
+assert.match(renderPayment(), /<button disabled=""[^>]*>ادفع/);
+
+const organizationView = await load('../src/pages/RegisterOrganization.tsx', {
+  react: React, 'react/jsx-runtime': jsxRuntime,
+  'react-router-dom': {
+    Navigate: ({ to }) => React.createElement('div', { 'data-target': to }),
+    useNavigate: () => () => {}, useSearchParams: () => [new URLSearchParams({ redirect: checkout })],
+  },
+  '@/integrations/supabase/client': { supabase: {} },
+  '@/hooks/useOptimizedAuth': { useOptimizedAuth: () => ({ user: actor }) },
+  '@/contexts/OrganizationContext': { useOrganization: () => ({ hasOrganization: true }) },
+  '@/contexts/LanguageContext': { useLanguage: () => ({ dir: 'rtl' }) },
+  '@/components/ui/button': { Button }, '@/components/ui/input': { Input: icon }, '@/components/ui/label': { Label: Container },
+  '@/lib/organizationContacts': {}, '@/lib/safeRedirect': redirects,
+  sonner: {}, 'lucide-react': { Building2: icon, ArrowLeft: icon },
+});
+assert.ok(renderToStaticMarkup(React.createElement(organizationView.default)).includes(checkout.replaceAll('&', '&amp;')));
+
+console.log('Launch regressions passed: financial helpers, tenant-scoped ledgers, quote-booking reads and subscription checkout handoffs.');

@@ -85,9 +85,15 @@ export const useCustomerSubmission = ({
       return updatedCustomer;
     }
 
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      toast.error('تعذّر التحقق من جلسة المستخدم');
+      throw authError ?? new Error('لم يتم التحقق من جلسة المستخدم');
+    }
+
     const { data: newCustomer, error } = await supabase
       .from('customers')
-      .insert([{ ...customerData, organization_id: orgId }])
+      .insert([{ ...customerData, organization_id: orgId, created_by: user.id }])
       .select(customerSelection)
       .single();
 

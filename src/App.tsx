@@ -158,6 +158,7 @@ const PlatformFinance = lazy(() => import("@/pages/platform-admin/PlatformFinanc
 const PlatformAdminAccounts = lazy(() => import("@/pages/platform-admin/PlatformAdminAccounts"));
 const PlatformAdminPlans = lazy(() => import("@/pages/platform-admin/PlatformAdminPlans"));
 const PlatformAdminAudit = lazy(() => import("@/pages/platform-admin/PlatformAdminAudit"));
+const PlatformMetaDataDeletion = lazy(() => import("@/pages/platform-admin/PlatformMetaDataDeletion"));
 const PlatformEventBus = lazy(() => import("@/pages/platform-admin/PlatformEventBus"));
 const PlatformEventExplorer = lazy(() => import("@/pages/platform-admin/PlatformEventExplorer"));
 const PlatformAdminAnalytics = lazy(() => import("@/pages/platform-admin/PlatformAdminAnalytics"));
@@ -312,6 +313,7 @@ function App() {
                             <Route path="finance" element={<PlatformFinance />} />
                             <Route path="accounts" element={<PlatformAdminAccounts />} />
                             <Route path="audit" element={<PlatformAdminAudit />} />
+                            <Route path="meta-data-deletion" element={<PlatformMetaDataDeletion />} />
                             <Route path="event-bus" element={<PlatformEventBus />} />
                             <Route path="event-bus/:id" element={<PlatformEventExplorer />} />
                             <Route path="analytics" element={<PlatformAdminAnalytics />} />
@@ -393,7 +395,7 @@ function App() {
                               <Route path="/site-customization" element={<PermissionRouteGuard requiredPermission="admin_settings"><SiteCustomization /></PermissionRouteGuard>} />
                               <Route path="/payment-orders" element={<PermissionRouteGuard requiredPermission="financial_view"><PaymentOrders /></PermissionRouteGuard>} />
                               <Route path="/financial-exceptions" element={<PermissionRouteGuard requiredPermission="financial_view"><FinancialExceptions /></PermissionRouteGuard>} />
-                              <Route path="/payment-success" element={<PaymentSuccess />} />
+                              <Route path="/payment-success/:checkoutId?" element={<PaymentSuccess />} />
                               <Route path="/bank-accounts" element={<PermissionRouteGuard requiredPermission="financial_view"><BankAccounts /></PermissionRouteGuard>} />
                               <Route path="/daily-operations" element={<PermissionRouteGuard requiredPermission="bookings_view"><DailyOperations /></PermissionRouteGuard>} />
                               <Route path="/operations" element={<PermissionRouteGuard requiredPermission="bookings_view"><OperationsCommandCenter /></PermissionRouteGuard>} />

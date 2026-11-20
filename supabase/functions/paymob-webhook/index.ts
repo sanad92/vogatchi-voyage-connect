@@ -60,10 +60,10 @@ function parseTransactionStatus(transaction: Record<string, any>): {
     return { status: "refunded", errorMessage: "Transaction was refunded" };
   }
   if (transaction.pending === true) return { status: "pending", errorMessage: null };
+  const code = String(transaction.txn_response_code || "");
   return {
     status: "failed",
-    errorMessage: transaction.data?.message ||
-      `Transaction failed (code: ${transaction.txn_response_code || "unknown"})`,
+    errorMessage: /^[A-Z0-9_-]{1,24}$/i.test(code) ? `Transaction failed (code: ${code})` : "Transaction failed",
   };
 }
 
@@ -158,13 +158,19 @@ Deno.serve(async (request) => {
         currency: currency || "EGP",
         status: storedStatus,
         payment_method: transaction.source_data?.type || null,
-        card_last_four: transaction.source_data?.pan || null,
+        card_last_four: String(transaction.source_data?.type || "").toLowerCase() === "card"
+          ? String(transaction.source_data?.pan || "").match(/[0-9]{4}$/)?.[0] ?? null
+          : null,
         card_brand: transaction.source_data?.sub_type || null,
-        billing_name: `${transaction.billing_data?.first_name || ""} ${transaction.billing_data?.last_name || ""}`.trim() || null,
-        billing_email: transaction.billing_data?.email || null,
-        billing_phone: transaction.billing_data?.phone_number || null,
         error_message: storedError,
-        raw_payload: body,
+        raw_payload: {
+          obj: {
+            order: { merchant_order_id: checkout?.merchant_order_id ?? null },
+            has_parent_transaction: transaction.has_parent_transaction === true,
+            is_void: transaction.is_void === true,
+            is_refund: transaction.is_refund === true,
+          },
+        },
         hmac_valid: hmacValid,
         processed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

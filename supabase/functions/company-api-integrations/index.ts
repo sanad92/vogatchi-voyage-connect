@@ -4,6 +4,7 @@ import { rateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 import { readBoundedJsonBody } from '../_shared/trip-file-bounded-json.ts';
 import { safeAirLocator } from '../_shared/trip-file-air-provider.ts';
 import { companyApiStore } from '../_shared/company-api-store.ts';
+import { handleCompanyEtaAction, isEtaAction } from '../_shared/company-eta-preprod.ts';
 import { ETA_PREPROD_CA } from '../_shared/eta-preprod-ca.ts';
 import {
   CompanyProviderError,
@@ -54,7 +55,7 @@ Deno.serve(async request => {
       return failure('invalid_input', 400);
     }
     const { organizationId, action } = payload;
-    if (!isUuid(organizationId) || !['list', 'connect', 'disconnect'].includes(String(action))) {
+    if (!isUuid(organizationId) || (!isEtaAction(action) && !['list', 'connect', 'disconnect'].includes(String(action)))) {
       return failure('invalid_input', 400);
     }
     const [member, org, permission] = await Promise.all([
@@ -69,6 +70,26 @@ Deno.serve(async request => {
     }
 
     const db = companyApiStore();
+    if (isEtaAction(action)) {
+      if (action !== 'eta_sample_list') {
+        const quota = rateLimit('company-eta-samples:' + organizationId, 8, 60_000);
+        if (!quota.allowed) return rateLimitResponse(quota.retryAfterMs, CORS);
+      }
+      let tls: ReturnType<typeof Deno.createHttpClient> | undefined;
+      try {
+        const result = await handleCompanyEtaAction({
+          action, organizationId, actorId: auth.user.id, payload,
+          rpc: (name, args) => db.rpc(name, args),
+          send: (url, init) => {
+            tls ??= Deno.createHttpClient({ caCerts: [ETA_PREPROD_CA] });
+            return fetch(url, { ...init, client: tls });
+          },
+        });
+        return json(result.body, result.status);
+      } finally {
+        tls?.close();
+      }
+    }
     if (action === 'list') {
       const { data, error } = await db.rpc('company_api_connections_list', { _org_id: organizationId });
       if (error || !Array.isArray(data)) return failure('configuration_unavailable', 503);

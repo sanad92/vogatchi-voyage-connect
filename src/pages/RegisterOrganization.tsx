@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
@@ -12,12 +12,15 @@ import { toast } from 'sonner';
 import { Building2, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { contactValidationError, normalizeContactPhone, validContactName } from '@/lib/organizationContacts';
+import { getSubscriptionCheckoutContinuation } from '@/lib/safeRedirect';
 
 const RegisterOrganization = () => {
   const { user, profile } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading, refetchOrganization } = useOrganization();
   const { dir } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const completionPath = getSubscriptionCheckoutContinuation(searchParams.get('redirect')) ?? '/dashboard';
   const [loading, setLoading] = useState(false);
   const [ownerName, setOwnerName] = useState<string>();
   const [companyEmail, setCompanyEmail] = useState<string>();
@@ -34,7 +37,7 @@ const RegisterOrganization = () => {
 
   // If user already has an organization, redirect to dashboard
   if (!orgLoading && hasOrganization) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={completionPath} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,10 +82,10 @@ const RegisterOrganization = () => {
       
       // Trigger welcome email (non-blocking)
       supabase.functions.invoke('send-welcome-email', {
-        body: { organizationName: form.name.trim() },
+        body: { organizationId },
       }).catch(() => {/* non-critical */});
       
-      navigate('/dashboard', { replace: true });
+      navigate(completionPath, { replace: true });
 
     } catch (error: unknown) {
       console.error('Error creating organization:', error);

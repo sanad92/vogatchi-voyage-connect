@@ -1,120 +1,137 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Home, XCircle, Loader2, CreditCard } from 'lucide-react';
+import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { CheckCircle2, Clock, Loader2, XCircle } from 'lucide-react';
 
-/**
- * Paymob redirects back with query params:
- *   ?success=true&txn_response_code=APPROVED&order=...&amount_cents=...
- *   ?success=false&txn_response_code=DECLINED&...
- */
+const UUID_PATTERN = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+
+const checkoutMessages: Record<string, { title: string; description: string }> = {
+  confirmed: {
+    title: 'تم تأكيد الدفع وتفعيل الاشتراك',
+    description: 'سُجّلت عملية الدفع في سجل المدفوعات.',
+  },
+  activating: {
+    title: 'تم تأكيد الدفع وجارٍ تفعيل الاشتراك',
+    description: 'تحقّق مرة أخرى قبل إجراء دفعة جديدة. إذا تأخر التفعيل، تواصل مع الدعم.',
+  },
+  pending: {
+    title: 'في انتظار تأكيد الدفع',
+    description: 'ما زلنا ننتظر تأكيد عملية الدفع. يمكنك التحقق من الحالة مرة أخرى.',
+  },
+  failed: {
+    title: 'لم تكتمل عملية الدفع',
+    description: 'أبلغت بوابة الدفع عن محاولة غير ناجحة. تحقّق من الحالة إذا أعدت المحاولة.',
+  },
+  expired: {
+    title: 'انتهت صلاحية جلسة الدفع',
+    description: 'لم يُسجَّل دفع مؤكّد لهذه الجلسة. إذا خُصم المبلغ، راجع سجل المدفوعات أو تواصل مع الدعم.',
+  },
+  voided: {
+    title: 'أُلغيت عملية الدفع',
+    description: 'أكّدت بوابة الدفع إلغاء العملية.',
+  },
+  refunded: {
+    title: 'تم رد الدفعة',
+    description: 'أكّدت بوابة الدفع رد الدفعة.',
+  },
+  unavailable: {
+    title: 'تعذّر عرض حالة الدفع',
+    description: 'يمكنك مراجعة سجل المدفوعات في صفحة الاشتراك.',
+  },
+};
+
 const PaymentSuccess = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const { checkoutId } = useParams();
+  const { user } = useOptimizedAuth();
   const queryClient = useQueryClient();
-  const [isLoading, setIsLoading] = useState(true);
+  const enabled = Boolean(user && checkoutId && UUID_PATTERN.test(checkoutId));
+  const checkout = useQuery({
+    queryKey: ['subscription-checkout-status', user?.id, checkoutId],
+    enabled,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_subscription_checkout_status', {
+        p_checkout_id: checkoutId!,
+      }).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: ({ state }) => {
+      const status = state.data?.status;
+      return state.dataUpdateCount + state.errorUpdateCount < 20 && (status === 'pending' || status === 'activating') ? 3000 : false;
+    },
+  });
 
-  const success = searchParams.get('success') === 'true';
-  const amountCents = parseInt(searchParams.get('amount_cents') || '0', 10);
-  const txnId = searchParams.get('id') || searchParams.get('transaction_id') || '';
-  const orderId = searchParams.get('order') || '';
+  const receipt = checkout.data;
+  const status = !checkout.isError && receipt?.status ? receipt.status : 'unavailable';
+  const confirmed = status === 'confirmed';
+  const waiting = status === 'pending' || status === 'activating';
+  const message = checkoutMessages[status] ?? checkoutMessages.unavailable;
+  const checking = enabled && checkout.isLoading;
 
   useEffect(() => {
-    // Give the webhook time to process, then refresh subscription data
-    const timer = setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
-      queryClient.invalidateQueries({ queryKey: ['my-subscription-full'] });
-      queryClient.invalidateQueries({ queryKey: ['my-payment-transactions'] });
-      setIsLoading(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [queryClient]);
-
-  if (isLoading) {
-    return (
-      <div className="w-full px-4 md:px-6 lg:px-8 py-6" dir="rtl">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-            <p className="text-muted-foreground">جارٍ التحقق من حالة الدفع...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    if (!confirmed) return;
+    queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
+    queryClient.invalidateQueries({ queryKey: ['my-subscription-full'] });
+    queryClient.invalidateQueries({ queryKey: ['my-payment-transactions'] });
+  }, [confirmed, queryClient]);
 
   return (
-    <div className="w-full px-4 md:px-6 lg:px-8 py-6" dir="rtl">
-      <div className="max-w-md mx-auto">
-        <Card className="text-center">
-          <CardHeader>
-            <div className="flex justify-center mb-4">
-              {success ? (
-                <CheckCircle2 className="h-16 w-16 text-green-500" />
-              ) : (
-                <XCircle className="h-16 w-16 text-destructive" />
-              )}
-            </div>
-            <CardTitle className={`text-2xl ${success ? 'text-green-600' : 'text-destructive'}`}>
-              {success ? 'تم الدفع بنجاح!' : 'فشلت عملية الدفع'}
-            </CardTitle>
-          </CardHeader>
+    <div className="w-full px-4 py-6 md:px-6 lg:px-8" dir="rtl">
+      <Card className="mx-auto max-w-md text-center">
+        <CardHeader>
+          <div className="mb-4 flex justify-center" aria-hidden="true">
+            {checking ? <Loader2 className="h-16 w-16 animate-spin text-primary" />
+              : confirmed ? <CheckCircle2 className="h-16 w-16 text-green-600" />
+              : waiting ? <Clock className="h-16 w-16 text-primary" />
+              : <XCircle className="h-16 w-16 text-muted-foreground" />}
+          </div>
+          <CardTitle className="text-2xl" aria-live="polite">
+            {checking ? 'جارٍ التحقق من حالة الدفع' : message.title}
+          </CardTitle>
+        </CardHeader>
+        {!checking && (
           <CardContent className="space-y-4">
-            {success ? (
-              <>
-                {amountCents > 0 && (
-                  <div className="bg-muted rounded-lg p-4 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">المبلغ:</span>
-                      <span className="font-semibold text-foreground">
-                        {(amountCents / 100).toLocaleString('ar-EG')} ج.م
-                      </span>
-                    </div>
-                    {txnId && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">رقم المعاملة:</span>
-                        <span className="font-mono text-foreground text-xs">{txnId}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">الحالة:</span>
-                      <span className="text-green-600 font-medium">مدفوع ✓</span>
-                    </div>
+            <p className="text-muted-foreground">{message.description}</p>
+            {(confirmed || status === 'activating') && receipt && (
+              <dl className="space-y-2 rounded-lg bg-muted p-4 text-sm">
+                <div className="flex justify-between gap-2">
+                  <dt>المبلغ</dt>
+                  <dd className="font-semibold">
+                    {(receipt.amount_cents / 100).toLocaleString('ar-EG', {
+                      style: 'currency', currency: receipt.currency,
+                    })}
+                  </dd>
+                </div>
+                {receipt.transaction_id && (
+                  <div className="flex justify-between gap-2">
+                    <dt>رقم المعاملة</dt>
+                    <dd className="font-mono" dir="ltr">{receipt.transaction_id}</dd>
                   </div>
                 )}
-                <p className="text-muted-foreground">
-                  تم تفعيل اشتراكك بنجاح. يمكنك الآن استخدام جميع ميزات النظام.
-                </p>
-              </>
-            ) : (
-              <p className="text-muted-foreground">
-                لم تتم عملية الدفع. يمكنك المحاولة مرة أخرى أو اختيار طريقة دفع مختلفة.
-              </p>
+                {confirmed && receipt.activated_at && (
+                  <div className="flex justify-between gap-2">
+                    <dt>تاريخ التفعيل</dt>
+                    <dd>{new Date(receipt.activated_at).toLocaleString('ar-EG')}</dd>
+                  </div>
+                )}
+              </dl>
             )}
-
-            <div className="flex gap-2 pt-4">
-              <Button onClick={() => navigate('/dashboard')} className="flex-1">
-                <Home className="h-4 w-4 ml-2" />
-                {success ? 'الذهاب للوحة التحكم' : 'العودة للرئيسية'}
-              </Button>
-              {!success && (
-                <Button variant="outline" onClick={() => navigate('/pricing')} className="flex-1">
-                  <CreditCard className="h-4 w-4 ml-2" />
-                  اختيار خطة
-                </Button>
-              )}
-              {success && (
-                <Button variant="outline" onClick={() => navigate('/subscription')} className="flex-1">
-                  <CreditCard className="h-4 w-4 ml-2" />
-                  إدارة الاشتراك
+            <div className="flex flex-wrap justify-center gap-2 pt-2">
+              <Button asChild><Link to="/subscription">إدارة الاشتراك</Link></Button>
+              {enabled && !confirmed && (
+                <Button variant="outline" disabled={checkout.isFetching} onClick={() => checkout.refetch()}>
+                  التحقق مرة أخرى
                 </Button>
               )}
             </div>
           </CardContent>
-        </Card>
-      </div>
+        )}
+      </Card>
     </div>
   );
 };
