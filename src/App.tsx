@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
 import SupabaseProtectedRoute from "@/components/SupabaseProtectedRoute";
+import { LegacyBookingLink } from "@/pages/LegacyBookingLink";
 import { OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
 import { MonitoringCollector } from "@/hooks/useMonitoring";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
@@ -344,10 +345,13 @@ function App() {
                               <Route path="/duplicate-customers" element={<PermissionRouteGuard requiredPermission="customers_view"><DuplicateCustomersPage /></PermissionRouteGuard>} />
                               <Route path="/data-quality" element={<DataQualityPage />} />
                               <Route path="/new-customer" element={<PermissionRouteGuard requiredPermission="customers_create"><NewCustomer /></PermissionRouteGuard>} />
+                              <Route path="/customers/new" element={<PermissionRouteGuard requiredPermission="customers_create"><NewCustomer /></PermissionRouteGuard>} />
                               <Route path="/customers/:customerId" element={<PermissionRouteGuard requiredPermission="customers_view"><CustomerDetails /></PermissionRouteGuard>} />
                               <Route path="/hotel-bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><HotelBookings /></PermissionRouteGuard>} />
+                              <Route path="/hotel-bookings/:id" element={<PermissionRouteGuard requiredPermission="bookings_view"><LegacyBookingLink type="hotel" /></PermissionRouteGuard>} />
                               <Route path="/new-hotel-booking" element={<PermissionRouteGuard requiredPermission="bookings_create"><NewHotelBooking /></PermissionRouteGuard>} />
                               <Route path="/flight-bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><FlightBookings /></PermissionRouteGuard>} />
+                              <Route path="/flight-bookings/:id" element={<PermissionRouteGuard requiredPermission="bookings_view"><LegacyBookingLink type="flight" /></PermissionRouteGuard>} />
                               <Route path="/new-flight-booking" element={<PermissionRouteGuard requiredPermission="bookings_create"><NewFlightBooking /></PermissionRouteGuard>} />
                               <Route path="/car-rentals" element={<PermissionRouteGuard requiredPermission="bookings_view"><CarRentals /></PermissionRouteGuard>} />
                               <Route path="/transport-bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><TransportBookings /></PermissionRouteGuard>} />
@@ -355,6 +359,7 @@ function App() {
                               <Route path="/pilgrimage" element={<PermissionRouteGuard requiredPermission="bookings_view"><PilgrimagePage /></PermissionRouteGuard>} />
                               <Route path="/quotes" element={<PermissionRouteGuard requiredPermission="quotes_view"><Quotes /></PermissionRouteGuard>} />
                               <Route path="/quotes/new" element={<PermissionRouteGuard requiredPermission="quotes_create"><NewQuote /></PermissionRouteGuard>} />
+                              <Route path="/new-quote" element={<PermissionRouteGuard requiredPermission="quotes_create"><NewQuote /></PermissionRouteGuard>} />
                               <Route path="/quotes/itinerary-builder" element={<PermissionRouteGuard requiredPermission="quotes_create"><ItineraryBuilder /></PermissionRouteGuard>} />
                               <Route path="/quotes/:id" element={<PermissionRouteGuard requiredPermission="quotes_view"><QuoteDetails /></PermissionRouteGuard>} />
                               <Route path="/invoices" element={<PermissionRouteGuard requiredPermission="invoices_view"><Invoices /></PermissionRouteGuard>} />
@@ -372,6 +377,7 @@ function App() {
                               <Route path="/employee-records" element={<Navigate to="/hr?tab=files" replace />} />
                               <Route path="/employee-commissions" element={<Navigate to="/hr?tab=commissions" replace />} />
                               <Route path="/expense-management" element={<PermissionRouteGuard requiredPermission="expenses_view"><ExpenseManagementEnhanced /></PermissionRouteGuard>} />
+                              <Route path="/expenses" element={<PermissionRouteGuard requiredPermission="expenses_view"><Navigate to="/expense-management?tab=expenses" replace /></PermissionRouteGuard>} />
                               <Route path="/employees-enhanced" element={<Navigate to="/team" replace />} />
                               <Route path="/employees" element={<Navigate to="/team" replace />} />
                               <Route path="/admin-settings" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminSettings /></PermissionRouteGuard>} />
