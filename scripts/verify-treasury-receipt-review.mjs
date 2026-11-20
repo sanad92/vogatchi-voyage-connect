@@ -15,6 +15,9 @@ const booking = id(8);
 const invoice = id(9);
 const foreignBooking = id(10);
 const financeOnly = id(93);
+const supplier = id(94);
+const foreignSupplier = id(95);
+const hiddenSupplierPayout = id(96);
 
 try {
   await db.exec(`
@@ -34,6 +37,11 @@ try {
     CREATE TABLE public.bank_accounts (id uuid, organization_id uuid, account_name text, currency text);
     CREATE TABLE public.bookings (id uuid, organization_id uuid, booking_number text);
     CREATE TABLE public.invoices (id uuid, organization_id uuid, invoice_number text, booking_id uuid);
+    CREATE TABLE public.suppliers (id uuid, organization_id uuid, name text);
+    CREATE TABLE public.supplier_payments (
+      id uuid, organization_id uuid, supplier_id uuid, booking_id uuid, treasury_account_id uuid,
+      status text, payment_method text, payment_date date, paid_date date, amount numeric, currency text, reference_number text
+    );
     CREATE TABLE public.customer_payments (
       id uuid, organization_id uuid, treasury_account_id uuid, amount numeric(14,2), currency text,
       payment_date date, reference_number text, booking_id uuid, invoice_id uuid, status text,
@@ -47,17 +55,45 @@ try {
     ALTER TABLE public.customer_payments ENABLE ROW LEVEL SECURITY;
     CREATE POLICY fixture_payments ON public.customer_payments FOR SELECT TO authenticated
     USING (public.user_belongs_to_org(auth.uid(), organization_id));
-    GRANT SELECT ON public.customer_payments, public.bank_account_transactions, public.bank_accounts, public.bookings, public.invoices TO authenticated;
+    ALTER TABLE public.supplier_payments ENABLE ROW LEVEL SECURITY;
+    CREATE POLICY fixture_supplier_payments ON public.supplier_payments FOR SELECT TO authenticated
+    USING (public.user_belongs_to_org(auth.uid(), organization_id) AND id <> '${hiddenSupplierPayout}'::uuid);
+    GRANT SELECT ON public.customer_payments, public.bank_account_transactions, public.bank_accounts,
+      public.bookings, public.invoices, public.suppliers, public.supplier_payments TO authenticated;
     INSERT INTO public.members VALUES ('${org}', '${owner}', 'organization'), ('${org}', '${scoped}', 'own'),
       ('${otherOrg}', '${foreign}', 'organization'), ('${org}', '${financeOnly}', 'organization');
     INSERT INTO public.bank_accounts VALUES ('${account}', '${org}', 'Office cash', 'EGP'), ('${wrongAccount}', '${otherOrg}', 'Other cash', 'EGP');
     INSERT INTO public.bookings VALUES ('${booking}', '${org}', 'BK-TEST'), ('${foreignBooking}', '${otherOrg}', 'OTHER-BOOKING');
     INSERT INTO public.invoices VALUES ('${invoice}', '${org}', 'INV-TEST', '${booking}');
+    INSERT INTO public.suppliers VALUES ('${supplier}', '${org}', 'Fixture supplier'),
+      ('${foreignSupplier}', '${otherOrg}', 'Other supplier');
+    INSERT INTO public.supplier_payments VALUES
+      ('${id(200)}', '${org}', '${supplier}', '${booking}', NULL,
+        'paid', 'cash', '2026-11-10', '2026-11-11', 110, 'EGP', 'SP-200'),
+      ('${id(201)}', '${org}', '${foreignSupplier}', '${foreignBooking}', NULL,
+        'completed', 'cash', '2026-11-09', NULL, 50, 'EGP', 'SP-201'),
+      ('${id(202)}', '${org}', '${supplier}', '${booking}', '${account}',
+        'paid', 'cash', '2026-11-11', NULL, 80, 'EGP', 'SP-202'),
+      ('${id(203)}', '${org}', '${supplier}', '${booking}', NULL,
+        'paid', 'bank_transfer', '2026-11-11', NULL, 80, 'EGP', 'SP-203'),
+      ('${id(204)}', '${org}', '${supplier}', '${booking}', NULL,
+        'pending', 'cash', '2026-11-11', NULL, 80, 'EGP', 'SP-204'),
+      ('${id(205)}', '${org}', '${supplier}', '${booking}', NULL,
+        'paid', 'cash', '2026-11-11', NULL, 0, 'EGP', 'SP-205'),
+      ('${id(206)}', '${otherOrg}', '${foreignSupplier}', '${foreignBooking}', NULL,
+        'paid', 'cash', '2026-11-11', NULL, 80, 'EGP', 'SP-206'),
+      ('${hiddenSupplierPayout}', '${org}', '${supplier}', '${booking}', NULL,
+        'paid', 'cash', '2026-11-11', NULL, 80, 'EGP', 'SP-207');
   `);
   await db.exec(readFileSync(new URL('../supabase/migrations/20261119173503_list_receipts_for_treasury_review.sql', import.meta.url), 'utf8'));
   const depositMigration = readFileSync(new URL('../supabase/migrations/20261119232020_review_linked_customer_receipt_deposits.sql', import.meta.url), 'utf8');
   await db.exec(depositMigration);
   await db.exec(depositMigration);
+  const supplierReviewMigration = readFileSync(
+    new URL('../supabase/migrations/20261120115544_list_legacy_supplier_cash_payout_review.sql', import.meta.url), 'utf8',
+  );
+  await db.exec(supplierReviewMigration);
+  await db.exec(supplierReviewMigration);
 
   const receipt = (number, { target = account, reference = 'R-' + number, company = org, status = 'completed', method = 'cash', demo = false, bookingId = null } = {}) =>
     db.query(`INSERT INTO public.customer_payments VALUES
@@ -102,6 +138,8 @@ try {
   };
   const list = (organization = org, offset = 0) => db.query('SELECT * FROM public.list_treasury_receipt_review($1,$2)', [organization, offset]);
   const deposits = (organization = org) => db.query('SELECT * FROM public.list_treasury_deposit_review($1)', [organization]);
+  const supplierPayouts = (organization = org, offset = 0) =>
+    db.query('SELECT *, payment_date::text AS paid_on FROM public.list_legacy_supplier_cash_payout_review($1,$2)', [organization, offset]);
   await as(owner);
   const { rows } = await list();
   assert.deepEqual(rows.map(r => r.payment_id), [25, 24, 23, 17, 16, 15, 12, 11].map(id));
@@ -117,6 +155,15 @@ try {
     'R-17': 'deposit_mismatch', reversed: 'receipt_not_current', orphan: 'receipt_missing',
   });
   assert.deepEqual((await list(org, 7)).rows.map(r => r.payment_id), [id(11)]);
+  const { rows: payoutRows } = await supplierPayouts();
+  assert.deepEqual(payoutRows.map(r => r.payment_id), [id(200), id(201)]);
+  assert.equal(payoutRows[0].reason, 'supplier_cash_treasury_missing');
+  assert.equal(payoutRows[0].paid_on, '2026-11-11');
+  assert.equal(payoutRows[0].supplier_name, 'Fixture supplier');
+  assert.equal(payoutRows[0].booking_id, booking);
+  assert.equal(payoutRows[1].supplier_name, null);
+  assert.equal(payoutRows[1].booking_id, null);
+  assert.deepEqual((await supplierPayouts(org, 1)).rows.map(r => r.payment_id), [id(201)]);
   for (let number = 100; number < 160; number += 1) {
     await db.exec('RESET ROLE');
     await receipt(number, { target: null });
@@ -126,18 +173,22 @@ try {
   assert.equal((await list(org, 50)).rows.length, 18);
   await assert.rejects(list(otherOrg), /treasury_receipt_review_denied/);
   await assert.rejects(deposits(otherOrg), /treasury_receipt_review_denied/);
+  await assert.rejects(supplierPayouts(otherOrg), /treasury_supplier_cash_review_denied/);
   await as(financeOnly);
   assert.equal((await list()).rows.length, 51);
   await assert.rejects(deposits(), /treasury_receipt_review_denied/);
+  assert.equal((await supplierPayouts()).rows.length, 2);
   await as(scoped);
   await assert.rejects(list(), /treasury_receipt_review_denied/);
   await assert.rejects(deposits(), /treasury_receipt_review_denied/);
+  await assert.rejects(supplierPayouts(), /treasury_supplier_cash_review_denied/);
   await as(foreign);
   await assert.rejects(list(), /treasury_receipt_review_denied/);
   await db.exec('RESET ROLE; SET ROLE anon');
   await assert.rejects(list(), /permission denied/);
   await assert.rejects(deposits(), /permission denied/);
-  console.log('Treasury review isolates company data, flags ambiguous or missing deposits, and finds orphaned or mismatched linked movements.');
+  await assert.rejects(supplierPayouts(), /permission denied/);
+  console.log('Treasury review isolates company data, finds mismatched linked movements, and lists historical supplier cash without a treasury link.');
 } finally {
   await db.close();
 }

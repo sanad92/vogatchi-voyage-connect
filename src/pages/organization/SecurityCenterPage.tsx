@@ -1,36 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Save, Key, Lock } from 'lucide-react';
-import { useSecuritySettings, type SecuritySettings } from '@/hooks/useSecuritySettings';
+import { Shield, Key, Lock } from 'lucide-react';
+import { useSecuritySettings } from '@/hooks/useSecuritySettings';
 import { BROWSER_SESSION_INACTIVITY_MINUTES } from '@/lib/browserSessionActivity';
 
-type EditableSecuritySettings = Pick<SecuritySettings, 'mfa_required' | 'password_policy'>;
-
 export default function SecurityCenterPage() {
-  const { data, save, setPin } = useSecuritySettings();
-  const [form, setForm] = useState<EditableSecuritySettings>({
-    mfa_required: false,
-    password_policy: { min_length: 8, require_upper: true, require_number: true, require_symbol: false },
-  });
+  const { data, isError, isPending, setPin } = useSecuritySettings();
   const [pin, setPinValue] = useState('');
-  const [ipList, setIpList] = useState('');
-
-  useEffect(() => {
-    if (data) {
-      setForm({ mfa_required: data.mfa_required, password_policy: data.password_policy });
-      setIpList((data.ip_allowlist ?? []).join('\n'));
-    }
-  }, [data]);
-
-  const handleSave = () => {
-    save.mutate({ ...form, ip_allowlist: ipList.split('\n').map((s) => s.trim()).filter(Boolean) });
-  };
+  const passwordPolicy = data?.password_policy;
+  const passwordRequirements = passwordPolicy && [
+    passwordPolicy.require_upper && 'حرف كبير',
+    passwordPolicy.require_number && 'رقم',
+    passwordPolicy.require_symbol && 'رمز خاص',
+  ].filter(Boolean).join('، ');
 
   return (
     <div className="p-6 space-y-6" dir="rtl">
@@ -43,31 +30,48 @@ export default function SecurityCenterPage() {
         <Card>
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><Lock className="h-4 w-4" /> السياسات العامة</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded bg-muted/50">
-              <div>
-                <div className="font-medium">فرض المصادقة الثنائية (MFA)</div>
-                <div className="text-xs text-muted-foreground">إلزام جميع المستخدمين بتفعيل MFA</div>
-              </div>
-              <Switch checked={!!form.mfa_required} onCheckedChange={(v) => setForm({ ...form, mfa_required: v })} />
-            </div>
             <div>
               <Label htmlFor="browser-session-timeout">مهلة عدم النشاط في المتصفح (بالدقائق)</Label>
               <Input id="browser-session-timeout" type="number" value={BROWSER_SESSION_INACTIVITY_MINUTES} readOnly />
               <p className="mt-1 text-xs text-muted-foreground">تُطبّق المهلة على جلسات المتصفح في كل المؤسسات.</p>
             </div>
-            <div className="border-t pt-3 space-y-2">
-              <Label className="text-xs font-semibold">سياسة كلمة المرور</Label>
-              <div><Label className="text-xs">الحد الأدنى للطول</Label><Input type="number" value={form.password_policy?.min_length ?? 8} onChange={(e) => setForm({ ...form, password_policy: { ...form.password_policy, min_length: parseInt(e.target.value) || 8 } })} /></div>
-              <div className="flex items-center gap-2"><Switch checked={!!form.password_policy?.require_upper} onCheckedChange={(v) => setForm({ ...form, password_policy: { ...form.password_policy, require_upper: v } })} /><Label>يجب أن تحتوي على حرف كبير</Label></div>
-              <div className="flex items-center gap-2"><Switch checked={!!form.password_policy?.require_number} onCheckedChange={(v) => setForm({ ...form, password_policy: { ...form.password_policy, require_number: v } })} /><Label>يجب أن تحتوي على رقم</Label></div>
-              <div className="flex items-center gap-2"><Switch checked={!!form.password_policy?.require_symbol} onCheckedChange={(v) => setForm({ ...form, password_policy: { ...form.password_policy, require_symbol: v } })} /><Label>يجب أن تحتوي على رمز خاص</Label></div>
+
+            <div className="rounded-md border p-3">
+              <p className="text-sm font-medium">سياسات المؤسسة غير المطبّقة حاليًا</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                فرض المصادقة الثنائية، تقييد عناوين IP وشروط كلمة المرور المخصصة غير متاحة على مستوى المؤسسة حاليًا.
+                القيم المحفوظة سابقًا معروضة للمراجعة فقط.
+              </p>
+              {isPending && <p role="status" className="mt-3 text-xs text-muted-foreground">جاري تحميل القيم المحفوظة…</p>}
+              {isError && <p role="alert" className="mt-3 text-xs text-destructive">تعذّر تحميل القيم المحفوظة.</p>}
+              {!isPending && !isError && !data && (
+                <p className="mt-3 text-xs text-muted-foreground">لا توجد قيم سابقة محفوظة لهذه المؤسسة.</p>
+              )}
+              {data && (
+                <dl className="mt-3 space-y-3 text-sm">
+                  <div>
+                    <dt className="font-medium">المصادقة الثنائية</dt>
+                    <dd className="text-muted-foreground">{data.mfa_required ? 'الإلزام محدد في القيم المحفوظة' : 'الإلزام غير محدد في القيم المحفوظة'}</dd>
+                  </div>
+                  {passwordPolicy && (
+                    <div>
+                      <dt className="font-medium">شروط كلمة المرور المحفوظة</dt>
+                      <dd className="text-muted-foreground">
+                        الحد الأدنى {passwordPolicy.min_length} أحرف{passwordRequirements && `، مع ${passwordRequirements}`}
+                      </dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt><Label htmlFor="saved-ip-allowlist">قائمة IP المحفوظة</Label></dt>
+                    <dd className="mt-1">
+                      {data.ip_allowlist?.length ? (
+                        <Textarea id="saved-ip-allowlist" dir="ltr" rows={3} value={data.ip_allowlist.join('\n')} readOnly />
+                      ) : <p className="text-xs text-muted-foreground">القائمة المحفوظة فارغة.</p>}
+                    </dd>
+                  </div>
+                </dl>
+              )}
             </div>
-            <div>
-              <Label>قائمة IP المسموح بها (سطر لكل عنوان)</Label>
-              <Textarea rows={4} value={ipList} onChange={(e) => setIpList(e.target.value)} placeholder="192.168.1.0/24&#10;10.0.0.5" />
-              <div className="text-xs text-muted-foreground mt-1">اتركها فارغة للسماح بجميع العناوين</div>
-            </div>
-            <Button onClick={handleSave} disabled={save.isPending}><Save className="h-4 w-4 ml-1" /> حفظ</Button>
           </CardContent>
         </Card>
 
