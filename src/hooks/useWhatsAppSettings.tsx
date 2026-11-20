@@ -17,6 +17,7 @@ export interface WhatsAppInbox {
   api_version: string | null;
   rate_limit_per_minute: number | null;
   auto_assignment_enabled: boolean | null;
+  auto_ad_leads: boolean;
   business_description: string | null;
   business_website: string | null;
   business_email: string | null;
@@ -36,6 +37,7 @@ interface UpdatableFields {
   api_version?: string;
   rate_limit_per_minute?: number;
   auto_assignment_enabled?: boolean;
+  auto_ad_leads?: boolean;
   business_description?: string;
   business_website?: string;
   business_email?: string;
@@ -52,7 +54,7 @@ export const useWhatsAppSettings = () => {
       const { data, error } = await supabase
         .from('whatsapp_settings')
         .select(
-          'id, label, business_name, phone_number_id, display_phone_number, waba_id, webhook_url, is_active, is_default, api_version, rate_limit_per_minute, auto_assignment_enabled, business_description, business_website, business_email, onboarding_status, connected_at, created_at, updated_at',
+          'id, label, business_name, phone_number_id, display_phone_number, waba_id, webhook_url, is_active, is_default, api_version, rate_limit_per_minute, auto_assignment_enabled, auto_ad_leads, business_description, business_website, business_email, onboarding_status, connected_at, created_at, updated_at',
         )
         .eq('organization_id', orgId!)
         .order('is_default', { ascending: false })

@@ -386,6 +386,19 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           }
         }
         if (msgErr) { console.error('[wa-webhook] message write error:', { messageId: message.id, conversationId, error: msgErr }); continue; }
+        if (insertedMsg && message.referral?.source_type === 'ad' && /^\d{1,32}$/.test(message.referral.source_id ?? '')) {
+          // Run on provider retries too. The RPC locks the conversation and preserves existing leads.
+          const contact = Array.isArray(messageData.contacts)
+            ? messageData.contacts.find((entry: { wa_id?: string }) => normalizePhone(entry.wa_id) === phoneNumber)
+            : undefined;
+          const { error: leadError } = await supabase.rpc('wa_open_ad_lead', {
+            _org: organizationId,
+            _message: insertedMsg.id,
+            _ad: message.referral.source_id,
+            _name: typeof contact?.profile?.name === 'string' ? contact.profile.name.slice(0, 120) : null,
+          });
+          if (leadError) console.error('[wa-webhook] ad lead intake failed', leadError.code);
+        }
         if (isDuplicate || concurrentDuplicate || !insertedMsg) continue;
 
         console.log('[wa-webhook] inbound saved', {
