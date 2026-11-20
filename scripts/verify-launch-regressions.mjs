@@ -32,6 +32,8 @@ const finance = await load('../src/hooks/finance/useFinanceRpcs.ts', {
   '@/integrations/supabase/client': { supabase: {} },
   '@/hooks/useOrgId': { useOrgId: () => org },
   '@/hooks/use-toast': { toast: () => {} },
+  '@/lib/supabaseRpc': {},
+  react: {},
 });
 for (const name of ['useCustomerLedgerRpc', 'useSupplierLedgerRpc']) {
   org = 'org-a'; const first = finance[name]('record-1');

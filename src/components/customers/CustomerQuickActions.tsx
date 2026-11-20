@@ -46,17 +46,12 @@ const CustomerQuickActions = ({ customer }: CustomerQuickActionsProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleNewBooking = () => {
-    // Navigate to new booking with customer pre-selected
-    navigate('/new-hotel-booking', { 
-      state: { selectedCustomer: customer } 
-    });
+    const query = new URLSearchParams({ type: 'hotel', customer_id: customer.id });
+    navigate(`/bookings/new?${query}`);
   };
 
   const handleNewInvoice = () => {
-    // Navigate to new invoice with customer pre-selected
-    navigate('/new-invoice', { 
-      state: { selectedCustomer: customer } 
-    });
+    navigate(`/invoices/new?${new URLSearchParams({ customer_id: customer.id })}`);
   };
 
   const handleSendMessage = () => {
