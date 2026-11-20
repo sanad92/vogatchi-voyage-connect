@@ -269,43 +269,48 @@ const PricingPage = () => {
                 <Link to="/subscription">إدارة الاشتراك</Link>
               </Button>
             ) : (
-              <>
-                <Button asChild variant="ghost" size="sm" className="font-bold text-foreground"><Link to="/login">تسجيل الدخول</Link></Button>
-                <Button asChild size="sm" className="rounded-lg font-bold"><Link to="/signup">ابدأ التجربة</Link></Button>
-              </>
+              <Button asChild variant="ghost" className="min-h-11 font-bold text-foreground"><Link to="/login">تسجيل الدخول</Link></Button>
             )}
           </div>
         </div>
       </header>
 
       <main>
-        <section className="relative overflow-hidden border-b border-border bg-brand-navy py-20 text-brand-ivory sm:py-24">
+        <section className="relative overflow-hidden border-b border-border bg-brand-navy py-10 text-brand-ivory sm:py-16">
           <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
-            <Badge className="border border-border/30 bg-primary/15 px-4 py-1.5 text-brand-gold hover:bg-primary/15">
-              <Sparkles className="ml-1.5 h-4 w-4" />
-              تجربة مجانية لمدة 7 أيام
-            </Badge>
-            <h1 className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
+            <h1 className="text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">
               خطط وأسعار SafarERP
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-brand-ivory/80 sm:text-lg">
               اختَر الباقة حسب عدد المستخدمين والحجوزات والميزات اللي تحتاجها شركتك. الأسعار بالجنيه المصري.
             </p>
-            <div className="mt-7 flex justify-center">
-              <div role="group" aria-label="دورة الفوترة" className="inline-flex items-center gap-1 rounded-xl border border-brand-ivory/20 bg-card/10 p-1">
-                {([{ yearly: false, label: 'شهري' }, { yearly: true, label: 'سنوي' }]).map(({ yearly, label }) => (
-                  <button key={label} type="button" aria-pressed={isYearly === yearly} onClick={() => setIsYearly(yearly)}
-                    className={`min-h-11 rounded-lg px-5 text-sm font-bold transition-colors ${isYearly === yearly ? 'bg-card text-foreground' : 'text-brand-ivory hover:bg-card/15'}`}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {showDiscount && <p className="mt-3 text-xs text-brand-ivory/80">التوفير السنوي موضّح تحت سعر كل باقة.</p>}
+            {!user && (
+              <>
+                <Button asChild size="lg" className="mt-6 min-h-12 rounded-lg bg-brand-gold px-6 font-bold text-brand-navy hover:bg-brand-gold/90">
+                  <Link to="/signup">
+                    ابدأ تجربة 7 أيام
+                    <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+                  </Link>
+                </Button>
+                <p className="mt-2 text-sm leading-6 text-brand-ivory/80">التجربة مجانية ببريد عمل شركتك، بدون بطاقة دفع.</p>
+              </>
+            )}
           </div>
         </section>
 
-        <section aria-label="خطط الاشتراك" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+        <section aria-labelledby="subscription-plans-title" className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <h2 id="subscription-plans-title" className="text-xl font-bold sm:text-2xl">باقات الاشتراك بعد التجربة</h2>
+            <div role="group" aria-label="دورة الفوترة" className="inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
+              {([{ yearly: false, label: 'شهري' }, { yearly: true, label: 'سنوي' }]).map(({ yearly, label }) => (
+                <button key={label} type="button" aria-pressed={isYearly === yearly} onClick={() => setIsYearly(yearly)}
+                  className={`min-h-11 rounded-lg px-5 text-sm font-bold transition-colors ${isYearly === yearly ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {isYearly && showDiscount && <p className="mb-4 text-sm text-muted-foreground">التوفير السنوي موضّح تحت سعر كل باقة.</p>}
           {isLoading ? (
             <p role="status" className="py-12 text-center text-muted-foreground">جارٍ تحميل الخطط...</p>
           ) : isError || !plans.length ? (
@@ -352,7 +357,7 @@ const PricingPage = () => {
                     <div className="flex flex-1 flex-col p-5 sm:p-6">
                       <div>
                         <p className="text-sm font-semibold text-muted-foreground">{meta.audience}</p>
-                        <h2 className="mt-2 text-3xl font-black text-foreground">{plan.name_ar || plan.name}</h2>
+                        <h3 className="mt-2 text-3xl font-black text-foreground">{plan.name_ar || plan.name}</h3>
                         <p className="mt-3 text-sm leading-6 text-muted-foreground lg:min-h-[3rem]">{meta.description}</p>
                       </div>
 
@@ -375,20 +380,21 @@ const PricingPage = () => {
                         )}
                       </div>
 
-                      <div className="mt-5">
-                        {available || !user ? (
-                          <Button asChild size="lg" className="w-full rounded-xl font-bold"
-                            variant={recommended ? 'default' : 'outline'}>
-                            <Link to={user ? checkoutUrl : '/signup'}>
-                              {user ? 'اشترك الآن' : 'ابدأ تجربة 7 أيام'}
-                              <ArrowLeft className="ms-2 h-4 w-4" aria-hidden="true" />
-                            </Link>
-                          </Button>
-                        ) : (
-                          <Button type="button" size="lg" variant="outline" className="w-full rounded-xl" onClick={() => setIsYearly(false)}>عرض السعر الشهري</Button>
-                        )}
-                        {!user && <p className="mt-2 text-center text-xs text-muted-foreground">بدون بطاقة للتجربة</p>}
-                      </div>
+                      {user && (
+                        <div className="mt-5">
+                          {available ? (
+                            <Button asChild size="lg" className="w-full rounded-xl font-bold"
+                              variant={recommended ? 'default' : 'outline'}>
+                              <Link to={checkoutUrl}>
+                                اشترك الآن
+                                <ArrowLeft className="ms-2 h-4 w-4" aria-hidden="true" />
+                              </Link>
+                            </Button>
+                          ) : (
+                            <Button type="button" size="lg" variant="outline" className="w-full rounded-xl" onClick={() => setIsYearly(false)}>عرض السعر الشهري</Button>
+                          )}
+                        </div>
+                      )}
 
                       <div className="mt-6 grid grid-cols-3 gap-2 text-center">
                         <div className="min-w-0 rounded-lg border border-border px-1 py-2 sm:px-2">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,202 +10,276 @@ import { Eye, EyeOff, UserPlus, Mail, Lock, User } from 'lucide-react';
 import AuthLayout from '@/components/auth/AuthLayout';
 import VogantraLogo from '@/components/brand/VogantraLogo';
 import PasswordChecklist from '@/components/auth/PasswordChecklist';
-import { PASSWORD_MIN_LENGTH, PASSWORD_LENGTH_MESSAGE } from '@/lib/passwordRules';
+import { getPasswordPolicyError, PASSWORD_MIN_LENGTH } from '@/lib/passwordRules';
 import { getSafeInternalRedirect } from '@/lib/safeRedirect';
 import { isFreeEmail, BUSINESS_EMAIL_MESSAGE } from '@/lib/business-email';
-import { getPasswordAuthErrorMessage } from '@/lib/authErrorMessage';
+import { getSignupAuthError } from '@/lib/authErrorMessage';
+
+const signupFields = ['name', 'email', 'password'] as const;
+type SignupField = typeof signupFields[number];
+type FieldErrors = Partial<Record<SignupField, string>>;
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [submitting, setSubmitting] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+  const requestInFlight = useRef(false);
+  const pendingFieldFocus = useRef<SignupField | null>(null);
+  const focusEmailAfterEdit = useRef(false);
+  const nameInput = useRef<HTMLInputElement>(null);
+  const emailInput = useRef<HTMLInputElement>(null);
+  const passwordInput = useRef<HTMLInputElement>(null);
+  const confirmationTitle = useRef<HTMLParagraphElement>(null);
   const { signUp, loading, isLoggedIn } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
   const [searchParams] = useSearchParams();
   const requestedRedirect = getSafeInternalRedirect(searchParams.get('redirect'));
   const isAgency = requestedRedirect === '/pilgrimage/agency';
   const isInvitation = requestedRedirect?.startsWith('/accept-invite') ?? false;
+  const loggedIn = isLoggedIn();
+  const showPasswordGuidance = Boolean(password || fieldErrors.password);
 
-  if (loading || orgLoading) {
+  useEffect(() => {
+    const target = pendingFieldFocus.current;
+    if (!target || submitting) return;
+    pendingFieldFocus.current = null;
+    const inputs = { name: nameInput, email: emailInput, password: passwordInput };
+    inputs[target].current?.focus();
+  }, [fieldErrors, submitting]);
+
+  useEffect(() => {
+    if (confirmationEmail) {
+      confirmationTitle.current?.focus();
+    } else if (focusEmailAfterEdit.current) {
+      focusEmailAfterEdit.current = false;
+      emailInput.current?.focus();
+    }
+  }, [confirmationEmail]);
+
+  if (!submitting && (loading || (loggedIn && !requestedRedirect && orgLoading))) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">جارٍ التحميل...</p>
+      <AuthLayout>
+        <div role="status" className="flex items-center justify-center gap-3 text-muted-foreground">
+          <div aria-hidden="true" className="size-5 animate-spin rounded-full border-b-2 border-primary" />
+          جارٍ التحميل…
         </div>
-      </div>
+      </AuthLayout>
     );
   }
 
-  if (isLoggedIn()) {
+  if (!submitting && loggedIn) {
     if (requestedRedirect) return <Navigate to={requestedRedirect} replace />;
-    if (!hasOrganization) return <Navigate to="/register-organization" replace />;
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={hasOrganization ? '/dashboard' : '/create-organization'} replace />;
   }
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setPasswordError('');
-    if (!email || !password || !fullName) {
-      setError('يرجى إدخال جميع البيانات المطلوبة');
-      return;
+  const updateField = (field: SignupField, value: string) => {
+    const values = { name: setFullName, email: setEmail, password: setPassword };
+    values[field](value);
+    if (fieldErrors[field]) setFieldErrors(previous => ({ ...previous, [field]: undefined }));
+    if (formError) setFormError('');
+  };
+
+  const showSignupError = (error: unknown) => {
+    const { field, message } = getSignupAuthError(error);
+    if (field) {
+      pendingFieldFocus.current = field;
+      setFieldErrors({ [field]: message });
+    } else {
+      setFormError(message);
     }
-    if (isFreeEmail(email)) {
-      setError(BUSINESS_EMAIL_MESSAGE);
-      return;
+  };
+
+  const handleSignUp = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (requestInFlight.current) return;
+
+    setFormError('');
+    const normalizedEmail = email.trim().toLowerCase();
+    const trimmedName = fullName.trim();
+    const nextErrors: FieldErrors = {};
+    if (!trimmedName) nextErrors.name = 'اكتب اسمك الكامل.';
+    if (!normalizedEmail) {
+      nextErrors.email = 'اكتب بريد العمل الرسمي.';
+    } else if (emailInput.current?.validity.typeMismatch) {
+      nextErrors.email = 'راجع صيغة بريد العمل واكتب عنوانًا صالحًا.';
+    } else if (isFreeEmail(normalizedEmail)) {
+      nextErrors.email = BUSINESS_EMAIL_MESSAGE;
     }
-    if (password.length < PASSWORD_MIN_LENGTH) {
-      setPasswordError(PASSWORD_LENGTH_MESSAGE);
-      return;
-    }
-    const result = await signUp(email, password, fullName, requestedRedirect || undefined);
-    if (result.error) {
-      const feedback = getPasswordAuthErrorMessage(result.error);
-      if (feedback) {
-        setPasswordError(feedback);
-        return;
+    nextErrors.password = password ? getPasswordPolicyError(password) : 'اكتب كلمة مرور لحسابك.';
+
+    const firstError = signupFields.find(field => Boolean(nextErrors[field]));
+    pendingFieldFocus.current = firstError ?? null;
+    setFieldErrors(nextErrors);
+    if (firstError) return;
+
+    requestInFlight.current = true;
+    setSubmitting(true);
+    try {
+      const result = await signUp(normalizedEmail, password, trimmedName, requestedRedirect || undefined);
+      if (result.error) {
+        showSignupError(result.error);
+      } else if (result.confirmationRequired) {
+        setConfirmationEmail(normalizedEmail);
+        setPassword('');
+        setShowPassword(false);
       }
-      const errorMsg = result.error instanceof Error ? result.error.message : String(result.error);
-      if (errorMsg.includes('already') || errorMsg.includes('user_already_exists')) {
-        setError('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من ذلك.');
-      } else {
-        setError('فشل في إنشاء الحساب. يرجى المحاولة مرة أخرى.');
-      }
-    } else if (result.confirmationRequired) {
-      setConfirmationEmail(email.trim().toLowerCase());
-      setPassword('');
+    } catch (error) {
+      showSignupError(error);
+    } finally {
+      requestInFlight.current = false;
+      setSubmitting(false);
     }
   };
 
   return (
     <AuthLayout>
-      {/* Mobile logo */}
-      <div className="lg:hidden text-center mb-8">
+      <div className="mb-5 text-center lg:hidden">
         <Link to="/" className="inline-flex">
           <VogantraLogo size="lg" />
         </Link>
-        <p className="text-muted-foreground text-sm mt-2">نظام إدارة شركات السياحة</p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-5">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{isAgency ? 'إنشاء حساب وكيل الحج والعمرة' : 'إنشاء حساب جديد'}</h1>
-          <p className="text-muted-foreground mt-1">
-            {isAgency ? 'استخدم بريد العمل المرتبط باتفاقية الوكالة.' : isInvitation ? 'أنشئ حسابك ثم اقبل دعوة الانضمام إلى فريقك' : 'سجّل شركتك وابدأ تجربتك المجانية لمدة 7 أيام'}
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+            {isAgency ? 'استخدم بريد العمل المسجل في اتفاقية الوكالة.' : isInvitation
+              ? 'أنشئ حسابك باستخدام بريد العمل الذي وصلك عليه رابط الدعوة.'
+              : 'سجّل شركتك وابدأ تجربتك المجانية لمدة 7 أيام.'}
           </p>
         </div>
 
         {confirmationEmail ? (
           <Alert role="status">
             <AlertDescription className="space-y-3">
-              <p className="font-semibold">راجع بريد العمل لإكمال التسجيل</p>
+              <p ref={confirmationTitle} tabIndex={-1} className="font-semibold">راجع بريد العمل لإكمال التسجيل</p>
               <p>افتح رسالة التأكيد على <bdi>{confirmationEmail}</bdi> وتابع من الرابط. لو الرسالة مش ظاهرة، راجع البريد غير المرغوب فيه.</p>
-              <Button type="button" variant="outline" onClick={() => setConfirmationEmail(null)}>تغيير البريد</Button>
+              <Button type="button" variant="outline" onClick={() => {
+                focusEmailAfterEdit.current = true;
+                setConfirmationEmail(null);
+              }}>
+                تغيير البريد
+              </Button>
             </AlertDescription>
           </Alert>
-        ) : <form onSubmit={handleSignUp} className="space-y-5">
-          {error && (
-            <Alert className="border-destructive/50 bg-destructive/10">
-              <AlertDescription className="text-destructive">{error}</AlertDescription>
-            </Alert>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="signup-fullname">الاسم الكامل</Label>
-            <div className="relative">
-              <Input
-                id="signup-fullname"
-                type="text"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                required
-                className="text-right pr-10 h-12"
-                placeholder="أدخل اسمك الكامل"
-                disabled={loading}
-              />
-              <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="signup-email">بريد العمل الرسمي</Label>
-            <div className="relative">
-              <Input
-                id="signup-email"
-                aria-describedby="signup-email-guidance"
-                aria-invalid={email.includes('@') && isFreeEmail(email)}
-                type="email"
-                autoComplete="email"
-                dir="ltr"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                className="text-right pr-10 h-12"
-                placeholder="name@company.com"
-                disabled={loading}
-              />
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            </div>
-            <p id="signup-email-guidance" className={email.includes('@') && isFreeEmail(email) ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'}>
-              {isAgency ? 'استخدم بريد العمل الذي سجّله مشغّل البرنامج على الاتفاقية، ثم أكّد البريد.' : BUSINESS_EMAIL_MESSAGE}
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="signup-password">كلمة المرور</Label>
-            <div className="relative">
-              <Input
-                id="signup-password"
-                autoComplete="new-password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={e => {
-                  setPassword(e.target.value);
-                  setPasswordError('');
-                }}
-                aria-describedby="signup-password-guidance"
-                aria-invalid={Boolean(passwordError)}
-                required
-                className="text-right pr-10 h-12"
-                placeholder="أدخل كلمة مرور"
-                disabled={loading}
-                minLength={PASSWORD_MIN_LENGTH}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                disabled={loading}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-              <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            </div>
-            <PasswordChecklist id="signup-password-guidance" password={password} error={passwordError} />
-          </div>
-          <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
-                جاري إنشاء الحساب...
+        ) : (
+          <form onSubmit={handleSignUp} noValidate aria-busy={submitting} className="space-y-3 sm:space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="signup-fullname">الاسم الكامل</Label>
+              <div className="relative">
+                <Input
+                  ref={nameInput}
+                  id="signup-fullname"
+                  autoComplete="name"
+                  value={fullName}
+                  onChange={event => updateField('name', event.target.value)}
+                  aria-invalid={Boolean(fieldErrors.name)}
+                  aria-describedby={fieldErrors.name ? 'signup-name-error' : undefined}
+                  required
+                  className="h-11 ps-10"
+                  disabled={submitting}
+                />
+                <User aria-hidden="true" className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <UserPlus size={18} />
-                إنشاء حساب
+              {fieldErrors.name && <p id="signup-name-error" role="alert" className="text-sm text-destructive">{fieldErrors.name}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="signup-email">بريد العمل الرسمي</Label>
+              <div className="relative">
+                <Input
+                  ref={emailInput}
+                  id="signup-email"
+                  aria-describedby={fieldErrors.email ? 'signup-email-hint signup-email-error' : 'signup-email-hint'}
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  type="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  dir="ltr"
+                  value={email}
+                  onChange={event => updateField('email', event.target.value)}
+                  required
+                  className="h-11 pl-10 text-left"
+                  placeholder="name@company.com"
+                  disabled={submitting}
+                />
+                <Mail aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               </div>
+              <p id="signup-email-hint" className="text-xs text-muted-foreground">
+                {isAgency ? 'استخدم البريد المسجل في اتفاقية الوكالة.' : 'استخدم عنوانًا على نطاق شركتك. هنرسل عليه رابط التأكيد.'}
+              </p>
+              {fieldErrors.email && <p id="signup-email-error" role="alert" className="text-sm text-destructive">{fieldErrors.email}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="signup-password">كلمة المرور</Label>
+              <div className="relative">
+                <Input
+                  ref={passwordInput}
+                  id="signup-password"
+                  autoComplete="new-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={event => updateField('password', event.target.value)}
+                  aria-describedby={showPasswordGuidance ? 'signup-password-guidance' : 'signup-password-hint'}
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  required
+                  className="h-11 pe-12 ps-10"
+                  disabled={submitting}
+                  minLength={PASSWORD_MIN_LENGTH}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(value => !value)}
+                  aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                  aria-controls="signup-password"
+                  className="absolute inset-y-0 end-0 grid w-11 place-items-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  disabled={submitting}
+                >
+                  {showPassword ? <EyeOff aria-hidden="true" size={16} /> : <Eye aria-hidden="true" size={16} />}
+                </button>
+                <Lock aria-hidden="true" className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              </div>
+              {showPasswordGuidance ? (
+                <PasswordChecklist id="signup-password-guidance" password={password} error={fieldErrors.password} />
+              ) : (
+                <p id="signup-password-hint" className="text-xs text-muted-foreground">استخدم {PASSWORD_MIN_LENGTH} أحرف على الأقل.</p>
+              )}
+            </div>
+
+            {formError && (
+              <Alert variant="destructive" role="alert">
+                <AlertDescription>{formError}</AlertDescription>
+              </Alert>
             )}
-          </Button>
-        </form>}
+
+            <Button type="submit" className="h-12 w-full gap-2 text-base" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <span aria-hidden="true" className="size-4 animate-spin rounded-full border-b-2 border-primary-foreground" />
+                  جاري إنشاء الحساب…
+                </>
+              ) : (
+                <>
+                  <UserPlus aria-hidden="true" size={18} />
+                  إنشاء حساب
+                </>
+              )}
+            </Button>
+          </form>
+        )}
 
         <div className="text-center text-sm text-muted-foreground">
           لديك حساب بالفعل؟{' '}
           <Link
             to={requestedRedirect ? `/login?redirect=${encodeURIComponent(requestedRedirect)}` : '/login'}
-            className="text-primary font-semibold hover:underline"
+            className="font-semibold text-primary hover:underline"
           >
             سجّل دخول
           </Link>
@@ -213,8 +287,8 @@ const SignupPage = () => {
 
         <p className="text-center text-xs text-muted-foreground">
           {isAgency ? 'بعد تأكيد البريد، ستعود إلى بوابة الوكيل.' : isInvitation
-            ? 'بعد تأكيد البريد، ستعود تلقائياً لقبول دعوة المؤسسة.'
-            : 'بعد إنشاء الحساب، ستقوم بتسجيل بيانات شركتك للبدء في استخدام النظام.'}
+            ? 'بعد تأكيد البريد، ستعود لقبول دعوة المؤسسة.'
+            : 'بعد تأكيد بريدك، أكمِل بيانات شركتك وابدأ التجربة المجانية.'}
         </p>
       </div>
     </AuthLayout>

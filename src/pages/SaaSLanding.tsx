@@ -4,10 +4,8 @@ import { useSafarLandingSettings } from '@/hooks/useSafarLandingSettings';
 import { safarLandingDefaults } from '@/lib/safarLandingSettings';
 import {
   ArrowLeft,
-  ArrowUpLeft,
   BarChart3,
   Building2,
-  CheckCircle2,
   ChevronLeft,
   CircleDollarSign,
   FileCheck2,
@@ -42,6 +40,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
 
@@ -348,8 +347,8 @@ const SaaSLanding = () => {
   return (
     <div className="min-h-screen overflow-x-hidden bg-background font-sans text-foreground" dir="rtl">
       <header className="sticky top-0 z-50 border-b border-border/80 bg-card/90 backdrop-blur-xl">
-        <div className={`${pageContainer} flex h-[72px] items-center justify-between`}>
-          <Link to="/" className="flex items-center" aria-label="العودة إلى صفحة SafarERP الرئيسية">
+        <div className={`${pageContainer} flex h-16 items-center justify-between gap-2 sm:h-[72px]`}>
+          <Link to="/" className="flex min-w-0 items-center" aria-label="العودة إلى صفحة SafarERP الرئيسية">
             <BrandLockup />
           </Link>
 
@@ -365,25 +364,17 @@ const SaaSLanding = () => {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link to="/login" className="hidden sm:inline-flex">
-              <Button variant="ghost" className="font-bold text-foreground hover:bg-muted">
-                تسجيل الدخول
-              </Button>
-            </Link>
-            <Link to="/signup">
-              <Button className="h-10 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-lg shadow-soft-md hover:bg-primary sm:px-5 sm:text-sm">
-                ابدأ مجانًا
-                <ArrowLeft className="mr-2 h-4 w-4" />
-              </Button>
-            </Link>
-
+            <Button asChild variant="ghost" className="min-h-11 shrink-0 px-2 font-bold sm:px-4">
+              <Link to="/login">تسجيل الدخول</Link>
+            </Button>
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="فتح القائمة">
+                <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 lg:hidden" aria-label="فتح القائمة">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] border-border bg-card">
+              <SheetContent side="right" dir="rtl" aria-describedby={undefined} className="w-[min(100%,300px)] border-border bg-card">
+                <SheetTitle className="sr-only">قائمة التنقل</SheetTitle>
                 <div className="mt-7 flex flex-col gap-5">
                   <Link to="/" onClick={() => setMobileMenuOpen(false)} aria-label="SafarERP">
                     <BrandLockup compact />
@@ -407,14 +398,6 @@ const SaaSLanding = () => {
                       الأسعار
                     </Link>
                   </nav>
-                  <div className="space-y-2 border-t border-border pt-5">
-                    <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="outline" className="w-full rounded-xl">تسجيل الدخول</Button>
-                    </Link>
-                    <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
-                      <Button className="w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary">ابدأ التجربة</Button>
-                    </Link>
-                  </div>
                 </div>
               </SheetContent>
             </Sheet>
@@ -423,48 +406,35 @@ const SaaSLanding = () => {
       </header>
 
       <main>
-        <section className="relative overflow-hidden bg-brand-navy pb-20 pt-14 text-brand-ivory sm:pb-24 sm:pt-20 lg:pb-28 lg:pt-24">
+        <section className="relative overflow-hidden bg-brand-navy pb-14 pt-10 text-brand-ivory sm:pb-24 sm:pt-20 lg:pb-28 lg:pt-24">
           <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] [background-size:54px_54px]" aria-hidden="true" />
 
-          <div className={`${pageContainer} relative grid items-center gap-14 lg:grid-cols-[.9fr_1.1fr] lg:gap-12`}>
+          <div className={`${pageContainer} relative grid items-center gap-9 lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)] lg:gap-12`}>
             <div className="text-center lg:text-right">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/20 bg-sky-300/10 px-4 py-2 text-xs font-bold text-brand-gold sm:text-sm">
-                <Sparkles className="h-4 w-4" />
-                نظام تشغيل متكامل لشركات السياحة
-              </div>
-              <h1 className="text-4xl font-black leading-[1.25] tracking-normal sm:text-5xl lg:text-[4.15rem] lg:leading-[1.18]">
+              <h1 className="text-4xl font-black leading-[1.2] tracking-normal sm:text-5xl lg:text-[4.15rem] lg:leading-[1.18]">
                 SafarERP
-                <span className="block text-brand-gold text-2xl sm:text-3xl mt-3">
+                <span className="block text-brand-gold mt-2 text-2xl leading-tight sm:text-3xl">
                   {landing.safar_landing_headline}
                 </span>
               </h1>
-              <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-brand-ivory/80 sm:text-lg lg:mx-0 lg:max-w-xl">
+              <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-brand-ivory/80 sm:mt-6 sm:text-lg sm:leading-8 lg:mx-0 lg:max-w-xl">
                 {landing.safar_landing_intro}
               </p>
 
-              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
-                <Link to="/signup">
-                  <Button size="lg" className="h-[52px] w-full rounded-lg bg-brand-gold px-7 text-base font-semibold text-brand-navy hover:bg-brand-gold/90 sm:w-auto">
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 lg:justify-start">
+                <Button asChild size="lg" className="min-h-12 w-full rounded-lg bg-brand-gold px-6 text-base font-bold text-brand-navy hover:bg-brand-gold/90 sm:w-auto">
+                  <Link to="/signup">
                     ابدأ تجربة 7 أيام
-                    <ArrowLeft className="mr-2 h-5 w-5" />
-                  </Button>
+                    <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+                  </Link>
+                </Button>
+                <Link to="/pricing" className="inline-flex min-h-11 items-center rounded-md px-2 text-sm font-bold text-brand-ivory underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-gold">
+                  قارن الباقات والأسعار
                 </Link>
-                <a href="#platform">
-                  <Button size="lg" variant="outline" className="h-[52px] w-full rounded-xl border-brand-ivory/20 bg-card/5 px-7 text-base font-bold text-brand-ivory hover:bg-card/10 hover:text-brand-ivory sm:w-auto">
-                    استكشف المنصة
-                    <ArrowUpLeft className="mr-2 h-5 w-5" />
-                  </Button>
-                </a>
               </div>
-
-              <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-xs font-medium text-muted-foreground sm:text-sm lg:justify-start">
-                {['إعداد سريع', 'واجهة عربية RTL', 'صلاحيات دقيقة'].map(item => (
-                  <span key={item} className="flex items-center gap-1.5">
-                    <CheckCircle2 className="h-4 w-4 text-success" />
-                    {item}
-                  </span>
-                ))}
-              </div>
+              <p className="mt-2 text-sm leading-6 text-brand-ivory/80">
+                سجّل ببريد عمل شركتك. التجربة مجانية وبدون بطاقة دفع.
+              </p>
             </div>
 
             <DashboardPreview />
@@ -566,14 +536,6 @@ const SaaSLanding = () => {
               ))}
             </div>
 
-            <div className="mt-10 text-center">
-              <Link to="/signup">
-                <Button className="h-12 rounded-xl bg-brand-navy px-7 text-sm font-extrabold text-brand-ivory hover:bg-primary">
-                  جرّب المنصة على بيانات شركتك
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
           </div>
         </section>
 
@@ -591,10 +553,6 @@ const SaaSLanding = () => {
               <p className="mt-5 max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">
                 وضّح مسؤولية كل قسم، حافظ على فصل البيانات، وراجع ما حدث داخل كل عملية بدون الاعتماد على الذاكرة أو الرسائل المتناثرة.
               </p>
-              <Link to="/signup" className="mt-7 inline-flex items-center gap-2 text-sm font-extrabold text-brand-gold transition-colors hover:text-brand-gold">
-                ابدأ إعداد فريقك
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
@@ -609,37 +567,6 @@ const SaaSLanding = () => {
                   </div>
                 </article>
               ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-card py-20 sm:py-24">
-          <div className={pageContainer}>
-            <div className="overflow-hidden rounded-lg border border-border bg-gradient-to-l from-primary via-white to-primary p-7 sm:p-10 lg:p-12">
-              <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
-                <div>
-                  <span className="text-xs font-extrabold uppercase tracking-normal text-brand-gold">7 أيام للتجربة</span>
-                  <h2 className="mt-3 text-3xl font-black leading-tight text-foreground sm:text-4xl">
-                    اختبر دورة عملك الحقيقية داخل SafarERP.
-                  </h2>
-                  <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-                    أضف فريقك، سجّل أول طلب، وتابع انتقاله بين الأقسام قبل اتخاذ قرار الاشتراك.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-                  <Link to="/signup">
-                    <Button size="lg" className="w-full rounded-xl bg-primary px-7 font-extrabold text-brand-ivory shadow-lg shadow-soft-md hover:bg-primary">
-                      ابدأ التجربة الآن
-                      <ArrowLeft className="mr-2 h-5 w-5" />
-                    </Button>
-                  </Link>
-                  <Link to="/pricing">
-                    <Button size="lg" variant="outline" className="w-full rounded-xl border-border bg-card px-7 font-bold text-foreground hover:bg-muted">
-                      شاهد الخطط
-                    </Button>
-                  </Link>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -680,12 +607,12 @@ const SaaSLanding = () => {
             <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-brand-gold sm:text-lg">
               ابدأ تجربة SafarERP لمدة 7 أيام واختبر الفرق على دورة عمل شركتك الفعلية.
             </p>
-            <Link to="/signup" className="mt-8 inline-flex">
-              <Button size="lg" className="h-[52px] rounded-xl bg-card px-8 text-base font-black text-brand-gold shadow-xl hover:bg-muted">
-                أنشئ حساب شركتك
-                <ArrowLeft className="mr-2 h-5 w-5" />
-              </Button>
-            </Link>
+            <Button asChild size="lg" className="mt-8 min-h-12 rounded-xl bg-card px-8 text-base font-bold text-brand-navy shadow-xl hover:bg-muted">
+              <Link to="/signup">
+                ابدأ تجربة 7 أيام
+                <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+              </Link>
+            </Button>
           </div>
         </section>
       </main>

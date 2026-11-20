@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import SafarERPLogo from '@/components/brand/VogantraLogo';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,32 +12,42 @@ import { supabase } from '@/integrations/supabase/client';
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [submittedAddress, setSubmittedAddress] = useState('');
+  const requestPending = useRef(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (requestPending.current) return;
     setError('');
-    if (!email) {
+    const address = email.trim().toLowerCase();
+    if (!address) {
       setError('يرجى إدخال البريد الإلكتروني');
       return;
     }
+    requestPending.current = true;
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(address, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
-      if (error) throw error;
-      setSent(true);
+      if (error && error.code !== 'user_not_found') {
+        setError(error.status === 429 || error.code === 'over_email_send_rate_limit'
+          ? 'تم طلب رسائل كثيرة. انتظر قليلًا ثم أعد المحاولة.'
+          : 'تعذّر طلب رابط الاستعادة. حاول مرة أخرى.');
+        return;
+      }
+      setSubmittedAddress(address);
     } catch {
-      setError('حدث خطأ أثناء إرسال رابط إعادة التعيين. يرجى المحاولة لاحقاً.');
+      setError('تعذّر الاتصال بخدمة الاستعادة. تحقق من اتصالك ثم حاول مرة أخرى.');
     } finally {
+      requestPending.current = false;
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-background px-4">
+    <div className="min-h-dvh flex items-center justify-center bg-background px-4 py-8" dir="rtl">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" aria-label="العودة إلى صفحة SafarERP الرئيسية" className="inline-flex items-center mb-4">
@@ -54,16 +63,15 @@ const ForgotPassword = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {sent ? (
+            {submittedAddress ? (
               <div className="text-center space-y-4">
                 <div className="mx-auto w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
-                <h3 className="text-lg font-semibold">تم الإرسال بنجاح!</h3>
-                <p className="text-muted-foreground text-sm">
-                  تم إرسال رابط إعادة تعيين كلمة المرور إلى <strong>{email}</strong>.
-                  يرجى فحص صندوق الوارد (والبريد غير المرغوب فيه).
-                  الرابط صالح لمدة 24 ساعة.
+                <h3 className="text-lg font-semibold">راجع بريدك</h3>
+                <p role="status" className="text-muted-foreground text-sm">
+                  لو فيه حساب مسجّل بالبريد <bdi className="break-all font-medium">{submittedAddress}</bdi> هيوصلك رابط الاستعادة.
+                  راجع صندوق الوارد والبريد غير المرغوب فيه.
                 </p>
                 <Button asChild variant="outline" className="mt-4 gap-2">
                   <Link to="/login">
@@ -86,11 +94,13 @@ const ForgotPassword = () => {
                       id="email"
                       type="email"
                       value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      placeholder="أدخل بريدك الإلكتروني"
+                      dir="ltr"
+                      autoComplete="email"
+                      onChange={e => { setEmail(e.target.value); setError(''); }}
+                      placeholder="name@company.com"
                       required
                       disabled={loading}
-                      className="text-right pr-10"
+                      className="ps-10"
                     />
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   </div>

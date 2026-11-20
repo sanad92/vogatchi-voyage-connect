@@ -1,5 +1,5 @@
 import { Check, Circle } from 'lucide-react';
-import { getPasswordChecks } from '@/lib/passwordRules';
+import { getPasswordChecks, PASSWORD_MAX_BYTES } from '@/lib/passwordRules';
 
 interface PasswordChecklistProps {
   id: string;
@@ -22,6 +22,7 @@ export default function PasswordChecklist({
   ];
   const required = [
     { label: '٨ أحرف على الأقل', met: checks.length },
+    ...(!checks.withinLimit ? [{ label: `بحد أقصى ${PASSWORD_MAX_BYTES.toLocaleString('ar-EG')} بايت`, met: false }] : []),
     ...(requireMixedCharacters ? characterRules : []),
   ];
   const recommended = [
@@ -33,7 +34,7 @@ export default function PasswordChecklist({
   return (
     <div id={id} className="space-y-2 rounded-md border border-border px-3 py-2 text-xs">
       {[
-        { title: 'شروط كلمة المرور', rules: required },
+        { title: 'شروط النموذج', rules: required },
         { title: 'اقتراحات لكلمة مرور أقوى', rules: recommended },
       ].map(({ title, rules }) => (
         <div key={title} className="space-y-1">
@@ -54,7 +55,7 @@ export default function PasswordChecklist({
       {error ? (
         <p role="alert" className="text-sm text-destructive">{error}</p>
       ) : (
-        <p className="text-muted-foreground">يتم التحقق من كلمات المرور الضعيفة الشائعة عند الإرسال.</p>
+        <p className="text-muted-foreground">الخادم بيتحقق من قبول كلمة المرور عند الإرسال، وممكن يرفض كلمة شائعة حتى لو استوفت شروط النموذج.</p>
       )}
     </div>
   );
