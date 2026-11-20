@@ -15,8 +15,8 @@ assert.equal(readPassportMrz(`${nameLine}\n${identityLine.replace('L898', 'L998'
 
 const db = new PGlite();
 const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const [org, other, inbox, otherInbox, chat, otherChat, message, otherMessage, actor, restricted, guideMessage] =
-  Array.from({ length: 11 }, (_, i) => id(i + 1));
+const [org, other, inbox, otherInbox, chat, otherChat, message, otherMessage, actor, restricted, guideMessage, booking, otherBooking, client, wrongClient] =
+  Array.from({ length: 15 }, (_, i) => id(i + 1));
 const readSql = path => readFileSync(new URL(`../supabase/migrations/${path}`, import.meta.url), 'utf8');
 
 try {
@@ -28,6 +28,7 @@ try {
     CREATE TABLE organizations (id uuid PRIMARY KEY);
     CREATE TABLE whatsapp_settings (id uuid PRIMARY KEY, organization_id uuid, is_active boolean);
     CREATE TABLE customers (id uuid PRIMARY KEY, organization_id uuid, name text);
+    CREATE TABLE bookings (id uuid PRIMARY KEY, organization_id uuid, customer_id uuid, status text);
     CREATE TABLE whatsapp_conversations (
       id uuid PRIMARY KEY, organization_id uuid, whatsapp_settings_id uuid, customer_id uuid, phone_number text,
       assigned_to uuid, status text, assignment_reason text
@@ -37,7 +38,7 @@ try {
       direction text, media_storage_path text, media_mime_type text, content text
     );
     CREATE TABLE sop_leads (
-      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid, conversation_id uuid, customer_id uuid,
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid, conversation_id uuid, customer_id uuid, booking_id uuid,
       lead_number text, contact_name text, contact_phone text, lead_source text, campaign text, destination text,
       approx_dates text, special_requests text, stage text DEFAULT 'new', intake_completed_at timestamptz, updated_at timestamptz
     );
@@ -50,6 +51,7 @@ try {
     GRANT SELECT ON whatsapp_conversations TO authenticated;
     GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
     INSERT INTO organizations VALUES ('${org}'), ('${other}');
+    INSERT INTO bookings VALUES ('${booking}', '${org}', '${client}', 'confirmed'), ('${otherBooking}', '${other}', '${wrongClient}', 'confirmed');
     INSERT INTO whatsapp_settings VALUES ('${inbox}', '${org}', true), ('${otherInbox}', '${other}', true);
     INSERT INTO whatsapp_conversations (id, organization_id, whatsapp_settings_id, phone_number, status) VALUES
       ('${chat}', '${org}', '${inbox}', '201000000001', 'open'),
@@ -57,11 +59,13 @@ try {
     INSERT INTO whatsapp_messages VALUES
       ('${message}', '${org}', '${chat}', '${inbox}', 'inbound', 'fixture/a.png', 'image/png', 'أريد رحلة'),
       ('${otherMessage}', '${other}', '${otherChat}', '${otherInbox}', 'inbound', 'fixture/b.png', 'image/png', 'طلب آخر'),
-      ('${id(50)}', '${org}', '${chat}', '${inbox}', 'inbound', 'fixture/c.png', 'image/png', 'صورة ثانية');
+      ('${id(50)}', '${org}', '${chat}', '${inbox}', 'inbound', 'fixture/c.pdf', 'application/pdf', 'جواز ثان');
   `);
   const guided = readSql('20260910224026_whatsapp_queue_routing.sql');
   await db.exec(guided.slice(guided.indexOf('CREATE TABLE public.wa_bot_intake')));
   await db.exec(readSql('20261120002115_whatsapp_ad_intake_and_passport_review.sql'));
+
+  await db.exec(readSql('20261120104437_whatsapp_passport_pdf_and_booking_links.sql'));
 
   const createAdLead = async (targetOrg = org, ad = '987654321') =>
     (await db.query('SELECT wa_open_ad_lead($1,$2,$3,$4) AS lead', [targetOrg, message, ad, 'Test Sender'])).rows[0].lead;
@@ -89,6 +93,7 @@ try {
   assert.match(lead.special_requests, /٤ مسافرين/);
   assert.equal(lead.intake_completed_at, null, 'draft remains open for review');
 
+  await db.exec(`RESET ROLE; UPDATE sop_leads SET booking_id = '${booking}', customer_id = '${client}' WHERE conversation_id = '${chat}';`);
   const person = { message_id: message, full_name: 'SYNTHETIC TRAVELER', passport_number: 'TEST0001',
     nationality: 'UTO', birth_date: '1990-01-01', expiry_date: '2030-12-31' };
   const approve = items => db.query('SELECT wa_approve_passport_reviews($1,$2,$3::jsonb) AS count', [org, chat, JSON.stringify(items)]);
@@ -96,16 +101,23 @@ try {
   await assert.rejects(createAdLead(), /permission denied/);
   await assert.rejects(approve([person, { ...person, message_id: otherMessage }]), /غير متاح/);
   assert.equal((await db.query('SELECT * FROM whatsapp_passport_reviews')).rows.length, 0, 'batch rolls back on unauthorized attachment');
+  const attach = (target, items) => db.query('SELECT wa_approve_passport_reviews_for_booking($1,$2,$3,$4::jsonb) AS count',
+    [org, chat, target, JSON.stringify(items)]);
   const secondPerson = { ...person, message_id: id(50), passport_number: 'TEST0002' };
-  assert.equal((await approve([person, secondPerson])).rows[0].count, 2);
+  await assert.rejects(attach(otherBooking, [person]), /غير متاح/, 'a related booking must belong to the organization');
+  await assert.rejects(attach(booking, [person, person]), /مكررًا/, 'duplicate selections roll back');
+  assert.equal((await db.query('SELECT * FROM whatsapp_passport_reviews')).rows.length, 0);
+  assert.equal((await attach(booking, [person, secondPerson])).rows[0].count, 2, 'PNG and PDF are both approved and attached');
+  assert.deepEqual((await db.query('SELECT DISTINCT booking_id FROM whatsapp_passport_reviews')).rows, [{ booking_id: booking }]);
   assert.equal((await approve([person])).rows[0].count, 1);
   assert.equal((await db.query('SELECT * FROM whatsapp_passport_reviews')).rows.length, 2, 'same attachment does not duplicate');
   await db.exec(`SELECT set_config('request.jwt.claim.sub','${restricted}',false)`);
   assert.equal((await db.query('SELECT * FROM whatsapp_passport_reviews')).rows.length, 0, 'without document rights');
   await assert.rejects(approve([person]), /صلاحياتك/);
+  await assert.rejects(attach(booking, [person]), /صلاحياتك/);
   await db.exec(`SELECT set_config('request.jwt.claim.sub','${id(99)}',false)`);
   assert.equal((await db.query('SELECT * FROM whatsapp_passport_reviews')).rows.length, 0, 'other tenant');
-  console.log('WhatsApp ad intake, guided handoff and passport batch authorization passed.');
+  console.log('WhatsApp ad intake, guided handoff and passport batch authorization and PDF booking attachment passed.');
 } finally {
   await db.close();
 }

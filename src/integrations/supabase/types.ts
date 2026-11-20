@@ -16575,6 +16575,7 @@ export type Database = {
           organization_id: string
           conversation_id: string
           message_id: string
+          booking_id: string | null
           full_name: string
           passport_number: string
           nationality: string
@@ -17660,6 +17661,10 @@ export type Database = {
     Functions: {
       wa_approve_passport_reviews: {
         Args: { _org: string; _conversation: string; _items: Json }
+        Returns: number
+      }
+      wa_approve_passport_reviews_for_booking: {
+        Args: { _org: string; _conversation: string; _booking: string; _items: Json }
         Returns: number
       }
       _bank_baseline_is_locked: { Args: { _account: string }; Returns: boolean }
