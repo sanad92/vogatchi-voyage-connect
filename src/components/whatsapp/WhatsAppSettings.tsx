@@ -32,6 +32,7 @@ export const WhatsAppSettings: React.FC = () => {
     api_version: settings?.api_version || 'v18.0',
     rate_limit_per_minute: settings?.rate_limit_per_minute || 80,
     auto_assignment_enabled: settings?.auto_assignment_enabled ?? true,
+    auto_ad_leads: settings?.auto_ad_leads ?? false,
     is_active: settings?.is_active ?? true
   });
 
@@ -50,6 +51,7 @@ export const WhatsAppSettings: React.FC = () => {
         api_version: settings.api_version || 'v18.0',
         rate_limit_per_minute: settings.rate_limit_per_minute || 80,
         auto_assignment_enabled: settings.auto_assignment_enabled ?? true,
+        auto_ad_leads: settings.auto_ad_leads,
         is_active: settings.is_active ?? true
       }));
     }
@@ -252,6 +254,17 @@ export const WhatsAppSettings: React.FC = () => {
                 checked={formData.auto_assignment_enabled}
                 onCheckedChange={(checked) => setFormData({...formData, auto_assignment_enabled: checked})}
               />
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Label htmlFor="auto-ad-leads">فتح ملف تلقائي لإعلانات واتساب</Label>
+                <p className="text-sm text-muted-foreground">
+                  كل محادثة جديدة جاية من إعلان تفتح ملف استقبال. استقبال بيانات الرحلة يستخدم وضع الأسئلة الموجّهة إذا كان مفعّلًا.
+                </p>
+              </div>
+              <Switch id="auto-ad-leads" checked={formData.auto_ad_leads}
+                onCheckedChange={(checked) => setFormData({ ...formData, auto_ad_leads: checked })} />
             </div>
 
             <div className="flex items-center justify-between">

@@ -16567,10 +16567,28 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_passport_reviews: {
+        Row: {
+          organization_id: string
+          conversation_id: string
+          message_id: string
+          full_name: string
+          passport_number: string
+          nationality: string
+          birth_date: string
+          expiry_date: string
+          approved_by: string
+          approved_at: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       whatsapp_settings: {
         Row: {
           access_token: string | null
           api_version: string | null
+          auto_ad_leads: boolean
           auto_assignment_enabled: boolean | null
           business_account_id: string | null
           business_description: string | null
@@ -16600,6 +16618,7 @@ export type Database = {
         Insert: {
           access_token?: string | null
           api_version?: string | null
+          auto_ad_leads?: boolean
           auto_assignment_enabled?: boolean | null
           business_account_id?: string | null
           business_description?: string | null
@@ -16629,6 +16648,7 @@ export type Database = {
         Update: {
           access_token?: string | null
           api_version?: string | null
+          auto_ad_leads?: boolean
           auto_assignment_enabled?: boolean | null
           business_account_id?: string | null
           business_description?: string | null
@@ -17635,6 +17655,10 @@ export type Database = {
       }
     }
     Functions: {
+      wa_approve_passport_reviews: {
+        Args: { _org: string; _conversation: string; _items: Json }
+        Returns: number
+      }
       _bank_baseline_is_locked: { Args: { _account: string }; Returns: boolean }
       _bank_book_balance_at: {
         Args: { _account: string; _as_of: string }

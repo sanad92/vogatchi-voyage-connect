@@ -1,3 +1,4 @@
+import { WhatsAppPassportReview } from './WhatsAppPassportReview';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { UserPlus } from 'lucide-react';
@@ -58,6 +59,7 @@ const WhatsAppConversationIntake = ({ conversationId, conversation }: Props) => 
   const { data: lead, isLoading, isError } = useSopLeadForConversation(conversationId);
   const { brief, isLoading: briefLoading } = useSalesBrief(conversationId);
   const { hasPermission } = usePermissionCheck();
+  const organizationId = useOrgId();
   const [creating, setCreating] = useState(false);
 
   if (isLoading) return <p className="p-3 text-xs text-muted-foreground">جاري التحميل…</p>;
@@ -103,6 +105,9 @@ const WhatsAppConversationIntake = ({ conversationId, conversation }: Props) => 
   return (
     <div className="p-3 space-y-3">
       <SopLeadPanel leadId={lead.id} compact />
+      {organizationId && hasPermission('whatsapp_view') && hasPermission('documents_view') && hasPermission('documents_create') && (
+        <WhatsAppPassportReview organizationId={organizationId} conversationId={conversationId} />
+      )}
     </div>
   );
 };

@@ -10,6 +10,16 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Tesseract requests the model by its fixed language filename.
+        assetFileNames: ({ name }) => name === 'eng.traineddata.gz'
+          ? 'assets/ocr/[name][extname]'
+          : 'assets/[name]-[hash][extname]',
+      },
+    },
+  },
   plugins: [
     react(),
     mcpPlugin(),
