@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { useSaveSopLead, type SopLead } from '@/hooks/useSop';
+import { getLeadCampaignLabel, LEAD_SOURCE_LABELS } from '@/lib/leadPipeline';
 import { toast } from 'sonner';
 
 interface Props {
@@ -22,7 +23,7 @@ const REQUIRED = [
 /** CS intake form — mirrors the mandatory intake fields enforced by the database. */
 export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
   const save = useSaveSopLead();
-  const [form, setForm] = useState<Partial<SopLead>>({
+  const [form, setForm] = useState<Omit<Partial<SopLead>, 'children_ages'> & { children_ages?: (number | null)[] }>({
     children_count: 0,
     children_ages: [],
     service_type: 'hotel',
@@ -55,7 +56,13 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
       toast.error('تاريخ المغادرة يجب ألا يسبق تاريخ الوصول');
       return;
     }
-    const ages = Array.isArray(form.children_ages) ? form.children_ages : [];
+    const ages = (Array.isArray(form.children_ages) ? form.children_ages : []).filter((age): age is number =>
+      typeof age === 'number' && Number.isInteger(age) && age >= 0 && age <= 17,
+    );
+    if (ages.length !== (form.children_count ?? 0)) {
+      toast.error('أدخل أعمار الأطفال المذكورين من صفر إلى 17 سنة.');
+      return;
+    }
     save.mutate(
       { ...form, children_ages: ages },
       { onSuccess: (l) => onSaved?.(l) },
@@ -116,8 +123,9 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
           <Input
             type="number" min={0} value={form.children_count ?? 0}
             onChange={(e) => {
-              const n = Number(e.target.value) || 0;
-              const ages = Array.from({ length: n }, (_, i) => (form.children_ages as number[])?.[i] ?? 0);
+              const n = Number(e.target.value);
+              if (!Number.isInteger(n) || n < 0) return;
+              const ages = Array.from({ length: n }, (_, i) => form.children_ages?.[i] ?? null);
               setForm((f) => ({ ...f, children_count: n, children_ages: ages }));
             }}
           />
@@ -127,10 +135,10 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
             {Array.from({ length: form.children_count || 0 }).map((_, i) => (
               <Input
                 key={i} type="number" min={0} max={17} className="w-16"
-                value={(form.children_ages as number[])?.[i] ?? ''}
+                value={form.children_ages?.[i] ?? ''}
                 onChange={(e) => {
-                  const ages = [...((form.children_ages as number[]) || [])];
-                  ages[i] = Number(e.target.value) || 0;
+                  const ages = [...(form.children_ages ?? [])];
+                  ages[i] = e.target.value === '' ? null : Number(e.target.value);
                   set('children_ages', ages);
                 }}
               />
@@ -183,7 +191,7 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
           <Input value={form.market || ''} onChange={(e) => set('market', e.target.value)} />
         </Field>
         <Field label="مصدر العميل *">
-          <Select value={form.lead_source || ''} onValueChange={(v) => set('lead_source', v)}>
+          {form.lead_source === 'meta_lead_ads' ? <Input value={LEAD_SOURCE_LABELS.meta_lead_ads} readOnly /> : <Select value={form.lead_source || ''} onValueChange={(v) => set('lead_source', v)}>
             <SelectTrigger><SelectValue placeholder="اختر المصدر" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="whatsapp">واتساب</SelectItem>
@@ -196,10 +204,10 @@ export const LeadIntakeForm = ({ lead, defaults, onSaved }: Props) => {
               <SelectItem value="phone">مكالمة</SelectItem>
               <SelectItem value="other">أخرى</SelectItem>
             </SelectContent>
-          </Select>
+          </Select>}
         </Field>
         <Field label="الحملة">
-          {form.campaign?.startsWith('pilgrimage:') ? <Input value="طلبات اهتمام العمرة" readOnly /> :
+          {form.lead_source === 'meta_lead_ads' || form.campaign?.startsWith('pilgrimage:') ? <Input value={getLeadCampaignLabel(form.campaign) || ''} readOnly /> :
             <Input value={form.campaign || ''} onChange={(e) => set('campaign', e.target.value)} />}
         </Field>
         <Field label="فندق / باقة مرجعية">

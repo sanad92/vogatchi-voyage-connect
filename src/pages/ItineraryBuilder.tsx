@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuotes, type QuoteItem } from '@/hooks/useQuotes';
 import { useOrgId } from '@/hooks/useOrgId';
+import { isRecordId, readActiveCustomer, type CustomerContext } from '@/hooks/useCustomerContext';
+import CustomerSearch from '@/components/customers/CustomerSearch';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -29,11 +31,24 @@ const labels: Record<ServiceType, string> = { hotel: 'فندق وغرف', flight
 const round = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 const newLine = (type: ServiceType): Line => ({ id: crypto.randomUUID(), type, description: '', currency: 'EGP', cost: 0, quantity: 1, markupType: 'percent', markup: 15, details: '' });
 export default function ItineraryBuilder() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const sourceQuoteId = searchParams.get('revise');
-  const loadedRevision = useRef<string | null>(null);
   const orgId = useOrgId();
+  const sourceQuoteId = searchParams.get('revise');
+  if (!orgId) return null;
+  if (sourceQuoteId && !isRecordId(sourceQuoteId)) return <p role="alert">رابط مراجعة العرض غير صالح.</p>;
+  return <ItineraryForm key={`${orgId}:${sourceQuoteId ?? ''}`} orgId={orgId} sourceQuoteId={sourceQuoteId} />;
+}
+
+function ItineraryForm({ orgId, sourceQuoteId }: { orgId: string; sourceQuoteId: string | null }) {
+  const navigate = useNavigate();
+  const loadedRevision = useRef<string | null>(null);
+  const submitting = useRef(false);
+  const mounted = useRef(false);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const { createQuote } = useQuotes();
   const { hasPermission } = useSupabasePermissions();
   const { data: orgCurrency, isLoading: currencyLoading } = useQuery({
@@ -48,6 +63,7 @@ export default function ItineraryBuilder() {
   const supportedOrgCurrency = currencies.includes(orgCurrency as Currency) ? orgCurrency as Currency : null;
   const [packageType, setPackageType] = useState<PackageType>('flight_hotel');
   const [customer, setCustomer] = useState('');
+  const [linkedCustomer, setLinkedCustomer] = useState<CustomerContext | null>(null);
   const [destination, setDestination] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
@@ -68,14 +84,16 @@ export default function ItineraryBuilder() {
       const { data: items, error: itemsError } = await supabase.from('quote_items').select('*').eq('organization_id', orgId!).eq('quote_id', sourceQuoteId!).order('sort_order');
       if (itemsError) throw itemsError;
       if (!items?.length || !items.every(item => (item.details as Record<string, unknown> | null)?.itinerary_builder === true)) throw new Error('هذا العرض ليس برنامجًا سياحيًا قابلًا للمراجعة');
-      return { quote, items };
+      const customer = await readActiveCustomer(orgId, quote.customer_id);
+      return { quote, items, customer };
     },
   });
   useEffect(() => {
     if (!sourceQuoteId || !revision || loadedRevision.current === sourceQuoteId) return;
     loadedRevision.current = sourceQuoteId;
-    const { quote, items } = revision;
-    setCustomer(quote.customer_name || '');
+    const { quote, items, customer } = revision;
+    setLinkedCustomer(customer);
+    setCustomer(customer?.name || quote.customer_name || '');
     setDestination(quote.destination || '');
     setStart(quote.travel_date || '');
     setEnd(quote.return_date || '');
@@ -135,6 +153,17 @@ export default function ItineraryBuilder() {
     setLines(old => [...old, { ...newLine('flight'), description: 'تذاكر طيران للمسافرين', currency: flightFareCurrency, cost, quantity: 1, details: 'تذاكر طيران للمسافرين' }]);
   };
   const save = async () => {
+    if (submitting.current || createQuote.isPending) return;
+    submitting.current = true;
+    setSaving(true);
+    try {
+      await submitItinerary();
+    } finally {
+      submitting.current = false;
+      if (mounted.current) setSaving(false);
+    }
+  };
+  const submitItinerary = async () => {
     if (sourceQuoteId && !hasPermission('quotes_edit')) return toast.error('ليس لديك صلاحية مراجعة عروض الأسعار');
     if (sourceQuoteId && (revisionLoading || revisionError || !revision)) return toast.error('تعذر تحميل العرض الأصلي للمراجعة');
     const errors = validateItinerary({ customer, destination, travelers: { adults, children, infants }, start, end, lines, rates, quoteCurrency: currency });
@@ -152,14 +181,22 @@ export default function ItineraryBuilder() {
         quote_currency: currency, markup_type: line.markupType, markup_value: line.markup,
         travelers: { adults, children, infants }, fx_snapshot: rates }
     }));
+    let verifiedCustomer: CustomerContext | null;
     try {
-      await createQuote.mutateAsync({
-        customer_id: null, customer_name: customer.trim(), destination: destination.trim(),
+      verifiedCustomer = await readActiveCustomer(orgId, linkedCustomer?.id);
+    } catch {
+      return toast.error('تعذر التحقق من العميل المرتبط بالعرض');
+    }
+    if (linkedCustomer && !verifiedCustomer) return toast.error('العميل المرتبط غير متاح. اختر عميلاً آخر أو احفظ بالاسم.');
+    if (!mounted.current) return;
+    try {
+      const quote = await createQuote.mutateAsync({
+        customer_id: verifiedCustomer?.id ?? null, customer_name: verifiedCustomer?.name ?? customer.trim(), destination: destination.trim(),
         travel_date: start || null, return_date: end || null, number_of_travelers: adults + children + infants,
         notes: (sourceQuoteId ? 'Revised from quote: ' + sourceQuoteId + ' | ' : '') + 'Itinerary Builder | Package: ' + packageType + ' | Currency: ' + currency + ' | Adults: ' + adults + ' | Children: ' + children + ' | Infants: ' + infants,
         currency, discount_amount: 0, vat_rate: 0, valid_until: null, assigned_employee_id: null, status: 'draft', items
       });
-      navigate('/quotes');
+      if (mounted.current) navigate(`/quotes/${quote.id}`);
     } catch { /* Existing mutation displays the error toast. */ }
   };
   return <div dir="rtl" className="p-4 md:p-6 space-y-5 max-w-6xl mx-auto">
@@ -172,7 +209,21 @@ export default function ItineraryBuilder() {
       <p className="col-span-full text-xs text-muted-foreground">عند تغيير النوع، يتم الاحتفاظ ببيانات الخدمات المشتركة والخدمات الإضافية، وإزالة البنود غير الداخلة في النوع الجديد.</p>
     </CardContent></Card>
     <Card><CardHeader><CardTitle>2. بيانات الرحلة والمسافرين</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-3 gap-4">
-      <div><Label>اسم العميل</Label><Input value={customer} onChange={e => setCustomer(e.target.value)}/></div>
+      <div className="space-y-2">
+        <Label htmlFor="itinerary-customer-name">اسم العميل</Label>
+        <Input id="itinerary-customer-name" value={customer} onChange={e => {
+          setLinkedCustomer(null);
+          setCustomer(e.target.value);
+        }} />
+        {linkedCustomer ? (
+          <Button type="button" variant="ghost" size="sm" onClick={() => setLinkedCustomer(null)}>إزالة الربط بالعميل</Button>
+        ) : (
+          <CustomerSearch onCustomerSelect={selected => {
+            setLinkedCustomer(selected);
+            setCustomer(selected.name);
+          }} />
+        )}
+      </div>
       <div><Label>الوجهة</Label><Input value={destination} onChange={e => setDestination(e.target.value)}/></div>
       <div><Label>عملة البرنامج وعرض السعر</Label><Select value={currency} onValueChange={v => { setProgramCurrency(v as Currency); setRates({ EGP: 0, SAR: 0, USD: 0, EUR: 0, AED: 0 }); }}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(['EGP', 'SAR', 'USD'] as Currency[]).map(c => <SelectItem key={c} value={c}>{c === 'EGP' ? 'جنيه مصري (EGP)' : c === 'SAR' ? 'ريال سعودي (SAR)' : 'دولار أمريكي (USD)'}</SelectItem>)}</SelectContent></Select><p className="text-xs text-muted-foreground mt-1">اختر عملة بيع البرنامج بشكل مستقل عن عملة الطيران. عند تغييرها أدخل أسعار الصرف من جديد.</p></div>
       <div><Label>المغادرة</Label><Input type="date" value={start} onChange={e => setStart(e.target.value)}/></div><div><Label>العودة</Label><Input type="date" value={end} onChange={e => setEnd(e.target.value)}/></div>
@@ -200,7 +251,7 @@ export default function ItineraryBuilder() {
     </CardContent></Card>
     <Card><CardHeader><CardTitle>الملخص الداخلي</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-3 gap-3"><div>التكلفة: <b>{totalCost.toLocaleString()} {currency}</b></div><div>البيع: <b>{totalSale.toLocaleString()} {currency}</b></div><div>الربح: <b>{round(totalSale-totalCost).toLocaleString()} {currency}</b></div></CardContent></Card>
     {hasLoss && <p role="alert" className="text-destructive font-medium">تنبيه: يوجد بند سعر بيعه أقل من تكلفته. راجع هامش الربح قبل الحفظ.</p>}
-    <div className="flex gap-3 flex-wrap"><Button disabled={!valid || createQuote.isPending} onClick={save}>حفظ عرض السعر كمسودة</Button><Select value={language} onValueChange={v => setLanguage(v as 'ar' | 'en')}><SelectTrigger className="w-36"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="ar">العربية</SelectItem><SelectItem value="en">English</SelectItem></SelectContent></Select><Button variant="outline" onClick={() => { window.print(); }}>طباعة / PDF</Button></div>
+    <div className="flex gap-3 flex-wrap"><Button disabled={!valid || saving || createQuote.isPending} onClick={save}>حفظ عرض السعر كمسودة</Button><Select value={language} onValueChange={v => setLanguage(v as 'ar' | 'en')}><SelectTrigger className="w-36"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="ar">العربية</SelectItem><SelectItem value="en">English</SelectItem></SelectContent></Select><Button variant="outline" onClick={() => { window.print(); }}>طباعة / PDF</Button></div>
     <section dir={language === 'ar' ? 'rtl' : 'ltr'} className="bg-white text-slate-900 rounded-xl p-8 border print:border-0 print:p-0" id="customer-itinerary" aria-label="Customer-only itinerary preview">
       <h2 className="text-3xl font-bold tracking-wide">SAFAR</h2><p className="text-sm italic">Travel smarter. Manage better.</p><hr className="my-4"/>
       <h3 className="text-xl font-semibold">{language === 'ar' ? 'برنامج الرحلة وعرض السعر' : 'Travel Itinerary & Quotation'}</h3>

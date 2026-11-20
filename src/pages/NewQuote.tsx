@@ -1,7 +1,8 @@
 import { useOrganizationSettings } from '@/hooks/useOrganizationSettings';
 import { emptyTerms, readTerms, termsError } from '@/lib/bookingCancellationTerms';
-import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { readActiveCustomer, useActiveCustomerOptions, useCustomerContext, type CustomerContext } from '@/hooks/useCustomerContext';
 import { useQuotes, type QuoteFormData } from '@/hooks/useQuotes';
 import QuoteItemsEditor from '@/components/quotes/QuoteItemsEditor';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, Save, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useQuery } from '@tanstack/react-query';
@@ -57,23 +59,50 @@ type WhatsAppQuoteSource = {
 export default function NewQuote() {
   const orgId = useOrgId();
   const { state } = useLocation();
+  const [params] = useSearchParams();
   const source = (state as { whatsappQuote?: WhatsAppQuoteSource } | null)?.whatsappQuote;
+  const scopedSource = source?.organizationId === orgId ? source : undefined;
+  const customerId = scopedSource?.customerId ?? params.get('customer_id') ?? params.get('customer');
+  const customer = useCustomerContext(orgId, customerId);
   if (!orgId) return null;
-  const whatsapp = source?.organizationId === orgId ? source : undefined;
-  return <QuoteForm key={`${orgId}:${whatsapp?.conversationId ?? ''}`} orgId={orgId} whatsapp={whatsapp} />;
+  if (customer.isLoading) return <p className="p-6 text-center">جاري التحقق من العميل...</p>;
+  const whatsapp = !scopedSource?.customerId || customer.data?.id === scopedSource.customerId ? scopedSource : undefined;
+  return (
+    <QuoteForm
+      key={`${orgId}:${whatsapp?.conversationId ?? customerId ?? ''}`}
+      orgId={orgId}
+      whatsapp={whatsapp}
+      initialCustomer={customer.data}
+      missingCustomer={Boolean(customerId && !customer.data)}
+    />
+  );
 }
 
-function QuoteForm({ orgId, whatsapp }: { orgId: string; whatsapp?: WhatsAppQuoteSource }) {
+function QuoteForm({ orgId, whatsapp, initialCustomer, missingCustomer }: {
+  orgId: string;
+  whatsapp?: WhatsAppQuoteSource;
+  initialCustomer?: CustomerContext | null;
+  missingCustomer: boolean;
+}) {
   const { settings } = useOrganizationSettings();
   const navigate = useNavigate();
   const { createQuote } = useQuotes();
+  const submitting = useRef(false);
+  const mounted = useRef(false);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   const wizard = useWizardForm({
     steps: quoteSteps,
-    draftKey: whatsapp ? `draft_quote_${orgId}_wa_${whatsapp.conversationId}` : `draft_quote_${orgId}`,
+    draftKey: whatsapp
+      ? `draft_quote_${orgId}_wa_${whatsapp.conversationId}`
+      : `draft_quote_${orgId}${initialCustomer ? `_${initialCustomer.id}` : ''}`,
     initialData: {
-      customer_id: whatsapp?.customerId ?? null,
-      customer_name: whatsapp?.customerName ?? '',
+      customer_id: initialCustomer?.id ?? null,
+      customer_name: initialCustomer?.name ?? whatsapp?.customerName ?? '',
       travel_date: whatsapp?.travelDate ?? null,
       return_date: whatsapp?.returnDate ?? null,
       destination: whatsapp?.destination ?? '',
@@ -87,14 +116,7 @@ function QuoteForm({ orgId, whatsapp }: { orgId: string; whatsapp?: WhatsAppQuot
     },
   });
 
-  const { data: customers } = useQuery({
-    queryKey: ['customers-select', orgId],
-    queryFn: async () => {
-      const { data } = await supabase.from('customers').select('id, name, phone').eq('organization_id', orgId!).order('name').limit(500);
-      return data ?? [];
-    },
-    enabled: !!orgId,
-  });
+  const customers = useActiveCustomerOptions(orgId, initialCustomer);
 
   const { data: employees } = useQuery({
     queryKey: ['employees-select', orgId],
@@ -121,13 +143,35 @@ function QuoteForm({ orgId, whatsapp }: { orgId: string; whatsapp?: WhatsAppQuot
   const totalProfit = financialBreakdown.totalProfit;
 
   const handleSubmit = async (status: string) => {
+    if (submitting.current || createQuote.isPending) return;
+    submitting.current = true;
+    setSaving(true);
+    try {
+      await submitQuote(status);
+    } finally {
+      submitting.current = false;
+      if (mounted.current) setSaving(false);
+    }
+  };
+
+  const submitQuote = async (status: string) => {
+    let verifiedCustomer: CustomerContext | null = null;
+    if (wizard.formData.customer_id) {
+      try {
+        verifiedCustomer = await readActiveCustomer(orgId, wizard.formData.customer_id);
+      } catch {
+        return toast.error('تعذر التحقق من العميل المرتبط بالعرض');
+      }
+      if (!verifiedCustomer) return toast.error('اختر عميلاً متاحًا في الشركة الحالية');
+    }
+    if (!mounted.current) return;
     const sameContact = whatsapp && (whatsapp.customerId
       ? wizard.formData.customer_id === whatsapp.customerId
       : !wizard.formData.customer_id);
 
     const formData: QuoteFormData = {
-      customer_id: wizard.formData.customer_id,
-      customer_name: wizard.formData.customer_name,
+      customer_id: verifiedCustomer?.id ?? null,
+      customer_name: verifiedCustomer?.name ?? wizard.formData.customer_name,
       travel_date: wizard.formData.travel_date,
       return_date: wizard.formData.return_date,
       destination: wizard.formData.destination,
@@ -147,14 +191,18 @@ function QuoteForm({ orgId, whatsapp }: { orgId: string; whatsapp?: WhatsAppQuot
         },
       })),
     };
-    const quote = await createQuote.mutateAsync(formData);
-    wizard.clearDraft();
-    navigate(whatsapp ? `/quotes/${quote.id}` : '/quotes');
+    try {
+      const quote = await createQuote.mutateAsync(formData);
+      if (mounted.current) {
+        wizard.clearDraft();
+        navigate(whatsapp ? `/quotes/${quote.id}` : '/quotes');
+      }
+    } catch { /* The quote mutation displays the error and preserves the draft. */ }
   };
 
   const handleCustomerChange = (customerId: string) => {
     const customer = customers?.find(c => c.id === customerId);
-    wizard.updateFields({ customer_id: customerId, customer_name: customer?.name || '' });
+    if (customer) wizard.updateFields({ customer_id: customer.id, customer_name: customer.name });
   };
 
   return (
@@ -166,6 +214,7 @@ function QuoteForm({ orgId, whatsapp }: { orgId: string; whatsapp?: WhatsAppQuot
         <h1 className="text-xl md:text-2xl font-bold">إنشاء عرض سعر جديد</h1>
       </div>
 
+      {missingCustomer && <p role="status" className="text-sm text-muted-foreground">تعذر اختيار العميل من الرابط. اختر عميلاً من الشركة الحالية.</p>}
       {whatsapp && <Button asChild variant="outline" size="sm">
         <Link to={`/whatsapp-inbox/${whatsapp.conversationId}`}>فتح محادثة واتساب</Link>
       </Button>}
@@ -199,7 +248,7 @@ function QuoteForm({ orgId, whatsapp }: { orgId: string; whatsapp?: WhatsAppQuot
                   <Label>أو اسم العميل يدوياً</Label>
                   <Input
                     value={wizard.formData.customer_name}
-                    onChange={e => wizard.updateField('customer_name', e.target.value)}
+                    onChange={e => wizard.updateFields({ customer_id: null, customer_name: e.target.value })}
                     placeholder="اسم العميل"
                   />
                 </div>
@@ -328,7 +377,7 @@ function QuoteForm({ orgId, whatsapp }: { orgId: string; whatsapp?: WhatsAppQuot
               </Button>
               <div className="flex gap-3">
                 <span className="text-xs text-muted-foreground self-center">الإرسال بعد اعتماد المراجعة من صفحة العرض</span>
-                <Button onClick={() => handleSubmit('draft')} disabled={createQuote.isPending}>
+                <Button onClick={() => handleSubmit('draft')} disabled={saving || createQuote.isPending}>
                   <Save className="h-4 w-4 ml-1" />
                   حفظ كمسودة
                 </Button>
