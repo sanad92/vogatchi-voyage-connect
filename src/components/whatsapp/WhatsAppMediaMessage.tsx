@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useOrgId } from '@/hooks/useOrgId';
 import { toast } from 'sonner';
+import { WhatsAppIdentityReview } from './WhatsAppIdentityReview';
 
 interface Props {
   message: any;
@@ -227,6 +228,12 @@ export const WhatsAppMediaMessage: React.FC<Props> = ({ message, outbound }) => 
     <div className="space-y-1.5">
       {mediaContent()}
       {caption && <div className="whitespace-pre-wrap break-words text-sm">{caption}</div>}
+      {!outbound && downloadStatus === 'success' && path && signedUrl && orgId &&
+        (type === 'image' || type === 'document') && typeof message.id === 'string' &&
+        typeof message.conversation_id === 'string' && (
+          <WhatsAppIdentityReview organizationId={orgId} conversationId={message.conversation_id}
+            messageId={message.id} path={path} mime={mime} preview={signedUrl} />
+        )}
     </div>
   );
 };

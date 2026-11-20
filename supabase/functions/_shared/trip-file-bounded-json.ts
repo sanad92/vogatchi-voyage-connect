@@ -3,10 +3,10 @@
  * Applies to browser requests, Travelport OAuth and reservation responses.
  * Caller retains responsibility for Content-Type, authentication and status.
  */
-export async function readBoundedJsonBody(
+export async function readBoundedBytes(
   stream: ReadableStream<Uint8Array> | null,
   byteLimit: number,
-): Promise<unknown> {
+): Promise<Uint8Array<ArrayBuffer>> {
   if (!stream || !Number.isSafeInteger(byteLimit) || byteLimit < 1) {
     throw new Error('invalid_json_stream');
   }
@@ -39,6 +39,14 @@ export async function readBoundedJsonBody(
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
+  return bytes;
+}
+
+export async function readBoundedJsonBody(
+  stream: ReadableStream<Uint8Array> | null,
+  byteLimit: number,
+): Promise<unknown> {
+  const bytes = await readBoundedBytes(stream, byteLimit);
   try {
     return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
   } catch {

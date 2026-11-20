@@ -61,6 +61,10 @@ jobs:
           node --experimental-strip-types scripts/verify-launch-workflows.mjs
           bun run test:whatsapp
           bun run test:crm
+          node scripts/verify-lead-campaign-search.mjs
+          node --experimental-strip-types scripts/verify-meta-lead-ads.mjs
+          node --experimental-strip-types scripts/verify-whatsapp-lead-draft.mjs
+          node --experimental-strip-types scripts/verify-whatsapp-identity-review.mjs
           bun run test:itinerary
           node scripts/verify-invitation-email-origin.mjs
           node --experimental-strip-types scripts/verify-transactional-email-dispatch.mjs
@@ -79,3 +83,5 @@ jobs:
         run: bunx --no-install tsc --noEmit -p tsconfig.app.json
       - name: Build
         run: bun run build
+      - name: Verify packaged OCR models with synthetic images
+        run: node --experimental-strip-types scripts/verify-whatsapp-image-ocr.mjs

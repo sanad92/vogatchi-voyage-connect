@@ -31,3 +31,10 @@ verify_jwt = false
 [functions.process-email-queue]
 # Uses the internal service-key guard, including Supabase secret keys.
 verify_jwt = false
+
+[functions.meta-lead-ads-config]
+verify_jwt = true
+
+[functions.meta-lead-ads-webhook]
+# Meta authenticates via X-Hub-Signature-256. The handler verifies the raw bytes.
+verify_jwt = false
