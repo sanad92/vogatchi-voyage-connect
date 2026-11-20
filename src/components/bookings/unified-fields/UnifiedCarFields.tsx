@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { FieldError } from '@/components/wizard/StepWizard';
-import { useEffect } from 'react';
+import { applyCalculatedBookingAmount, bookingDayCount, optionalNonnegativeAmount } from '@/lib/bookingServiceFields';
 
 interface UnifiedCarFieldsProps {
   formData: Record<string, any>;
@@ -11,22 +11,19 @@ interface UnifiedCarFieldsProps {
   errors: Record<string, string>;
 }
 
+const carTotal = (data: Record<string, unknown>) => {
+  const days = bookingDayCount(data.pickup_date, data.dropoff_date, true);
+  const rate = optionalNonnegativeAmount(data.daily_rate);
+  return days !== null && rate !== null ? days * rate : null;
+};
+
 const UnifiedCarFields = ({ formData, updateField, updateFields, errors }: UnifiedCarFieldsProps) => {
-  // حساب المدة والتكلفة تلقائياً
-  useEffect(() => {
-    if (formData.pickup_date && formData.dropoff_date) {
-      const pickup = new Date(formData.pickup_date);
-      const dropoff = new Date(formData.dropoff_date);
-      const days = Math.ceil((dropoff.getTime() - pickup.getTime()) / (1000 * 60 * 60 * 24));
-      if (days > 0) {
-        updateField('rental_days', days);
-        const rate = Number(formData.daily_rate) || 0;
-        if (rate > 0) {
-          updateField('selling_price', rate * days);
-        }
-      }
-    }
-  }, [formData.pickup_date, formData.dropoff_date, formData.daily_rate]);
+  const days = bookingDayCount(formData.pickup_date, formData.dropoff_date, true);
+  const updatePricing = (key: string, value: string) => {
+    const next = { ...formData, [key]: value };
+    const selling = applyCalculatedBookingAmount(formData.selling_price, carTotal(formData), carTotal(next));
+    updateFields({ [key]: value, ...(selling !== undefined ? { selling_price: selling } : {}) });
+  };
 
   return (
     <div className="space-y-4">
@@ -38,8 +35,9 @@ const UnifiedCarFields = ({ formData, updateField, updateFields, errors }: Unifi
           <FieldError error={errors.car_type} />
         </div>
         <div>
-          <Label>السعر اليومي</Label>
-          <Input type="number" value={formData.daily_rate || ''} onChange={e => updateField('daily_rate', e.target.value)} placeholder="0" />
+          <Label>سعر البيع اليومي</Label>
+          <Input type="number" min={0} step="0.01" value={formData.daily_rate ?? ''} onChange={e => updatePricing('daily_rate', e.target.value)} placeholder="0" />
+          <FieldError error={errors.daily_rate} />
         </div>
       </div>
 
@@ -59,15 +57,17 @@ const UnifiedCarFields = ({ formData, updateField, updateFields, errors }: Unifi
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <Label>تاريخ الاستلام</Label>
-          <Input type="date" value={formData.pickup_date || ''} onChange={e => updateField('pickup_date', e.target.value)} />
+          <Input type="date" value={formData.pickup_date || ''} onChange={e => updatePricing('pickup_date', e.target.value)} />
+          <FieldError error={errors.pickup_date} />
         </div>
         <div>
           <Label>تاريخ التسليم</Label>
-          <Input type="date" value={formData.dropoff_date || ''} onChange={e => updateField('dropoff_date', e.target.value)} />
+          <Input type="date" value={formData.dropoff_date || ''} onChange={e => updatePricing('dropoff_date', e.target.value)} />
+          <FieldError error={errors.dropoff_date} />
         </div>
         <div>
           <Label>عدد الأيام</Label>
-          <Input type="number" value={formData.rental_days || ''} readOnly className="bg-muted/50" />
+          <Input type="number" value={days ?? ''} readOnly className="bg-muted/50" />
         </div>
       </div>
 

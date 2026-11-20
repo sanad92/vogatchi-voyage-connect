@@ -1,7 +1,8 @@
 import { SupportedCurrency } from './currency';
+import type { SpecializedBookingDocumentFields } from '@/lib/specializedBookingFinance';
 import { BookingStatus } from './common';
 
-export interface HotelBooking {
+export interface HotelBooking extends SpecializedBookingDocumentFields {
   id: string;
   customer_id?: string;
   customer_name: string;

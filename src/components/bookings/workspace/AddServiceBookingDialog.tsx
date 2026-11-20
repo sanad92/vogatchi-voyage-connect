@@ -19,6 +19,9 @@ interface Props {
   kind: ServiceKind;
   bookingId: string;
   bookingNumber?: string | null;
+  bookingCustomerId?: string | null;
+  bookingCustomerName?: string | null;
+  bookingCurrency?: string | null;
   onSaved: () => void;
 }
 
@@ -28,6 +31,9 @@ export const AddServiceBookingDialog = ({
   kind,
   bookingId,
   bookingNumber,
+  bookingCustomerId,
+  bookingCustomerName,
+  bookingCurrency,
   onSaved,
 }: Props) => {
   const handleSuccess = () => {
@@ -43,13 +49,17 @@ export const AddServiceBookingDialog = ({
             {TITLES[kind]}
             {bookingNumber ? (
               <span className="block text-sm font-normal text-muted-foreground mt-1">
-                سيتم ربط الحجز بملف الحجز {bookingNumber} وتحديث الفاتورة والربحية تلقائيًا
+                هتتربط الخدمة بملف الحجز {bookingNumber} وتتحدّث الفاتورة المسودة لو موجودة
               </span>
             ) : null}
           </DialogTitle>
         </DialogHeader>
 
-        <ParentBookingProvider bookingId={bookingId}>
+        <ParentBookingProvider
+          bookingId={bookingId}
+          customer={bookingCustomerId ? { id: bookingCustomerId, name: bookingCustomerName || 'عميل الحجز' } : null}
+          currency={bookingCurrency}
+        >
           {kind === 'hotel' && (
             <HotelBookingForm onSuccess={handleSuccess} onCancel={() => onOpenChange(false)} />
           )}

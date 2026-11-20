@@ -6,7 +6,7 @@ import { Ticket, Download, Loader2, Receipt, Eye } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { buildInvoiceModel, buildVoucherModel } from '@/lib/travelDocuments';
+import { buildInvoiceModel, buildVoucherModel, getTravelServiceSections, voucherCopyIsStale } from '@/lib/travelDocuments';
 import { bookingVoucherState } from '@/lib/bookingVoucher';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { useWorkspaceVouchers } from '@/hooks/useWorkspaceVouchers';
@@ -14,10 +14,8 @@ import { useBookingDocumentSources } from '@/hooks/useBookingDocumentSources';
 import { InvoiceDocument } from '@/components/documents/travel/InvoiceDocument';
 import { VoucherDocument } from '@/components/documents/travel/VoucherDocument';
 import { DocumentPreviewDialog } from '@/components/documents/travel/DocumentPreviewDialog';
+import { invalidateSpecializedBookingLists } from '@/lib/specializedBookingFinance';
 import type { Workspace } from './types';
-
-const anyClient = supabase as any;
-
 
 interface Props {
   workspace: Workspace;
@@ -32,11 +30,7 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
   useEffect(() => setCheckedVoucherState(undefined), [booking?.id, booking?.status, booking?.workflow_stage]);
   const voucherState = checkedVoucherState ?? bookingVoucherState(booking);
   const canIssue = Boolean(booking?.id && hasPermission('bookings_view') && hasPermission('documents_create') && voucherState === 'current');
-  const { getSource } = useBookingDocumentSources({
-    booking,
-    customer,
-    itinerary: (workspace as any).itinerary,
-  });
+  const sources = useBookingDocumentSources(workspace);
   const [preview, setPreview] = useState<
     | { type: 'voucher'; voucherNumber: string; issuedAt?: string | null }
     | { type: 'invoice'; invoice: any }
@@ -47,10 +41,10 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
 
   const vouchersQ = useWorkspaceVouchers(booking?.id);
 
-  const invoiceModel = preview?.type === 'invoice' ? buildInvoiceModel(preview.invoice, getSource('invoice')) : null;
+  const invoiceModel = preview?.type === 'invoice' ? buildInvoiceModel(preview.invoice, sources.getSource('invoice')) : null;
   const voucherModel =
     preview?.type === 'voucher'
-      ? buildVoucherModel(preview.voucherNumber, getSource('voucher'), preview.issuedAt)
+      ? buildVoucherModel(preview.voucherNumber, sources.getSource('voucher'), preview.issuedAt)
       : null;
 
 
@@ -132,7 +126,25 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
     if (state !== 'current') throw new Error('يجب تأكيد الحجز قبل إصدار الفاوتشر.');
   };
 
-  const openStoredVoucher = async (path: string) => {
+  const verifyCurrentVoucherSource = async () => {
+    await verifyVoucherEligibility();
+    const source = await sources.refreshVoucherSource();
+    const sections = getTravelServiceSections(source);
+    if (sections.length > 0 && sections.every(section => section.cancelled)) {
+      throw new Error('كل خدمات الحجز ملغاة. لا يمكن إصدار فاوتشر لهذه الخدمات.');
+    }
+    return source;
+  };
+
+  const verifyVoucherPreview = async () => {
+    const source = await verifyCurrentVoucherSource();
+    if (preview?.type === 'voucher' && voucherModel &&
+      JSON.stringify(buildVoucherModel(preview.voucherNumber, source, preview.issuedAt)) !== JSON.stringify(voucherModel)) {
+      throw new Error('تغيّرت بيانات الفاوتشر. راجع المعاينة المحدّثة ثم حاول مرة أخرى.');
+    }
+  };
+
+  const openStoredVoucher = async (path: string, savedAt: string) => {
     if (!path || /^https?:/i.test(path)) return;
     const tab = window.open('', '_blank');
     if (!tab) {
@@ -141,7 +153,10 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
     }
     tab.opener = null;
     try {
-      await verifyVoucherEligibility();
+      const source = await verifyCurrentVoucherSource();
+      if (voucherCopyIsStale(source, savedAt)) {
+        throw new Error('تغيّرت خدمات الحجز بعد حفظ هذه النسخة. أعد إصدار الفاوتشر.');
+      }
       const { data, error } = await supabase.storage.from('documents').createSignedUrl(path, 60);
       if (error || !data?.signedUrl) throw new Error('تعذّر فتح الفاوتشر.');
       if (!tab.closed) tab.location.replace(data.signedUrl);
@@ -153,10 +168,10 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
 
   /** Ensures the voucher business record exists, then opens its preview. */
   const handleIssueVoucher = async () => {
-    if (!canIssue || busy === 'voucher') return;
+    if (!canIssue || busy === 'voucher' || !sources.isReady) return;
     setBusy('voucher');
     try {
-      await verifyVoucherEligibility();
+      await verifyCurrentVoucherSource();
       const result = await vouchersQ.refetch();
       if (result.error) throw result.error;
       let existing = result.data?.[0];
@@ -175,6 +190,7 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
           },
         }, { onConflict: 'booking_id', ignoreDuplicates: true });
         if (error) throw error;
+        void invalidateSpecializedBookingLists(qc, booking.organization_id);
         const current = await vouchersQ.refetch();
         if (current.error || !current.data?.[0]) throw new Error('تعذّر قراءة الفاوتشر بعد الحفظ.');
         existing = current.data[0];
@@ -190,7 +206,7 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
 
   /** Store the rendered PDF against the existing voucher/document records (no duplicates). */
   const persistVoucherPdf = async (blob: Blob, voucherNumber: string) => {
-    await verifyVoucherEligibility();
+    await verifyVoucherPreview();
     const url = await persistDocument(
       blob, 'voucher', voucherNumber, 0, booking?.currency || workspace.financials.currency,
     );
@@ -201,6 +217,7 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
     if (error) throw error;
     void qc.invalidateQueries({ queryKey: ['workspace-vouchers', booking.id] });
     void qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking.id] });
+    void invalidateSpecializedBookingLists(qc, booking.organization_id);
   };
 
   const persistInvoicePdf = async (blob: Blob, inv: any, docNumber: string) => {
@@ -225,7 +242,7 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={handleIssueVoucher} disabled={!canIssue || busy === 'voucher'}>
+          <Button size="sm" onClick={handleIssueVoucher} disabled={!canIssue || !sources.isReady || busy === 'voucher'}>
             {busy === 'voucher' ? (
               <Loader2 className="h-4 w-4 ml-1 animate-spin" />
             ) : (
@@ -233,8 +250,8 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
             )}
             {vouchers.length ? 'إعادة إصدار الفاوتشر' : 'إصدار فاوتشر'}
           </Button>
-          {voucherState === 'current' && vouchers[0]?.pdf_url && !/^https?:/i.test(vouchers[0].pdf_url) && (
-            <Button size="sm" variant="outline" onClick={() => openStoredVoucher(vouchers[0].pdf_url)}>
+          {voucherState === 'current' && sources.isReady && vouchers[0]?.pdf_url && !/^https?:/i.test(vouchers[0].pdf_url) && (
+            <Button size="sm" variant="outline" onClick={() => openStoredVoucher(vouchers[0].pdf_url!, vouchers[0].updated_at)}>
               <Download className="h-4 w-4 ml-1" /> تحميل آخر فاوتشر
             </Button>
           )}
@@ -243,6 +260,12 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
         {voucherState === 'cancelled' && <p className="text-sm text-destructive">الحجز ملغي. الفاوتشرات السابقة متاحة للمعاينة المؤرشفة فقط.</p>}
         {voucherState === 'unconfirmed' && <p className="text-sm text-muted-foreground">أكّد الحجز قبل إصدار الفاوتشر.</p>}
         {voucherState === 'current' && !canIssue && <p className="text-sm text-muted-foreground">يلزم الحصول على صلاحية إصدار المستندات.</p>}
+        {sources.isError && <div className="flex flex-wrap items-center gap-2" role="alert">
+          <p className="text-sm text-destructive">تعذّر تحميل بيانات الفاوتشر.</p>
+          <Button size="sm" variant="outline" onClick={() => void sources.refreshVoucherSource().catch(() => {
+            toast.error('تعذّر تحديث بيانات الفاوتشر.');
+          })}>إعادة المحاولة</Button>
+        </div>}
 
         {vouchers.length > 0 && (
           <div className="space-y-1.5">
@@ -259,6 +282,7 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={!sources.isReady}
                     onClick={() =>
                       setPreview({
                         type: 'voucher',
@@ -318,8 +342,8 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
           onOpenChange={(o) => !o && setPreview(null)}
           title={`فاوتشر ${voucherModel.voucherNumber}`}
           fileName={`${voucherModel.voucherNumber}.pdf`}
-          readOnly={!canIssue}
-          beforeOutput={verifyVoucherEligibility}
+          readOnly={!canIssue || !sources.isReady}
+          beforeOutput={verifyVoucherPreview}
           requireSavedCopy
           onGenerated={(blob) => persistVoucherPdf(blob, voucherModel.voucherNumber)}
         >

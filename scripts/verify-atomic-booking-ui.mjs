@@ -70,11 +70,12 @@ org='org-a';
 
 const jsx=(type,props,key)=>({type,props,key});
 const nodes=x=>Array.isArray(x)?x.flatMap(nodes):x&&typeof x==='object'?[x,...nodes(x.props?.children)]:[];
-let allowed=true,pending=false,fail=false,hold=null,mutations=0,cleared=0;
-const navigations=[],effects=[];
+let allowed=true,canCreateCustomer=true,pending=false,fail=false,hold=null,mutations=0,cleared=0;
+let configuredSteps;
+const navigations=[],effects=[],submittedPayloads=[];
 const form={booking_type:'hotel',employee_id:'sales-a',customer_name:'QA Guest',customer_email:'qa@example.invalid',supplier_id:'supplier-a',
- selling_price:1500,cost_price:900,hotel_name:'Room',currency:'EGP',start_date:'2026-10-10',end_date:'2026-10-12'};
-const wizard={formData:form,currentStep:3,errors:{},updateField:()=>{},updateFields:()=>{},goBack:()=>{},goNext:()=>{},clearDraft:()=>cleared++};
+ selling_price:1500,cost_price:900,hotel_name:'Room',currency:'EGP',start_date:'2026-10-10',end_date:'2026-10-12',check_in:'2026-10-11',check_out:'2026-10-13'};
+const wizard={formData:form,currentStep:3,errors:{},updateField:()=>{},updateFields:()=>{},goBack:()=>{},goNext:()=>{},goToStep:()=>{},clearDraft:()=>cleared++};
 const termsModule=await load('../src/lib/bookingCancellationTerms.ts');
 assert.equal(termsModule.previousCalendarDay('2027-01-01T01:00'),'2026-12-31');
 assert.equal(termsModule.previousCalendarDay('2028-03-01T00:00'),'2028-02-29');
@@ -90,12 +91,17 @@ const pageImports={
  'react-router-dom':{useNavigate:()=>x=>navigations.push(x),useSearchParams:()=>[{get:()=>null}]},
  '@/hooks/useOrgId':{useOrgId:()=>org},
  '@/hooks/useOptimizedAuth':{useOptimizedAuth:()=>({user:{id:user}})},
- '@/hooks/useSupabasePermissions':{useSupabasePermissions:()=>({hasAllPermissions:()=>allowed})},
+ '@/hooks/useSupabasePermissions':{useSupabasePermissions:()=>({hasAllPermissions:([key])=>key==='customers_create'?canCreateCustomer:allowed})},
+ '@/hooks/useCustomerContext':{useCustomerContext:()=>({data:null,isLoading:false})},
+ sonner:{toast:{error:x=>toasts.push(x)}},
  '@/hooks/useUnifiedBookings':{useUnifiedBookings:()=>({finishCreation:()=>{},createBooking:{isPending:pending,mutateAsync:async input=>{
-  mutations++;assert.equal(input.employee_id,'sales-a');assert.equal(input.customer_email,'qa@example.invalid');assert.equal(input.hotelDetails.hotel_name,'Room');assert.equal(input.cancellation_terms.payment_due,'2027-01-18T18:00');
+  mutations++;submittedPayloads.push(input);assert.equal(input.employee_id,'sales-a');assert.equal(input.customer_email,'qa@example.invalid');if(input.booking_type==='hotel'){
+    assert.equal(input.hotelDetails.hotel_name,'Room');assert.equal(input.start_date,input.hotelDetails.check_in);
+    assert.equal(input.end_date,input.hotelDetails.check_out);assert.equal(input.start_date,'2026-10-11');assert.equal(input.end_date,'2026-10-13');
+  }assert.equal(input.cancellation_terms.payment_due,'2027-01-18T18:00');
   if(hold)await hold;if(fail)throw Error('detail failure');return {id:'booking-a',invoice_id:'invoice-a'};
  }}})},
- '@/hooks/useWizardForm':{useWizardForm:()=>wizard},
+ '@/hooks/useWizardForm':{useWizardForm:options=>{configuredSteps=options.steps;return wizard;}},
  '@/components/wizard/StepWizard':{default:'StepWizard',WizardNavButtons:'WizardNavButtons',FieldError:'FieldError'},
  'lucide-react':Object.fromEntries(['Hotel','Plane','Car','Truck','TrendingUp','TrendingDown','Search','Plus','User'].map(x=>[x,x])),
 };
@@ -107,7 +113,34 @@ for(const path of ['customers/CustomerSearch','customers/QuickCustomerAdd','shar
  pageImports[`@/components/${path}`]={default:path};
 }
 const page=await load('../src/pages/NewUnifiedBooking.tsx',pageImports);
-const submit=()=>nodes(page.NewUnifiedBookingForm()).find(x=>x.type==='WizardNavButtons').props.onNext;
+page.NewUnifiedBookingForm({});
+const basic = configuredSteps[1].validate;
+assert.ok(basic({customer_name:'New Company Guest'}).customer_contact,'new customer needs a contact before review');
+assert.equal(Object.keys(basic({customer_name:'New Company Guest',customer_phone:'+201001234567'})).length,0);
+canCreateCustomer=false;
+page.NewUnifiedBookingForm({});
+assert.ok(configuredSteps[1].validate({customer_name:'New Company Guest',customer_phone:'+201001234567'}).customer_name);
+assert.equal(Object.keys(configuredSteps[1].validate({customer_id:'same-org-customer'})).length,0);
+canCreateCustomer=true;
+
+const details = configuredSteps[2].validate;
+const hotel = {booking_type:'hotel',hotel_name:'Room',selling_price:1500,cost_price:0};
+assert.ok(details(hotel).service_dates,'missing service dates block the review');
+assert.ok(details({...hotel,check_in:'2026-10-10',check_out:'2026-10-09'}).service_dates);
+assert.ok(details({...hotel,check_in:'2026-10-10',check_out:'2026-10-10'}).service_dates);
+assert.ok(details({...hotel,start_date:'2026-10-10',end_date:'2026-10-12',check_in:'',check_out:'2026-10-12'}).service_dates,
+ 'an explicitly cleared service date is not replaced by the legacy date');
+assert.equal(Object.keys(details({...hotel,start_date:'2026-10-10',end_date:'2026-10-12'})).length,0,
+ 'old date drafts continue without re-entering values');
+const flight = {booking_type:'flight',airline:'Airline',departure_airport:'CAI',arrival_airport:'JED',
+ departure_date:'2026-10-10',arrival_date:'2026-10-10',selling_price:1500,cost_price:0};
+assert.equal(Object.keys(details(flight)).length,0,'same-day one-way flight is valid');
+assert.ok(details({...flight,is_round_trip:true}).return_arrival_date,'return segment must be completed');
+assert.equal(Object.keys(details({...flight,is_round_trip:true,return_departure_airport:'JED',return_arrival_airport:'CAI',
+ return_departure_date:'2026-10-12',return_arrival_date:'2026-10-13'})).length,0);
+assert.equal(Object.keys(details({booking_type:'transport',vehicle_type:'bus',start_date:'2026-10-10',
+ end_date:'2026-10-10',selling_price:1500,cost_price:0})).length,0,'same-day transport is valid');
+const submit=()=>nodes(page.NewUnifiedBookingForm({})).find(x=>x.type==='WizardNavButtons').props.onNext;
 fail=true;await submit()();assert.equal(cleared,0);assert.equal(navigations.length,0,'failed save preserves draft and current page');
 fail=false;allowed=false;const count=mutations;await submit()();assert.equal(mutations,count);
 allowed=true;pending=true;await submit()();assert.equal(mutations,count);
@@ -117,4 +150,18 @@ release();await saving;hold=null;assert.equal(cleared,1);assert.deepEqual(naviga
 const keyA=page.default().key;org='org-b';assert.notEqual(page.default().key,keyA,'company switch remounts the form');org='org-a';
 hold=new Promise(r=>release=r);const late=submit()();effects.at(-1)();release();await late;hold=null;
 assert.equal(cleared,1);assert.equal(navigations.length,1,'unmounted form cannot clear drafts or navigate on a late result');
-console.log('Atomic booking UI passed: persisted retry identity, payload/company/user changes, RPC-only writes, errors, permissions, double-click and late-result guards.');
+Object.assign(form,flight,{
+  is_round_trip:true,return_departure_airport:'JED',return_arrival_airport:'CAI',
+  return_departure_date:'2026-10-12',return_arrival_date:'2026-10-13',
+});
+await submit()();
+const roundTrip = submittedPayloads.at(-1);
+assert.equal(roundTrip.start_date,'2026-10-10');
+assert.equal(roundTrip.end_date,'2026-10-13');
+assert.equal(roundTrip.flightDetails.arrival_date,'2026-10-10');
+assert.equal(roundTrip.flightDetails.return_arrival_date,'2026-10-13');
+form.is_round_trip=false;
+await submit()();
+assert.equal(submittedPayloads.at(-1).end_date,'2026-10-10');
+assert.ok(!('return_arrival_date' in submittedPayloads.at(-1).flightDetails),'hidden return leg does not reach the API');
+console.log('Atomic booking UI passed: canonical/legacy dates, early customer and role checks, return and same-day dates, retry identity and save guards.');

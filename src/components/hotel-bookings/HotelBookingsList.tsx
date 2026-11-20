@@ -2,21 +2,20 @@
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import HotelInvoiceCreator from "./HotelInvoiceCreator";
+import { Link } from "react-router-dom";
+import { BookingListFinance } from "@/components/bookings/BookingListFinance";
 import HotelBookingSearch, { SearchFilters } from "./HotelBookingSearch";
 import HotelBookingStats from "./HotelBookingStats";
 import { HotelBooking } from "@/types/hotelBooking";
+import { hotelBookingStatus } from '@/lib/specializedBookingFinance';
 
 interface HotelBookingsListProps {
   bookings: HotelBooking[];
   onEdit: (booking: HotelBooking) => void;
-  onRefresh: () => void;
   onCreateNew: () => void;
 }
 
-const HotelBookingsList = ({ bookings, onEdit, onRefresh, onCreateNew }: HotelBookingsListProps) => {
-  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
-  const [invoiceBooking, setInvoiceBooking] = useState<HotelBooking | null>(null);
+const HotelBookingsList = ({ bookings, onEdit, onCreateNew }: HotelBookingsListProps) => {
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     searchTerm: '',
     status: 'all',
@@ -43,21 +42,7 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh, onCreateNew }: HotelBo
 
       // Status filter
       if (searchFilters.status !== 'all') {
-        filtered = filtered.filter(booking => {
-          if (searchFilters.status === 'confirmed') {
-            return booking.status_id && booking.status_id !== 'cancelled';
-          }
-          if (searchFilters.status === 'pending') {
-            return !booking.status_id || booking.status_id === 'pending';
-          }
-          if (searchFilters.status === 'cancelled') {
-            return booking.status_id === 'cancelled';
-          }
-          if (searchFilters.status === 'completed') {
-            return booking.status_id === 'completed';
-          }
-          return true;
-        });
+        filtered = filtered.filter(booking => hotelBookingStatus(booking) === searchFilters.status);
       }
 
       // Date range filter
@@ -99,17 +84,6 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh, onCreateNew }: HotelBo
       return bookings || [];
     }
   }, [bookings, searchFilters]);
-
-  const handleOpenInvoiceDialog = (booking: HotelBooking) => {
-    setInvoiceBooking(booking);
-    setInvoiceDialogOpen(true);
-  };
-
-  const handleInvoiceDialogClose = () => {
-    setInvoiceDialogOpen(false);
-    setInvoiceBooking(null);
-    if(onRefresh) onRefresh();
-  };
 
   const handleSearch = (filters: SearchFilters) => {
     setSearchFilters(filters);
@@ -161,19 +135,15 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh, onCreateNew }: HotelBo
                 <div className="text-gray-500 text-xs">
                   التواريخ: {new Date(booking.check_in_date).toLocaleDateString('ar-EG')} - {new Date(booking.check_out_date).toLocaleDateString('ar-EG')}
                 </div>
-                <div className="text-gray-500 text-xs">الحالة: {booking.invoice_sent ? "تم إصدار فاتورة" : "بدون فاتورة"}</div>
+                <BookingListFinance booking={booking} />
                 <div className="text-gray-500 text-xs">
                   المبلغ: {(booking.total_cost_customer || 0).toLocaleString()} {booking.currency || 'EGP'}
                 </div>
               </div>
               <div className="flex gap-2">
-                <button
-                  className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 transition disabled:opacity-60"
-                  disabled={!!booking.invoice_sent}
-                  onClick={() => handleOpenInvoiceDialog(booking)}
-                >
-                  إصدار فاتورة
-                </button>
+                <Button asChild size="sm" variant="outline">
+                  <Link to={`/bookings/${booking.id}?tab=documents`}>مستندات الحجز</Link>
+                </Button>
                 <button
                   className="border border-gray-300 px-4 py-1 rounded hover:bg-gray-100"
                   onClick={() => onEdit && onEdit(booking)}
@@ -185,14 +155,6 @@ const HotelBookingsList = ({ bookings, onEdit, onRefresh, onCreateNew }: HotelBo
           ))
         )}
       </div>
-
-      {invoiceDialogOpen && invoiceBooking && (
-        <HotelInvoiceCreator
-          booking={invoiceBooking}
-          open={invoiceDialogOpen}
-          onClose={handleInvoiceDialogClose}
-        />
-      )}
     </div>
   );
 };

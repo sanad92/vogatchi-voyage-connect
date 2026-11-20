@@ -1,5 +1,6 @@
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { paymentOrderBalance } from '@/lib/paymentOrderBalance';
+import { bookingCalendarEvents } from '@/lib/bookingCalendarEvents';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -10,19 +11,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  ChevronLeft, ChevronRight, Plane, Hotel, Receipt, FileCheck, ListTodo,
-  PlaneLanding, PlaneTakeoff, CreditCard, Building2,
+  ChevronLeft, ChevronRight, Plane, Hotel, Receipt, ListTodo,
+  PlaneLanding, PlaneTakeoff, CreditCard, Building2, CarFront,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type EventKind =
-  | 'arrival' | 'departure' | 'checkin' | 'checkout'
-  | 'flight' | 'visa_deadline' | 'customer_payment' | 'supplier_payment' | 'task' | 'reminder';
+  | 'arrival' | 'departure' | 'checkin' | 'checkout' | 'pickup' | 'dropoff'
+  | 'flight' | 'customer_payment' | 'supplier_payment' | 'task' | 'reminder';
 
 interface CalEvent {
   id: string;
   kind: EventKind;
   date: string; // YYYY-MM-DD
+  time?: string;
   title: string;
   href?: string;
   amount?: number;
@@ -34,8 +36,9 @@ const KIND_META: Record<EventKind, { label: string; icon: any; color: string }> 
   departure:        { label: 'مغادرة',       icon: PlaneTakeoff, color: 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/40 dark:text-rose-200' },
   checkin:          { label: 'تسجيل دخول',   icon: Hotel,        color: 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950/40 dark:text-sky-200' },
   checkout:         { label: 'تسجيل خروج',   icon: Hotel,        color: 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/40 dark:text-indigo-200' },
+  pickup:           { label: 'استلام',        icon: CarFront,     color: 'bg-cyan-100 text-cyan-800 border-cyan-300 dark:bg-cyan-950/40 dark:text-cyan-200' },
+  dropoff:          { label: 'تسليم',        icon: CarFront,     color: 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-950/40 dark:text-teal-200' },
   flight:           { label: 'رحلة',          icon: Plane,        color: 'bg-violet-100 text-violet-800 border-violet-300 dark:bg-violet-950/40 dark:text-violet-200' },
-  visa_deadline:    { label: 'موعد تأشيرة',  icon: FileCheck,    color: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200' },
   customer_payment: { label: 'دفعة عميل',    icon: CreditCard,   color: 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-950/40 dark:text-teal-200' },
   supplier_payment: { label: 'دفعة مورّد',   icon: Building2,    color: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/40 dark:text-orange-200' },
   task:             { label: 'مهمة',          icon: ListTodo,     color: 'bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800/40 dark:text-slate-200' },
@@ -52,6 +55,7 @@ const TravelCalendar = () => {
   const orgId = useOrgId();
   const { hasPermission } = useSupabasePermissions();
   const canViewFinance = hasPermission('financial_view');
+  const canViewInvoices = hasPermission('invoices_view');
   const navigate = useNavigate();
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
   const [cursor, setCursor] = useState(new Date());
@@ -59,39 +63,48 @@ const TravelCalendar = () => {
 
   const range = useMemo(() => {
     const start = new Date(cursor); const end = new Date(cursor);
-    if (view === 'month') { start.setDate(1); end.setMonth(end.getMonth() + 1); end.setDate(0); }
+    if (view === 'month') {
+      start.setDate(1);
+      start.setDate(1 - dayIndexFromJS(start.getDay()));
+      end.setTime(start.getTime());
+      end.setDate(end.getDate() + 41);
+    }
     else if (view === 'week') { const off = dayIndexFromJS(start.getDay()); start.setDate(start.getDate() - off); end.setTime(start.getTime()); end.setDate(end.getDate() + 6); }
     start.setHours(0,0,0,0); end.setHours(23,59,59,999);
     return { start, end };
   }, [cursor, view]);
 
   const { data: events = [], isError } = useQuery({
-    queryKey: ['travel-calendar', orgId, toISO(range.start), toISO(range.end), canViewFinance],
+    queryKey: ['travel-calendar', orgId, toISO(range.start), toISO(range.end), canViewFinance, canViewInvoices],
     enabled: !!orgId,
     queryFn: async () => {
       const out: CalEvent[] = [];
       const from = toISO(range.start); const to = toISO(range.end);
 
+      const unavailable = { data: [], error: null };
       const [bookings, invoices, payments, poRes, tasks] = await Promise.all([
-        (supabase as any).from('bookings').select('id, booking_number, customer_name, start_date, end_date, booking_type').eq('organization_id', orgId).lte('start_date', to).or(`start_date.gte.${from},end_date.gte.${from}`).limit(500),
-        (supabase as any).from('invoices').select('id, invoice_number, customer_name, due_date, final_amount, currency, booking_id').eq('organization_id', orgId).gte('due_date', from).lte('due_date', to).limit(500),
-        (supabase as any).from('customer_payments').select('id, amount, currency, payment_date, booking_id, customer_id').eq('organization_id', orgId).gte('payment_date', from).lte('payment_date', to).limit(500),
+        (supabase as any).from('bookings').select(`
+          id, booking_number, customer_name, start_date, end_date, booking_type, status, workflow_stage,
+          booking_flight_details!booking_flight_details_booking_id_fkey(
+            departure_date, departure_time, arrival_date, arrival_time,
+            return_departure_date, return_departure_time, return_arrival_date, return_arrival_time
+          ),
+          booking_transport_details!booking_transport_details_booking_id_fkey(pickup_point, pickup_time, dropoff_point)
+        `).eq('organization_id', orgId).lte('start_date', to).or(`start_date.gte.${from},end_date.gte.${from}`).limit(500),
+        canViewInvoices ? (supabase as any).from('invoices').select('id, invoice_number, customer_name, due_date, final_amount, currency, booking_id').eq('organization_id', orgId).gte('due_date', from).lte('due_date', to).limit(500) : unavailable,
+        canViewFinance ? (supabase as any).from('customer_payments').select('id, amount, currency, payment_date, booking_id').eq('organization_id', orgId).gte('payment_date', from).lte('payment_date', to).limit(500) : unavailable,
         canViewFinance ? (supabase as any).from('supplier_payment_orders').select('id, amount, currency, schedule_date, planned_payment_date, status, supplier_payment_allocations(amount), refund_balance_settlements(amount)')
-          .eq('organization_id', orgId).gte('schedule_date', from).lte('schedule_date', to)
-          .in('status', ['draft', 'pending', 'approved', 'partially_paid']).neq('approval_status', 'rejected').limit(500) : { data: [], error: null },
-        (supabase as any).from('booking_tasks').select('id, title, due_date, booking_id, status').eq('organization_id', orgId).gte('due_date', from).lte('due_date', to).limit(500),
+          .eq('organization_id', orgId)
+          .or(`and(planned_payment_date.gte.${from},planned_payment_date.lte.${to}),and(planned_payment_date.is.null,schedule_date.gte.${from},schedule_date.lte.${to})`)
+          .in('status', ['draft', 'pending', 'approved', 'partially_paid']).neq('approval_status', 'rejected').limit(500) : unavailable,
+        (supabase as any).from('booking_tasks').select('id, title, due_date, booking_id').eq('organization_id', orgId).gte('due_date', from).lte('due_date', to).limit(500),
       ]);
 
-      (bookings.data ?? []).forEach((b: any) => {
-        const ref = b.booking_number || b.id.slice(0,8);
-        const name = b.customer_name || 'عميل';
-        const href = `/bookings/${b.id}/workspace`;
-        const dep = b.booking_type === 'flight' ? 'flight' : b.booking_type === 'hotel' ? 'checkin' : 'departure';
-        const ret = b.booking_type === 'hotel' ? 'checkout' : 'arrival';
-        if (b.start_date && b.start_date >= from && b.start_date <= to)
-          out.push({ id: `st-${b.id}`, kind: dep, date: b.start_date, title: `${name} — ${ref}`, href });
-        if (b.end_date && b.end_date >= from && b.end_date <= to)
-          out.push({ id: `en-${b.id}`, kind: ret, date: b.end_date, title: `${name} — ${ref}`, href });
+      const failedRequest = [bookings, invoices, payments, poRes, tasks].find(result => result.error);
+      if (failedRequest) throw failedRequest.error;
+
+      (bookings.data ?? []).forEach((booking: Parameters<typeof bookingCalendarEvents>[0]) => {
+        out.push(...bookingCalendarEvents(booking, from, to));
       });
 
       (invoices.data ?? []).forEach((i: any) => {
@@ -111,14 +124,13 @@ const TravelCalendar = () => {
         });
       });
 
-      if (poRes.error) throw poRes.error;
       (poRes.data ?? []).forEach((p: any) => {
         const { remainingAmount } = paymentOrderBalance(p.amount, [
           ...(p.supplier_payment_allocations ?? []), ...(p.refund_balance_settlements ?? []),
         ]);
         if (remainingAmount <= 0) return;
         out.push({
-          id: `spo-${p.id}`, kind: 'supplier_payment', date: p.schedule_date,
+          id: `spo-${p.id}`, kind: 'supplier_payment', date: p.planned_payment_date ?? p.schedule_date,
           title: p.planned_payment_date ? 'سداد مورد مخطط' : 'استحقاق مورد', amount: remainingAmount, currency: p.currency,
           href: `/payment-orders?id=${p.id}`,
         });
@@ -145,6 +157,7 @@ const TravelCalendar = () => {
       arr.push(e);
       map.set(e.date, arr);
     }
+    for (const day of map.values()) day.sort((a, b) => (a.time ?? '24:00').localeCompare(b.time ?? '24:00'));
     return map;
   }, [events, filters]);
 
@@ -165,7 +178,7 @@ const TravelCalendar = () => {
 
   const shift = (dir: 1 | -1) => {
     const d = new Date(cursor);
-    if (view === 'month') d.setMonth(d.getMonth() + dir);
+    if (view === 'month') d.setMonth(d.getMonth() + dir, 1);
     else if (view === 'week') d.setDate(d.getDate() + 7 * dir);
     else d.setDate(d.getDate() + dir);
     setCursor(d);
@@ -188,11 +201,11 @@ const TravelCalendar = () => {
           <p className="text-sm text-muted-foreground">الوصولات، المغادرات، الفواتير، المدفوعات وأوامر الدفع في مكان واحد</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => shift(-1)}><ChevronRight className="w-4 h-4" /></Button>
+          <Button variant="outline" size="icon" aria-label="الفترة السابقة" onClick={() => shift(-1)}><ChevronRight className="w-4 h-4" /></Button>
           <div className="min-w-[140px] text-center font-medium">
             {view === 'month' ? `${MONTH_NAMES[cursor.getMonth()]} ${cursor.getFullYear()}` : toISO(cursor)}
           </div>
-          <Button variant="outline" size="icon" onClick={() => shift(1)}><ChevronLeft className="w-4 h-4" /></Button>
+          <Button variant="outline" size="icon" aria-label="الفترة التالية" onClick={() => shift(1)}><ChevronLeft className="w-4 h-4" /></Button>
           <Button variant="ghost" size="sm" onClick={() => setCursor(new Date())}>اليوم</Button>
           <Tabs value={view} onValueChange={(v: any) => setView(v)}>
             <TabsList>
@@ -211,6 +224,7 @@ const TravelCalendar = () => {
           return (
             <button key={k}
               onClick={() => toggleFilter(k)}
+              aria-pressed={active}
               className={cn('inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs border', active ? M.color : 'bg-muted/30 text-muted-foreground border-transparent line-through')}>
               <Icon className="w-3 h-3" /> {M.label}
             </button>
@@ -243,12 +257,16 @@ const TravelCalendar = () => {
                           return (
                             <button key={e.id} onClick={() => e.href && navigate(e.href)}
                               className={cn('w-full text-right truncate px-1.5 py-0.5 rounded border text-[10px]', M.color)}
-                              title={e.title}>
-                              {e.title}
+                              title={e.time ? `${e.time} ${e.title}` : e.title}>
+                              {e.time && <bdi>{e.time} </bdi>}{e.title}
                             </button>
                           );
                         })}
-                        {dayEvents.length > 4 && <div className="text-[10px] text-muted-foreground">+{dayEvents.length - 4} أخرى</div>}
+                        {dayEvents.length > 4 && (
+                          <button type="button" onClick={() => { setCursor(d); setView('day'); }} className="text-[10px] text-muted-foreground underline">
+                            +{dayEvents.length - 4} أخرى
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -274,6 +292,7 @@ const TravelCalendar = () => {
                           <button key={e.id} onClick={() => e.href && navigate(e.href)}
                             className={cn('w-full text-right px-2 py-1.5 rounded border text-xs flex items-center gap-1.5', M.color)}>
                             <Icon className="w-3.5 h-3.5 shrink-0" />
+                            {e.time && <bdi className="tabular-nums">{e.time}</bdi>}
                             <span className="truncate flex-1">{e.title}</span>
                             {e.amount != null && <span className="text-[10px] opacity-80">{e.amount.toLocaleString()} {e.currency || ''}</span>}
                           </button>

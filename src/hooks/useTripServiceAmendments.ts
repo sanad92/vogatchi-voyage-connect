@@ -4,6 +4,7 @@ import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { useOrgId } from '@/hooks/useOrgId';
 import type { ServiceKind } from '@/hooks/useBookingServices';
+import type { TravelServiceAmendment } from '@/lib/travelDocuments';
 
 export type AmendmentOperation = 'change' | 'cancel';
 export type AmendmentRule = 'free' | 'repriced' | 'nonrefundable' | 'partial' | 'full';
@@ -48,14 +49,7 @@ export interface ServiceAmendment {
   supplier_order_id: string | null;
 }
 
-interface AmendmentHistoryRow {
-  service_kind: ServiceKind;
-  service_id: string;
-  service_source: ServiceSource;
-  ticket_number: string | null;
-  operation: AmendmentOperation;
-  start_date: string | null;
-  end_date: string | null;
+interface AmendmentHistoryRow extends TravelServiceAmendment {
   new_ticket: string | null;
   applied_at: string;
 }
@@ -159,10 +153,10 @@ export function useTripServiceAmendments(bookingId: string, canRead: boolean) {
 
 export function useTripServiceAmendmentHistory(bookingId?: string) {
   const orgId = useOrgId();
-  const { getPermissionScope } = useSupabasePermissions();
+  const { getPermissionScope, hasPermission } = useSupabasePermissions();
   return useQuery({
     queryKey: historyKey(orgId, bookingId ?? ''),
-    enabled: !!orgId && !!bookingId && getPermissionScope('bookings_view') === 'organization',
+    enabled: !!orgId && !!bookingId && hasPermission('bookings_view') && getPermissionScope('bookings_view') !== 'none',
     queryFn: async (): Promise<AmendmentHistoryRow[]> => {
       const { data, error } = await callUntypedRpc<AmendmentHistoryRow[]>('get_trip_service_amendment_history', { _booking: bookingId });
       if (error) throw error;

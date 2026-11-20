@@ -52,10 +52,8 @@ const computeSLA = (workspace: Workspace): { color: string; label: string } => {
 
 const destinationOf = (workspace: Workspace): string => {
   const it = workspace.itinerary;
-  if (it?.hotel?.city || it?.hotel?.destination) return it.hotel.city || it.hotel.destination;
-  if (it?.flight?.arrival_city || it?.flight?.destination) return it.flight.arrival_city || it.flight.destination;
-  if (it?.transport?.destination) return it.transport.destination;
-  return workspace.booking?.destination || '—';
+  return it?.hotel?.city || workspace.booking?.destination || it?.flight?.arrival_airport ||
+    it?.transport?.dropoff_point || it?.car?.dropoff_location || '—';
 };
 
 export const WorkspaceExecutiveHeader = ({ workspace, paymentStatus, profitHealth }: Props) => {

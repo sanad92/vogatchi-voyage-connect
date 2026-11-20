@@ -1,5 +1,6 @@
 
 import { SupportedCurrency } from './currency';
+import type { SpecializedBookingDocumentFields } from '@/lib/specializedBookingFinance';
 import { BookingStatus } from './common';
 
 export interface Airport {
@@ -42,7 +43,7 @@ export interface BaggageInfo {
   additional_fees: number;
 }
 
-export interface FlightBooking {
+export interface FlightBooking extends SpecializedBookingDocumentFields {
   id: string;
   booking_reference: string;
   customer_id?: string;

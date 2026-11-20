@@ -77,8 +77,7 @@ export default function PilgrimageAvailabilitySearch({ orgId, roomInventoryProgr
     && travelerNames.every(name => name.length >= 3 && name.length <= 200);
   const quoteSelected = selection?.action === 'quote';
   const bookSelected = selection?.action === 'book';
-  const canSubmit = quoteSelected ? canQuote : canBook && (!bookSelected ||
-    (validManifest && (selection?.row.program_type !== 'umrah' || canInvoice)));
+  const canSubmit = quoteSelected ? canQuote : canBook && (!bookSelected || (validManifest && canInvoice));
   const validFilters = Number.isInteger(Number(filters.party)) && Number(filters.party) >= 1
     && Number(filters.party) <= 10000 && (!filters.from || !filters.to || filters.from <= filters.to);
   const searchKey = ['pilgrimage-availability', orgId, submitted] as const;
@@ -183,6 +182,10 @@ export default function PilgrimageAvailabilitySearch({ orgId, roomInventoryProgr
         qc.invalidateQueries({ queryKey: ['pilgrimage-seat-allocations', orgId] });
         qc.invalidateQueries({ queryKey: ['pilgrimage-programs', orgId] });
         qc.invalidateQueries({ queryKey: ['pilgrims', orgId] });
+      }
+      if (action === 'book') {
+        qc.invalidateQueries({ queryKey: ['umrah-unified-links', orgId] });
+        qc.invalidateQueries({ queryKey: ['unified-bookings', orgId] });
       }
       toast({ title: actions[action].success });
       onOpenSale(id, programType);
@@ -296,8 +299,8 @@ export default function PilgrimageAvailabilitySearch({ orgId, roomInventoryProgr
         </div>
         <div className="flex flex-wrap gap-2">
           {canBook && <>
-            <Button disabled={actionDisabled || (row.program_type === 'umrah' && !canInvoice)}
-              title={row.program_type === 'umrah' && !canInvoice ? 'تأكيد الحجز يحتاج صلاحية إصدار الفاتورة' : undefined}
+            <Button disabled={actionDisabled || !canInvoice}
+              title={!canInvoice ? 'تأكيد الحجز يحتاج صلاحية إصدار الفاتورة' : undefined}
               onClick={() => openAction(row, 'book')}>{actions.book.label}</Button>
             <Button variant="outline" disabled={actionDisabled} onClick={() => openAction(row, 'hold')}>{actions.hold.label}</Button>
           </>}

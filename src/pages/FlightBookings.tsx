@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { BookingListFinance } from '@/components/bookings/BookingListFinance';
 
 import React, { useState } from "react";
 import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
@@ -8,23 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plane } from "lucide-react";
 import FlightBookingsList from "@/components/flight-bookings/FlightBookingsList";
 import { FlightBooking } from "@/types/flightBooking";
-import FlightBookingActions from "@/components/flight-bookings/details/FlightBookingActions";
-import FlightInvoiceDialog from "@/components/flight-bookings/dialogs/FlightInvoiceDialog";
-import FlightPrintDialog from "@/components/flight-bookings/dialogs/FlightPrintDialog";
-import FlightVoucherDialog from "@/components/flight-bookings/dialogs/FlightVoucherDialog";
-import { useFlightBookingsPage } from "@/components/flight-bookings/hooks/useFlightBookingsPage";
 
 const FlightBookings = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("list");
   const [selectedBooking, setSelectedBooking] = useState<FlightBooking | null>(null);
-
-  // إدارة حوارات الطباعة والفاتورة والفاوتشر
-  const {
-    showPrintInvoice, setShowPrintInvoice,
-    showCreateInvoice, setShowCreateInvoice,
-    showVoucher, setShowVoucher
-  } = useFlightBookingsPage();
 
   const handleCreateNew = () => {
     navigate("/bookings/new?type=flight");
@@ -112,8 +101,7 @@ const FlightBookings = () => {
                       <p><strong>التكلفة الإجمالية:</strong> {selectedBooking.total_cost} {selectedBooking.currency}</p>
                       <p><strong>تكلفة المورد:</strong> {selectedBooking.supplier_cost} {selectedBooking.currency}</p>
                       <p><strong>الربح:</strong> {selectedBooking.total_profit || 0} {selectedBooking.currency}</p>
-                      <p><strong>المبلغ المدفوع:</strong> {selectedBooking.paid_amount || 0} {selectedBooking.currency}</p>
-                      <p><strong>المتبقي:</strong> {selectedBooking.remaining_amount || 0} {selectedBooking.currency}</p>
+                      <BookingListFinance booking={selectedBooking} />
                     </div>
                   </div>
 
@@ -155,32 +143,15 @@ const FlightBookings = () => {
                   </div>
                 )}
 
-                {/* إجراءات الحجوزات - أزرار الإجراءات الجديدة */}
-                <FlightBookingActions
-                  booking={selectedBooking}
-                  onBack={() => setActiveTab("list")}
-                  onEdit={() => navigate(`/bookings/${selectedBooking.id}?tab=amendments`)}
-                  onInvoice={() => setShowCreateInvoice(true)}
-                  onPrint={() => setShowPrintInvoice(true)}
-                  onVoucher={() => setShowVoucher(true)}
-                />
-
-                {/* الحوارات المناسبة */}
-                <FlightInvoiceDialog
-                  open={showCreateInvoice}
-                  booking={selectedBooking}
-                  onClose={() => setShowCreateInvoice(false)}
-                />
-                <FlightPrintDialog
-                  open={showPrintInvoice}
-                  booking={selectedBooking}
-                  onClose={() => setShowPrintInvoice(false)}
-                />
-                <FlightVoucherDialog
-                  open={showVoucher}
-                  booking={selectedBooking}
-                  onClose={() => setShowVoucher(false)}
-                />
+                <div className="mt-6 flex flex-wrap gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setActiveTab("list")}>رجوع للقائمة</Button>
+                  <Button asChild variant="outline">
+                    <Link to={`/bookings/${selectedBooking.id}?tab=documents`}>مستندات الحجز</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link to={`/bookings/${selectedBooking.id}?tab=amendments`}>التعديلات والتسوية</Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}

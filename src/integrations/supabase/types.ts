@@ -2397,6 +2397,13 @@ export type Database = {
           meal_preferences: string | null
           passengers_count: number | null
           pnr: string | null
+          return_arrival_airport: string | null
+          return_arrival_date: string | null
+          return_arrival_time: string | null
+          return_departure_airport: string | null
+          return_departure_date: string | null
+          return_departure_time: string | null
+          return_flight_number: string | null
           seat_preferences: string | null
           selling_amount: number
           taxes_and_fees: number | null
@@ -2421,6 +2428,13 @@ export type Database = {
           meal_preferences?: string | null
           passengers_count?: number | null
           pnr?: string | null
+          return_arrival_airport?: string | null
+          return_arrival_date?: string | null
+          return_arrival_time?: string | null
+          return_departure_airport?: string | null
+          return_departure_date?: string | null
+          return_departure_time?: string | null
+          return_flight_number?: string | null
           seat_preferences?: string | null
           selling_amount?: number
           taxes_and_fees?: number | null
@@ -2445,6 +2459,13 @@ export type Database = {
           meal_preferences?: string | null
           passengers_count?: number | null
           pnr?: string | null
+          return_arrival_airport?: string | null
+          return_arrival_date?: string | null
+          return_arrival_time?: string | null
+          return_departure_airport?: string | null
+          return_departure_date?: string | null
+          return_departure_time?: string | null
+          return_flight_number?: string | null
           seat_preferences?: string | null
           selling_amount?: number
           taxes_and_fees?: number | null
@@ -2502,6 +2523,7 @@ export type Database = {
           children_ages: string | null
           city: string | null
           cost_amount: number
+          cost_per_night: number | null
           created_at: string | null
           hotel_name: string | null
           id: string
@@ -2510,6 +2532,7 @@ export type Database = {
           room_type: string | null
           rooms: number | null
           selling_amount: number
+          selling_per_night: number | null
           star_rating: number | null
         }
         Insert: {
@@ -2524,6 +2547,7 @@ export type Database = {
           children_ages?: string | null
           city?: string | null
           cost_amount?: number
+          cost_per_night?: number | null
           created_at?: string | null
           hotel_name?: string | null
           id?: string
@@ -2532,6 +2556,7 @@ export type Database = {
           room_type?: string | null
           rooms?: number | null
           selling_amount?: number
+          selling_per_night?: number | null
           star_rating?: number | null
         }
         Update: {
@@ -2546,6 +2571,7 @@ export type Database = {
           children_ages?: string | null
           city?: string | null
           cost_amount?: number
+          cost_per_night?: number | null
           created_at?: string | null
           hotel_name?: string | null
           id?: string
@@ -2554,6 +2580,7 @@ export type Database = {
           room_type?: string | null
           rooms?: number | null
           selling_amount?: number
+          selling_per_night?: number | null
           star_rating?: number | null
         }
         Relationships: [
@@ -2898,6 +2925,7 @@ export type Database = {
           id: string
           passengers: number | null
           pickup_point: string | null
+          pickup_time: string | null
           route: string | null
           selling_amount: number
           vehicle_type: string | null
@@ -2910,6 +2938,7 @@ export type Database = {
           id?: string
           passengers?: number | null
           pickup_point?: string | null
+          pickup_time?: string | null
           route?: string | null
           selling_amount?: number
           vehicle_type?: string | null
@@ -2922,6 +2951,7 @@ export type Database = {
           id?: string
           passengers?: number | null
           pickup_point?: string | null
+          pickup_time?: string | null
           route?: string | null
           selling_amount?: number
           vehicle_type?: string | null

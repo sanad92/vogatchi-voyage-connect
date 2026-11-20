@@ -1,6 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
-import { useState } from "react";
 import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,26 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Hotel, Plus } from "lucide-react";
 import HotelBookingsList from "@/components/hotel-bookings/HotelBookingsList";
 import { HotelBooking } from "@/types/hotelBooking";
-import HotelInvoiceGenerator from "@/components/hotel-bookings/HotelInvoiceGenerator";
-import HotelVoucherGenerator from "@/components/hotel-bookings/HotelVoucherGenerator";
-import HotelInvoiceCreator from "@/components/hotel-bookings/HotelInvoiceCreator";
-import { Printer, FileText } from "lucide-react";
-import { toast } from "sonner";
 import { useHotelBookingsPage } from "@/components/hotel-bookings/hooks/useHotelBookingsPage";
 import { useOrgId } from "@/hooks/useOrgId";
 import HotelBookingDetails from "@/components/hotel-bookings/details/HotelBookingDetails";
-import HotelBookingActions from "@/components/hotel-bookings/details/HotelBookingActions";
-import HotelInvoiceDialog from "@/components/hotel-bookings/dialogs/HotelInvoiceDialog";
-import HotelPrintDialog from "@/components/hotel-bookings/dialogs/HotelPrintDialog";
-import HotelVoucherDialog from "@/components/hotel-bookings/dialogs/HotelVoucherDialog";
 
 const HotelBookings = () => {
   const {
     activeTab, setActiveTab,
-    editingBooking, setEditingBooking,
-    showPrintInvoice, setShowPrintInvoice,
-    showCreateInvoice, setShowCreateInvoice,
-    showVoucher, setShowVoucher
+    editingBooking, setEditingBooking
   } = useHotelBookingsPage();
   const orgId = useOrgId();
   const navigate = useNavigate();
@@ -139,7 +126,6 @@ const HotelBookings = () => {
           <HotelBookingsList
             bookings={bookings}
             onEdit={handleEditBooking}
-            onRefresh={refetch}
             onCreateNew={handleNewBooking}
           />
         </TabsContent>
@@ -156,30 +142,15 @@ const HotelBookings = () => {
               <CardContent>
                 <HotelBookingDetails booking={editingBooking} />
 
-                <HotelBookingActions
-                  booking={editingBooking}
-                  onBack={() => setActiveTab("list")}
-                  onEdit={() => navigate(`/bookings/${editingBooking.id}?tab=amendments`)}
-                  onInvoice={() => setShowCreateInvoice(true)}
-                  onPrint={() => setShowPrintInvoice(true)}
-                  onVoucher={() => setShowVoucher(true)}
-                />
-
-                <HotelInvoiceDialog
-                  open={showCreateInvoice}
-                  booking={editingBooking}
-                  onClose={() => setShowCreateInvoice(false)}
-                />
-                <HotelPrintDialog
-                  open={showPrintInvoice}
-                  booking={editingBooking}
-                  onClose={() => setShowPrintInvoice(false)}
-                />
-                <HotelVoucherDialog
-                  open={showVoucher}
-                  booking={editingBooking}
-                  onClose={() => setShowVoucher(false)}
-                />
+                <div className="mt-6 flex flex-wrap gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setActiveTab("list")}>رجوع للقائمة</Button>
+                  <Button asChild variant="outline">
+                    <Link to={`/bookings/${editingBooking.id}?tab=documents`}>مستندات الحجز</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link to={`/bookings/${editingBooking.id}?tab=amendments`}>التعديلات والتسوية</Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}

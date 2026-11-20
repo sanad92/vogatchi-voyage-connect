@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
+import { invalidateSpecializedBookingLists } from '@/lib/specializedBookingFinance';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useToast } from '@/hooks/use-toast';
@@ -116,6 +117,7 @@ export const RecordPaymentDialog = ({
       toast({ title: 'تم تسجيل الدفعة بنجاح' });
       queryClient.invalidateQueries({ queryKey: ['workspace-payments'] });
       void queryClient.invalidateQueries({ queryKey: ['workspace-invoices', bookingId] });
+      void invalidateSpecializedBookingLists(queryClient, orgId);
       void queryClient.invalidateQueries({ queryKey: ['unified-bookings'] });
       for (const key of ['treasury-accounts', 'bank-accounts', 'bank-transactions', 'journal-entries']) {
         void queryClient.invalidateQueries({ queryKey: [key, orgId] });

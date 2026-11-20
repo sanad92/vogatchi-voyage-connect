@@ -1,4 +1,5 @@
-import { useParentBookingLink } from '@/contexts/ParentBookingContext';
+import { useParentBookingFields, useParentBookingLink } from '@/contexts/ParentBookingContext';
+import { useOrgId } from '@/hooks/useOrgId';
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -44,7 +45,9 @@ interface UseFlightBookingFormProps {
 }
 
 export const useFlightBookingForm = ({ onSuccess, initialData }: UseFlightBookingFormProps) => {
-  const { withParentBooking, syncParent } = useParentBookingLink();
+  const { withParentBooking } = useParentBookingLink();
+  const { bookingId, customer: bookingCustomer, currency: bookingCurrency } = useParentBookingFields();
+  const orgId = useOrgId();
   const [passengerDetails, setPassengerDetails] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedSupplier, setSelectedSupplier] = useState<{ id: string; name: string } | null>(null);
@@ -54,12 +57,13 @@ export const useFlightBookingForm = ({ onSuccess, initialData }: UseFlightBookin
   const form = useForm<FlightBookingFormData>({
     resolver: zodResolver(flightBookingSchema),
     defaultValues: {
-      customer_name: initialData?.customer_name || "",
+      customer_id: bookingCustomer?.id,
+      customer_name: bookingCustomer?.name || initialData?.customer_name || "",
       trip_type: initialData?.trip_type || "one-way",
       number_of_passengers: initialData?.number_of_passengers || 1,
       ticket_price_per_person: initialData?.ticket_price_per_person || 0,
       supplier_cost: initialData?.supplier_cost || 0,
-      currency: initialData?.currency || "EGP",
+      currency: bookingCurrency || initialData?.currency || "EGP",
       paid_amount: initialData?.paid_amount || 0,
     },
   });
@@ -86,9 +90,13 @@ export const useFlightBookingForm = ({ onSuccess, initialData }: UseFlightBookin
 
   const createBookingMutation = useMutation({
     mutationFn: async (data: FlightBookingFormData) => {
+      if (!orgId) throw new Error('اختار المؤسسة الأول');
+      const customer = bookingCustomer ?? selectedCustomer;
+      const paid = bookingId ? 0 : (data.paid_amount || 0);
       const bookingData = {
-        customer_id: selectedCustomer?.id || null,
-        customer_name: data.customer_name,
+        organization_id: orgId,
+        customer_id: customer?.id || null,
+        customer_name: customer?.name || data.customer_name,
         departure_airport_id: data.departure_airport_id,
         arrival_airport_id: data.arrival_airport_id,
         departure_date: format(data.departure_date, 'yyyy-MM-dd'),
@@ -101,15 +109,15 @@ export const useFlightBookingForm = ({ onSuccess, initialData }: UseFlightBookin
         number_of_passengers: data.number_of_passengers,
         ticket_price_per_person: data.ticket_price_per_person,
         total_cost: totalCost,
-        currency: data.currency,
+        currency: bookingCurrency || data.currency,
         supplier_cost: data.supplier_cost,
         supplier_name: selectedSupplier?.name || '',
         booking_agent_id: getBookingAgentId(),
         booking_agent_name: getBookingAgentName(),
         total_profit: totalProfit,
-        remaining_amount: Math.max(0, totalCost - (data.paid_amount || 0)),
-        paid_amount: data.paid_amount || 0,
-        payment_method: data.payment_method || null,
+        remaining_amount: Math.max(0, totalCost - paid),
+        paid_amount: paid,
+        payment_method: bookingId ? null : (data.payment_method || null),
         special_requests: data.special_requests || null,
         meal_preferences: data.meal_preferences || null,
         seat_preferences: data.seat_preferences || null,
@@ -126,12 +134,12 @@ export const useFlightBookingForm = ({ onSuccess, initialData }: UseFlightBookin
         .single();
 
       if (error) throw error;
-      await syncParent();
       return result;
     },
     onSuccess: (data) => {
       toast.success("تم إنشاء حجز الطيران بنجاح");
       queryClient.invalidateQueries({ queryKey: ['flight-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['flight-bookings-unified', orgId] });
       form.reset();
       setPassengerDetails([]);
       setSelectedCustomer(null);
@@ -140,7 +148,7 @@ export const useFlightBookingForm = ({ onSuccess, initialData }: UseFlightBookin
     },
     onError: (error) => {
       console.error('خطأ في إنشاء الحجز:', error);
-      toast.error("فشل في إنشاء حجز الطيران");
+      toast.error(error.message || 'فشل في إنشاء حجز الطيران');
     }
   });
 

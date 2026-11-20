@@ -27,7 +27,7 @@ export interface TransportRoute {
   updated_at: string;
 }
 
-export interface TransportBooking {
+export interface TransportBooking extends SpecializedBookingDocumentFields {
   id: string;
   booking_reference: string;
   customer_id?: string;
@@ -89,7 +89,7 @@ export interface TransportBooking {
   updated_at: string;
 }
 
-export interface CarRental {
+export interface CarRental extends SpecializedBookingDocumentFields {
   id: string;
   rental_reference: string;
   customer_id?: string;
@@ -168,3 +168,4 @@ export interface CarRental {
   created_at: string;
   updated_at: string;
 }
+import type { SpecializedBookingDocumentFields } from '@/lib/specializedBookingFinance';

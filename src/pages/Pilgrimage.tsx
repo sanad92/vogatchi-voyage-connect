@@ -143,6 +143,9 @@ const Pilgrimage = () => {
 
   const program = programs.find((p) => p.id === programId) ?? null;
   const usesGroupedRooming = program?.program_type === 'umrah' || !!program?.uses_room_inventory;
+  const hasHajjAvailabilityPassengers = program?.program_type === 'hajj' && !program.uses_room_inventory
+    && pilgrims.some((person) => person.program_id === programId && person.inventory_booking_id);
+  const hasDepartureOperations = usesGroupedRooming || hasHajjAvailabilityPassengers;
   const roomingGroups = useQuery<UmrahRoomGroup[]>({
     queryKey: ['umrah-rooming-groups', orgId, programId],
     enabled: Boolean(orgId && usesGroupedRooming),
@@ -157,7 +160,7 @@ const Pilgrimage = () => {
   });
   const operationRefunds = useQuery({
     queryKey: ['pilgrimage-operation-refunds', orgId, programId],
-    enabled: Boolean(orgId && usesGroupedRooming),
+    enabled: Boolean(orgId && hasDepartureOperations),
     queryFn: async () => {
       const { data, error } = await callUntypedRpc<{ pilgrim_id: string; reserved_amount: number }[]>('get_pilgrimage_operation_refunds', {
         _organization_id: orgId, _program_id: programId,
@@ -168,7 +171,7 @@ const Pilgrimage = () => {
   });
   const reservationLinks = useQuery({
     queryKey: ['umrah-unified-links', orgId, programId],
-    enabled: !!orgId && !!programId && usesGroupedRooming,
+    enabled: !!orgId && !!programId && hasDepartureOperations,
     queryFn: async () => {
       const { data, error } = await sb.from('umrah_inventory_bookings').select('id,booking_id,availability_sale_id,mode')
         .eq('organization_id', orgId).eq('program_id', programId).not('booking_id', 'is', null);
@@ -185,6 +188,7 @@ const Pilgrimage = () => {
       inventory_room_mode: reservationLinks.data?.get(g.inventory_booking_id)?.mode,
       manual_allotment_booking: !!reservationLinks.data?.get(g.inventory_booking_id)?.availability_sale_id })),
     [pilgrims, programId, operationRefunds.data, reservationLinks.data]);
+  const editedPassenger = programPilgrims.find((person) => person.id === editingPilgrim);
   const approvedEdit = useBookingStaff(
     editingBookingId && programPilgrims.some(person => person.unified_booking_id === editingBookingId) ? editingBookingId : null,
   );
@@ -396,7 +400,7 @@ const Pilgrimage = () => {
     const registrationBlock = canRegisterPilgrim(program, programPilgrims);
     const canOpenInventory = canManage || !!program.uses_room_inventory;
     const requestedTab = params.get('tab');
-    const tab = requestedTab && (['rooming', 'payments', 'reports'].includes(requestedTab) || (requestedTab === 'interest' && interestTab) || (requestedTab === 'operations' && usesGroupedRooming) || (requestedTab === 'inventory' && canOpenInventory))
+    const tab = requestedTab && (['rooming', 'payments', 'reports'].includes(requestedTab) || (requestedTab === 'interest' && interestTab) || (requestedTab === 'operations' && hasDepartureOperations) || (requestedTab === 'inventory' && canOpenInventory))
       ? requestedTab : 'pilgrims';
     const goToProgramTab = (value: string) => setParams((current) => {
       const next = new URLSearchParams(current);
@@ -481,7 +485,7 @@ const Pilgrimage = () => {
           </div>
         </Card>
         {program.status === 'draft' && program.notes && <Card className="p-4 text-sm whitespace-pre-wrap text-muted-foreground">{program.notes}</Card>}
-        {usesGroupedRooming && operationRefunds.isError && <Card role="alert" className="flex flex-wrap items-center gap-2 p-4 text-sm text-destructive">
+        {hasDepartureOperations && operationRefunds.isError && <Card role="alert" className="flex flex-wrap items-center gap-2 p-4 text-sm text-destructive">
           تعذر تحميل رصيد الاسترداد. أعد المحاولة قبل التحصيل أو تنفيذ تعديل مالي.
           <Button size="sm" variant="outline" onClick={() => operationRefunds.refetch()}>إعادة المحاولة</Button>
         </Card>}
@@ -506,7 +510,7 @@ const Pilgrimage = () => {
         )}
 
         <Tabs value={tab} onValueChange={goToProgramTab}>
-          <TabsList className="h-auto flex-wrap"><TabsTrigger value="pilgrims">المسجلون</TabsTrigger>{interestTab && <TabsTrigger value="interest">طلبات الاهتمام</TabsTrigger>}<TabsTrigger value="rooming">التسكين</TabsTrigger>{canOpenInventory && <TabsTrigger value="inventory">رصيد الدفعة</TabsTrigger>}{usesGroupedRooming && <TabsTrigger value="operations">التعديلات والإلغاء</TabsTrigger>}<TabsTrigger value="payments">التحصيل</TabsTrigger><TabsTrigger value="reports">الكشوفات</TabsTrigger></TabsList>
+          <TabsList className="h-auto flex-wrap"><TabsTrigger value="pilgrims">المسجلون</TabsTrigger>{interestTab && <TabsTrigger value="interest">طلبات الاهتمام</TabsTrigger>}<TabsTrigger value="rooming">التسكين</TabsTrigger>{canOpenInventory && <TabsTrigger value="inventory">رصيد الدفعة</TabsTrigger>}{hasDepartureOperations && <TabsTrigger value="operations">{hasHajjAvailabilityPassengers ? 'إلغاء التسجيل' : 'التعديلات والإلغاء'}</TabsTrigger>}<TabsTrigger value="payments">التحصيل</TabsTrigger><TabsTrigger value="reports">الكشوفات</TabsTrigger></TabsList>
 
           {orgId && canOpenInventory && <TabsContent value="inventory">
             <UmrahDepartureInventory key={`${orgId}:${program.id}`} orgId={orgId} program={program}
@@ -517,7 +521,7 @@ const Pilgrimage = () => {
           {interestTab && orgId && <TabsContent value="interest">
             <PilgrimageInterest key={`${orgId}:${program.id}`} organizationId={orgId} program={program} canCreate={canCreateCRM() && ['draft', 'open', 'full'].includes(program.status)} />
           </TabsContent>}
-          {usesGroupedRooming && orgId && <TabsContent value="operations">
+          {hasDepartureOperations && orgId && <TabsContent value="operations">
             <PilgrimageOperations key={`${orgId}:${program.id}`} orgId={orgId} program={program} programs={programs}
               passengers={programPilgrims} canManage={canManageOperations} onChanged={refresh}
               canCancel={hasPermission('bookings_cancel')}
@@ -584,8 +588,9 @@ const Pilgrimage = () => {
                           {!cancelled && g.unified_booking_id && !canEditPassenger(g) && <Button asChild size="sm" variant="ghost">
                             <Link to={`/bookings/${g.unified_booking_id}?tab=amendments`}>طلب فتح التعديل</Link>
                           </Button>}
-                          {!g.b2b_roster_entry_id && !cancelled && canManage && <Button size="icon" variant="ghost" title="إلغاء" onClick={() => {
-                            if (usesGroupedRooming) setParams((current) => { const next = new URLSearchParams(current); next.set('tab', 'operations'); return next; });
+                          {!g.b2b_roster_entry_id && !cancelled && canManage && (usesGroupedRooming || !g.inventory_booking_id || g.manual_allotment_booking)
+                            && <Button size="icon" variant="ghost" title="إلغاء" onClick={() => {
+                            if (usesGroupedRooming || g.manual_allotment_booking) goToProgramTab('operations');
                             else { setCancelFor(g); setFee(0); }
                           }}><Ban className="h-4 w-4 text-destructive" /></Button>}
                         </TableCell>
@@ -697,7 +702,7 @@ const Pilgrimage = () => {
                   <SelectContent><SelectItem value="__none__">غير محدد</SelectItem><SelectItem value="male">ذكر</SelectItem><SelectItem value="female">أنثى</SelectItem></SelectContent></Select>
               </F>
               <F label="نوع الغرفة">
-                <Select value={gf.room_type} disabled={!!editingPilgrim && usesGroupedRooming && !programPilgrims.find((g) => g.id === editingPilgrim)?.b2b_roster_entry_id} onValueChange={(v) => setGf({ ...gf, room_type: v })}><SelectTrigger><SelectValue /></SelectTrigger>
+                <Select value={gf.room_type} disabled={!!editedPassenger && !editedPassenger.b2b_roster_entry_id && (usesGroupedRooming || !!editedPassenger.inventory_booking_id)} onValueChange={(v) => setGf({ ...gf, room_type: v })}><SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{Object.entries(ROOM).map(([k, v]) => <SelectItem key={k} value={k}>{v}{!programPilgrims.find(g => g.id === editingPilgrim)?.b2b_roster_entry_id && ` · ${fmt(priceFor(program, k), program.currency)}`}</SelectItem>)}</SelectContent></Select>
               </F>
               <F label="ملف المستندات مكتمل">

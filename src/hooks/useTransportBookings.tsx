@@ -8,7 +8,7 @@ import { useParentBookingLink } from '@/contexts/ParentBookingContext';
 export const useTransportBookings = () => {
   const queryClient = useQueryClient();
   const orgId = useOrgId();
-  const { withParentBooking, syncParent } = useParentBookingLink();
+  const { withParentBooking, parentBookingId } = useParentBookingLink();
 
   const { data: transportData, isLoading: bookingsLoading, refetch } = useQuery({
     queryKey: ['transport-bookings-unified', orgId],
@@ -71,9 +71,8 @@ export const useTransportBookings = () => {
         .insert(withParentBooking({ ...booking, currency: booking.currency || 'EGP', organization_id: orgId }))
         .select().single();
       if (error) throw error;
-      await syncParent();
+      if (parentBookingId) return data;
 
-      // Trigger confirmation notification
       try {
         const { data: confirmation, error: confirmationError } = await supabase.functions.invoke('send-booking-confirmation', {
           body: { bookingId: data.id, bookingType: 'transport' }

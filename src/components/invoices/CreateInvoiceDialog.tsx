@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useOrgId } from "@/hooks/useOrgId";
+import { invalidateSpecializedBookingLists } from "@/lib/specializedBookingFinance";
 import { useCurrencyHelper } from "@/hooks/useCurrencyHelper";
 import { calculateFinancialBreakdown } from "@/utils/calculationHelpers";
 import CustomerSelectionStep from "./create/CustomerSelectionStep";
@@ -196,8 +197,9 @@ const CreateInvoiceDialog = ({ open, onClose }: CreateInvoiceDialogProps) => {
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: invoice => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      void invalidateSpecializedBookingLists(queryClient, invoice.organization_id);
       toast.success('تم إنشاء الفاتورة بنجاح');
       handleClose();
     },

@@ -28,6 +28,7 @@ export interface DocFact {
 }
 
 export type DocSectionKind = 'hotel' | 'flight' | 'transport' | 'car' | 'service';
+export type TravelServiceKind = Exclude<DocSectionKind, 'service'>;
 
 export interface DocSection {
   kind: DocSectionKind;
@@ -98,7 +99,10 @@ export const fmtDate = (value?: string | null): string | undefined => {
   if (!value) return undefined;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    timeZone: /^\d{4}-\d{2}-\d{2}$/.test(value) ? 'UTC' : undefined,
+  });
 };
 
 export const fmtMoney = (amount: number, currency: string): string =>
@@ -113,13 +117,16 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const fact = (label: string, value: unknown): DocFact | null => {
   if (value === null || value === undefined) return null;
   const v = String(value).trim();
-  if (!v || v === '0' || v.toLowerCase() === 'null') return null;
+  if (!v || v.toLowerCase() === 'null') return null;
   if (UUID_RE.test(v)) return null;
   return { label, value: v };
 };
 
 
 const facts = (...rows: (DocFact | null)[]): DocFact[] => rows.filter(Boolean) as DocFact[];
+
+const dateAndTime = (date?: string | null, time?: string | null) =>
+  [fmtDate(date), time].filter(Boolean).join(' ');
 
 /** Money-shaped label/value detector used to keep vouchers financially clean. */
 const MONEY_LABEL = /(price|cost|amount|total|profit|margin|markup|net|rate|fee|tax|vat|paid|balance|due|سعر|تكلفة|مبلغ|إجمالي|ربح|هامش|صافي|عمولة|ضريبة|مدفوع|متبقي|رسوم)/i;
@@ -152,18 +159,121 @@ const PAYMENT_STATUS: Record<string, { labelAr: string; labelEn: string }> = {
   cancelled: { labelAr: 'ملغاة', labelEn: 'Cancelled' },
 };
 
+type ServiceText = string | null;
+type ServiceNumber = number | null;
+export interface TravelItinerary {
+  hotel?: {
+    id?: string;
+    hotel_name?: ServiceText;
+    city?: ServiceText;
+    star_rating?: ServiceNumber;
+    check_in?: ServiceText;
+    check_out?: ServiceText;
+    nights?: ServiceNumber;
+    rooms?: ServiceNumber;
+    room_type?: ServiceText;
+    room_view?: ServiceText;
+    meal_plan?: ServiceText;
+    board_type?: ServiceText;
+    adults?: ServiceNumber;
+    children?: ServiceNumber;
+    children_ages?: ServiceText;
+    booking_reference?: ServiceText;
+    cancellation_policy?: ServiceText;
+  } | null;
+  flight?: {
+    id?: string;
+    airline?: ServiceText;
+    arrival_airport?: ServiceText;
+    arrival_date?: ServiceText;
+    arrival_time?: ServiceText;
+    departure_airport?: ServiceText;
+    departure_date?: ServiceText;
+    departure_time?: ServiceText;
+    flight_class?: ServiceText;
+    flight_number?: ServiceText;
+    is_round_trip?: boolean | null;
+    meal_preferences?: ServiceText;
+    passengers_count?: ServiceNumber;
+    pnr?: ServiceText;
+    seat_preferences?: ServiceText;
+    ticket_number?: ServiceText;
+    ticket_numbers?: string[];
+    return_flight_number?: ServiceText;
+    return_departure_airport?: ServiceText;
+    return_arrival_airport?: ServiceText;
+    return_departure_date?: ServiceText;
+    return_departure_time?: ServiceText;
+    return_arrival_date?: ServiceText;
+    return_arrival_time?: ServiceText;
+  } | null;
+  transport?: {
+    id?: string;
+    vehicle_type?: ServiceText;
+    route?: ServiceText;
+    pickup_point?: ServiceText;
+    pickup_date?: ServiceText;
+    pickup_time?: ServiceText;
+    dropoff_point?: ServiceText;
+    dropoff_date?: ServiceText;
+    dropoff_time?: ServiceText;
+    passengers?: ServiceNumber;
+    reference?: ServiceText;
+  } | null;
+  car?: {
+    id?: string;
+    car_type?: ServiceText;
+    pickup_location?: ServiceText;
+    pickup_date?: ServiceText;
+    dropoff_location?: ServiceText;
+    dropoff_date?: ServiceText;
+    insurance_included?: boolean | null;
+    reference?: ServiceText;
+  } | null;
+}
+
+export interface LinkedItineraryService {
+  kind: TravelServiceKind;
+  id: string;
+  cancelled: boolean;
+  updatedAt?: string | null;
+  itinerary: TravelItinerary;
+}
+
+export interface TravelServiceAmendment {
+  service_kind: TravelServiceKind;
+  service_id: string;
+  service_source: 'linked' | 'detail';
+  ticket_number: string | null;
+  operation: 'change' | 'cancel';
+  start_date: string | null;
+  end_date: string | null;
+  applied_at?: string | null;
+}
+
+export interface TravelServiceSection extends DocSection {
+  kind: TravelServiceKind;
+  serviceId: string;
+  source: 'linked' | 'detail';
+  cancelled: boolean;
+}
+
+export interface DocSpecialRequest {
+  booking_id?: string | null;
+  custom_request_text?: string | null;
+  special_request_type?: { name: string } | null;
+  hotel?: { hotel_name: string | null } | null;
+}
+
 export interface DocSourceData {
   booking: any;
   customer?: any;
-  itinerary?: {
-    hotel?: any;
-    flight?: any;
-    transport?: any;
-    car?: any;
-  } | null;
+  itinerary?: TravelItinerary | null;
+  linkedServices?: LinkedItineraryService[];
+  amendments?: TravelServiceAmendment[];
   org?: any;
   /** rows of booking_special_requests joined with special_request_types */
-  specialRequests?: any[];
+  specialRequests?: DocSpecialRequest[];
   /** customer-facing template copy (document_templates) */
   template?: { notes_text?: string | null; terms_text?: string | null } | null;
 }
@@ -180,9 +290,8 @@ export const buildBrand = (org: any): DocBrand => ({
   footerText: org?.footer_text || undefined,
 });
 
-/** Build the travel/service sections shared by both documents. */
-export const buildSections = (src: DocSourceData): DocSection[] => {
-  const { booking, itinerary } = src;
+/** Only values explicitly listed here reach customer-facing documents. */
+const buildItinerarySections = (itinerary: TravelItinerary | null | undefined): DocSection[] => {
   const sections: DocSection[] = [];
   const h = itinerary?.hotel;
   const f = itinerary?.flight;
@@ -224,15 +333,19 @@ export const buildSections = (src: DocSourceData): DocSection[] => {
       subtitle: [f.departure_airport, f.arrival_airport].filter(Boolean).join(' → ') || undefined,
       facts: facts(
         fact('رقم الرحلة', f.flight_number),
-        fact('المغادرة', [fmtDate(f.departure_date), f.departure_time].filter(Boolean).join(' ')),
-        fact('الوصول', [fmtDate(f.arrival_date), f.arrival_time].filter(Boolean).join(' ')),
+        fact('المغادرة', dateAndTime(f.departure_date, f.departure_time)),
+        fact('الوصول', dateAndTime(f.arrival_date, f.arrival_time)),
         fact('درجة السفر', f.flight_class),
         fact('عدد المسافرين', f.passengers_count),
         fact('نوع الرحلة', f.is_round_trip ? 'ذهاب وعودة' : undefined),
         fact('رمز الحجز (PNR)', f.pnr),
-        fact('رقم التذكرة', f.ticket_number),
+        fact('التذاكر', [f.ticket_number, ...(f.ticket_numbers ?? [])].filter(Boolean).join('، ')),
         fact('تفضيلات المقاعد', f.seat_preferences),
         fact('تفضيلات الوجبات', f.meal_preferences),
+        fact('رقم رحلة العودة', f.return_flight_number),
+        fact('مسار العودة', [f.return_departure_airport, f.return_arrival_airport].filter(Boolean).join(' → ')),
+        fact('مغادرة رحلة العودة', dateAndTime(f.return_departure_date, f.return_departure_time)),
+        fact('وصول رحلة العودة', dateAndTime(f.return_arrival_date, f.return_arrival_time)),
       ),
     });
   }
@@ -246,8 +359,11 @@ export const buildSections = (src: DocSourceData): DocSection[] => {
         fact('نوع المركبة', t.vehicle_type),
         fact('المسار', t.route),
         fact('نقطة الاستلام', t.pickup_point),
+        fact('موعد الاستلام', dateAndTime(t.pickup_date, t.pickup_time)),
         fact('نقطة التوصيل', t.dropoff_point),
+        fact('موعد التوصيل', dateAndTime(t.dropoff_date, t.dropoff_time)),
         fact('عدد الركاب', t.passengers),
+        fact('مرجع الانتقال', t.reference),
       ),
     });
   }
@@ -264,19 +380,7 @@ export const buildSections = (src: DocSourceData): DocSection[] => {
         fact('مكان التسليم', c.dropoff_location),
         fact('تاريخ التسليم', fmtDate(c.dropoff_date)),
         fact('التأمين', c.insurance_included ? 'مشمول' : undefined),
-      ),
-    });
-  }
-
-  if (!sections.length) {
-    sections.push({
-      kind: 'service',
-      title: booking?.booking_type ? `خدمة: ${booking.booking_type}` : 'تفاصيل الخدمة',
-      subtitle: booking?.destination || undefined,
-      facts: facts(
-        fact('الوجهة', booking?.destination),
-        fact('تاريخ البداية', fmtDate(booking?.start_date)),
-        fact('تاريخ النهاية', fmtDate(booking?.end_date)),
+        fact('مرجع التأجير', c.reference),
       ),
     });
   }
@@ -284,12 +388,97 @@ export const buildSections = (src: DocSourceData): DocSection[] => {
   return sections;
 };
 
-const specialRequestLines = (rows?: any[]): string[] =>
-  (rows ?? [])
-    .map((r) =>
-      [r?.special_request_type?.name, r?.custom_request_text].filter(Boolean).join(' — '),
-    )
-    .filter((s: string) => s.trim().length > 0);
+const serviceKinds: TravelServiceKind[] = ['hotel', 'flight', 'transport', 'car'];
+const serviceTitles: Record<string, string> = {
+  hotel: 'الإقامة الفندقية', flight: 'رحلة الطيران', transport: 'خدمة الانتقالات',
+  car_rental: 'تأجير سيارة', umrah: 'العمرة', hajj: 'الحج', package: 'برنامج سياحي',
+};
+
+const legacyTables: Record<TravelServiceKind, string> = {
+  hotel: 'hotel_bookings', flight: 'flight_bookings', transport: 'transport_bookings', car: 'car_rentals',
+};
+
+/** The workspace shows canceled services, while a current voucher excludes them. */
+export const getTravelServiceSections = (src: DocSourceData): TravelServiceSection[] => {
+  const details = serviceKinds.flatMap<LinkedItineraryService & { source: 'detail' }>(kind => {
+    const row = src.itinerary?.[kind];
+    if (!row) return [];
+    // A migrated legacy row may also be linked to its own workspace booking.
+    const duplicate = src.booking?.legacy_table === legacyTables[kind] &&
+      src.linkedServices?.some(service => service.kind === kind && service.id === src.booking?.legacy_id);
+    if (duplicate) return [];
+    return [{ kind, id: row.id ?? kind, source: 'detail' as const, cancelled: false, itinerary: { [kind]: row } }];
+  });
+  const linked = (src.linkedServices ?? []).map(service => ({ ...service, source: 'linked' as const }));
+
+  return [...details, ...linked].flatMap(service => {
+    const mirrorId = service.source === 'linked' && src.booking?.legacy_table === legacyTables[service.kind] &&
+      src.booking?.legacy_id === service.id ? src.itinerary?.[service.kind]?.id : undefined;
+    const history = (src.amendments ?? []).filter(entry =>
+      entry.service_kind === service.kind && (
+        (entry.service_id === service.id && entry.service_source === service.source) ||
+        (entry.service_id === mirrorId && entry.service_source === 'detail')
+      ));
+    const itinerary: TravelItinerary = { ...service.itinerary };
+    if (itinerary.transport && service.source === 'detail') {
+      const latestChange = history.find(entry => entry.operation === 'change' && !entry.ticket_number);
+      itinerary.transport = {
+        ...itinerary.transport,
+        pickup_date: latestChange?.start_date ?? itinerary.transport.pickup_date ?? src.booking?.start_date,
+        dropoff_date: latestChange?.end_date ?? itinerary.transport.dropoff_date ?? src.booking?.end_date,
+      };
+    }
+    const cancelledTickets = new Set(history.filter(entry => entry.operation === 'cancel').map(entry => entry.ticket_number));
+    const savedTickets = itinerary.flight
+      ? [itinerary.flight.ticket_number, ...(itinerary.flight.ticket_numbers ?? [])]
+        .filter((ticket): ticket is string => Boolean(ticket))
+      : [];
+    const activeTickets = savedTickets.filter(ticket => !cancelledTickets.has(ticket));
+    const cancelled = service.cancelled || cancelledTickets.has(null) ||
+      (savedTickets.length > 0 && activeTickets.length === 0);
+    if (itinerary.flight) {
+      itinerary.flight = { ...itinerary.flight, ticket_number: undefined, ticket_numbers: activeTickets };
+    }
+    return buildItinerarySections(itinerary).map(section => ({
+      ...section, kind: service.kind, serviceId: service.id, source: service.source, cancelled,
+    }));
+  });
+};
+
+export const voucherCopyIsStale = (src: DocSourceData, savedAt: string) => {
+  const savedTime = Date.parse(savedAt);
+  const timestamps = [
+    ...(src.linkedServices ?? []).map(service => service.updatedAt),
+    ...(src.amendments ?? []).map(amendment => amendment.applied_at),
+  ];
+  return !Number.isFinite(savedTime) || timestamps.some(timestamp =>
+    Boolean(timestamp && Date.parse(timestamp) > savedTime));
+};
+
+const fallbackSection = (booking: DocSourceData['booking']): DocSection => ({
+  kind: 'service',
+  title: serviceTitles[booking?.booking_type] || 'تفاصيل الخدمة',
+  subtitle: booking?.destination || undefined,
+  facts: facts(
+    fact('الوجهة', booking?.destination),
+    fact('تاريخ البداية', fmtDate(booking?.start_date)),
+    fact('تاريخ النهاية', fmtDate(booking?.end_date)),
+  ),
+});
+
+export const buildSections = (src: DocSourceData): DocSection[] => {
+  const sections = buildItinerarySections(src.itinerary);
+  return sections.length ? sections : [fallbackSection(src.booking)];
+};
+
+const specialRequestLines = (rows: DocSpecialRequest[] = []): string[] => {
+  const multipleHotels = new Set(rows.map(row => row.booking_id).filter(Boolean)).size > 1;
+  return [...new Set(rows.flatMap(row => {
+    const request = [row.special_request_type?.name, row.custom_request_text].filter(Boolean).join(' — ').trim();
+    if (!request) return [];
+    return [multipleHotels && row.hotel?.hotel_name ? `${row.hotel.hotel_name}: ${request}` : request];
+  }))];
+};
 
 /* ------------------------------------------------------------------ */
 /* invoice                                                             */
@@ -371,6 +560,14 @@ export const buildVoucherModel = (
   issuedAt?: string | null,
 ): VoucherDocModel => {
   const { booking, customer, template } = src;
+  const services = getTravelServiceSections(src);
+  const activeServices = services.filter(service => !service.cancelled);
+  const cancelledHotelIds = new Set(services.filter(service =>
+    service.kind === 'hotel' && service.cancelled).map(service =>
+      service.source === 'linked' ? service.serviceId : booking?.legacy_id));
+  const activeSections: DocSection[] = services.length
+    ? activeServices.map(({ kind, title, subtitle, facts, notes }) => ({ kind, title, subtitle, facts, notes }))
+    : [fallbackSection(booking)];
 
   return {
     voucherNumber,
@@ -387,8 +584,9 @@ export const buildVoucherModel = (
     travelStart: fmtDate(booking?.start_date),
     travelEnd: fmtDate(booking?.end_date),
     // scrubbed: guarantees no money-shaped fact can reach the voucher DOM/PDF
-    sections: scrubSections(buildSections(src)),
-    specialRequests: specialRequestLines(src.specialRequests),
+    sections: scrubSections(activeSections),
+    specialRequests: specialRequestLines(src.specialRequests?.filter(request =>
+      !request.booking_id || !cancelledHotelIds.has(request.booking_id))),
     customerNotes: [template?.notes_text]
       .filter((v): v is string => !!v && String(v).trim().length > 0)
       .map(String),

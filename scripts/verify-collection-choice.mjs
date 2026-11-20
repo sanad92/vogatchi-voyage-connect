@@ -16,6 +16,7 @@ let receipt;
 const ui = new Proxy({}, { get: (_, name) => name });
 const jsx = (type, props) => ({ type, props });
 const imports = {
+  '@/lib/specializedBookingFinance': { invalidateSpecializedBookingLists() {} },
   react: {
     useState(initial) {
       const index = cursor++;

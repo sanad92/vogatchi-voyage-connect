@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { FieldError } from '@/components/wizard/StepWizard';
 import { Star } from 'lucide-react';
-import { useEffect } from 'react';
+import { applyCalculatedBookingAmount, bookingDayCount, optionalNonnegativeAmount } from '@/lib/bookingServiceFields';
 
 const MEAL_PLANS = [
   { value: 'RO', label: 'بدون وجبات (RO)' },
@@ -31,34 +31,26 @@ interface UnifiedHotelFieldsProps {
   errors: Record<string, string>;
 }
 
+const hotelTotal = (data: Record<string, unknown>, rateKey: string) => {
+  const nights = bookingDayCount(data.check_in, data.check_out);
+  const rooms = Number(data.rooms || 1);
+  const rate = optionalNonnegativeAmount(data[rateKey]);
+  return nights !== null && Number.isInteger(rooms) && rooms > 0 && rate !== null ? nights * rooms * rate : null;
+};
+
 const UnifiedHotelFields = ({ formData, updateField, updateFields, errors }: UnifiedHotelFieldsProps) => {
-  // حساب عدد الليالي تلقائياً
-  useEffect(() => {
-    if (formData.check_in && formData.check_out) {
-      const checkIn = new Date(formData.check_in);
-      const checkOut = new Date(formData.check_out);
-      const diffTime = checkOut.getTime() - checkIn.getTime();
-      const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (nights > 0 && nights !== formData.nights) {
-        updateField('nights', nights);
-      }
-    }
-  }, [formData.check_in, formData.check_out]);
-
-  // حساب التكلفة الإجمالية عند تغيير عدد الليالي أو السعر
-  useEffect(() => {
-    const nights = Number(formData.nights) || 0;
-    const costPerNight = Number(formData.cost_per_night) || 0;
-    const sellingPerNight = Number(formData.selling_per_night) || 0;
-    const rooms = Number(formData.rooms) || 1;
-
-    if (nights > 0) {
-      const totalCost = costPerNight * nights * rooms;
-      const totalSelling = sellingPerNight * nights * rooms;
-      if (totalCost > 0) updateField('cost_price', totalCost);
-      if (totalSelling > 0) updateField('selling_price', totalSelling);
-    }
-  }, [formData.nights, formData.cost_per_night, formData.selling_per_night, formData.rooms]);
+  const nights = bookingDayCount(formData.check_in, formData.check_out);
+  const updatePricing = (key: string, value: string) => {
+    const next = { ...formData, [key]: value };
+    const cost = applyCalculatedBookingAmount(formData.cost_price, hotelTotal(formData, 'cost_per_night'), hotelTotal(next, 'cost_per_night'));
+    const selling = applyCalculatedBookingAmount(formData.selling_price, hotelTotal(formData, 'selling_per_night'), hotelTotal(next, 'selling_per_night'));
+    updateFields({
+      [key]: value,
+      nights: bookingDayCount(next.check_in, next.check_out),
+      ...(cost !== undefined ? { cost_price: cost } : {}),
+      ...(selling !== undefined ? { selling_price: selling } : {}),
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -99,7 +91,7 @@ const UnifiedHotelFields = ({ formData, updateField, updateFields, errors }: Uni
         </div>
         <div>
           <Label>عدد الغرف</Label>
-          <Input type="number" min={1} value={formData.rooms || 1} onChange={e => updateField('rooms', Number(e.target.value))} />
+          <Input type="number" min={1} value={formData.rooms ?? 1} onChange={e => updatePricing('rooms', e.target.value)} />
         </div>
       </div>
 
@@ -107,15 +99,17 @@ const UnifiedHotelFields = ({ formData, updateField, updateFields, errors }: Uni
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <Label>تسجيل الدخول *</Label>
-          <Input type="date" value={formData.check_in || ''} onChange={e => updateField('check_in', e.target.value)} />
+          <Input type="date" value={formData.check_in || ''} onChange={e => updatePricing('check_in', e.target.value)} />
+          <FieldError error={errors.check_in} />
         </div>
         <div>
           <Label>تسجيل الخروج *</Label>
-          <Input type="date" value={formData.check_out || ''} onChange={e => updateField('check_out', e.target.value)} />
+          <Input type="date" value={formData.check_out || ''} onChange={e => updatePricing('check_out', e.target.value)} />
+          <FieldError error={errors.check_out} />
         </div>
         <div>
           <Label>عدد الليالي</Label>
-          <Input type="number" value={formData.nights || ''} readOnly className="bg-muted/50" />
+          <Input type="number" value={nights ?? ''} readOnly className="bg-muted/50" />
         </div>
       </div>
 
@@ -157,12 +151,14 @@ const UnifiedHotelFields = ({ formData, updateField, updateFields, errors }: Uni
       {/* سعر الليلة (تكلفة + بيع) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label>تكلفة الليلة</Label>
-          <Input type="number" value={formData.cost_per_night || ''} onChange={e => updateField('cost_per_night', e.target.value)} placeholder="0" />
+          <Label>تكلفة الغرفة في الليلة</Label>
+          <Input type="number" min={0} step="0.01" value={formData.cost_per_night ?? ''} onChange={e => updatePricing('cost_per_night', e.target.value)} placeholder="0" />
+          <FieldError error={errors.cost_per_night} />
         </div>
         <div>
-          <Label>سعر بيع الليلة</Label>
-          <Input type="number" value={formData.selling_per_night || ''} onChange={e => updateField('selling_per_night', e.target.value)} placeholder="0" />
+          <Label>سعر بيع الغرفة في الليلة</Label>
+          <Input type="number" min={0} step="0.01" value={formData.selling_per_night ?? ''} onChange={e => updatePricing('selling_per_night', e.target.value)} placeholder="0" />
+          <FieldError error={errors.selling_per_night} />
         </div>
       </div>
 

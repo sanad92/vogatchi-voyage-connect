@@ -114,6 +114,8 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
   const [reason, setReason] = useState('');
   const [approved, setApproved] = useState(false);
   const [submission, setSubmission] = useState<object[] | null>(null);
+  const usesRoomStock = Boolean(program.uses_room_inventory);
+  const hajjAvailabilityOnly = program.program_type === 'hajj' && !usesRoomStock;
 
   const history = useQuery<History[]>({
     queryKey: ['pilgrimage-operations', orgId, program.id],
@@ -125,8 +127,8 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
       return data ?? [];
     },
   });
-  const active = passengers.filter((person) => !person.b2b_roster_entry_id && !['cancelled', 'traveled', 'completed'].includes(person.status));
-  const usesRoomStock = Boolean(program.uses_room_inventory);
+  const active = passengers.filter((person) => !person.b2b_roster_entry_id && !['cancelled', 'traveled', 'completed'].includes(person.status)
+    && (!hajjAvailabilityOnly || person.manual_allotment_booking));
   const amendable = active.filter((person) => {
     if (usesRoomStock) return canCancel && canCreateReplacement && Boolean(person.unified_booking_id)
       && person.inventory_room_mode === 'shared' && (person.gender === 'male' || person.gender === 'female');
@@ -199,14 +201,14 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
   return (
     <div className="space-y-4">
       <Card className="space-y-3 p-4">
-        <h2 className="font-semibold">تعديلات وإلغاءات المسافرين</h2>
+        <h2 className="font-semibold">{hajjAvailabilityOnly ? 'إلغاء تسجيل المسافرين' : 'تعديلات وإلغاءات المسافرين'}</h2>
         {usesRoomStock && (
           <p className="text-sm text-muted-foreground">الغرف المشتركة تتعدل لكل مسافر حسب الرصيد. الغرفة الخاصة تتعدل لكل المسافرين معًا لما يكون الحجز من غير دفعات والإجمالي يفضل زي ما هو.</p>
         )}
         {canManage && !['departed', 'completed', 'cancelled'].includes(program.status) && (
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" disabled={!amendable.length || (usesRoomStock && program.status !== 'open')} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>
-            {canCancel && <Button variant="outline" disabled={!amendable.length || !targets.length} onClick={() => open('transfer')}>{ACTIONS.transfer}</Button>}
+            {!hajjAvailabilityOnly && <Button variant="outline" disabled={!amendable.length || (usesRoomStock && program.status !== 'open')} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>}
+            {!hajjAvailabilityOnly && canCancel && <Button variant="outline" disabled={!amendable.length || !targets.length} onClick={() => open('transfer')}>{ACTIONS.transfer}</Button>}
             {usesRoomStock && canCancel && canCreateReplacement && <PilgrimagePrivateGroupAmendment
               orgId={orgId} program={program} targets={targets} passengers={passengers} onChanged={bookingId => {
                 void cache.invalidateQueries({ queryKey: ['pilgrimage-operations', orgId, program.id] });

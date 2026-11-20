@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { BookingListFinance } from '@/components/bookings/BookingListFinance';
 import { Button } from '@/components/ui/button';
-import { Car, Calendar, MapPin, Users, DollarSign, Phone, FileText, Trash2, Send, CheckCircle } from 'lucide-react';
+import { Car, Calendar, MapPin, Users, DollarSign, Phone, FileText, Trash2 } from 'lucide-react';
 import { useTransportBookings } from '@/hooks/useTransportBookings';
 import { useClientPagination } from '@/hooks/useClientPagination';
 import PaginationControlsUI from '@/components/ui/pagination-controls';
@@ -30,9 +30,6 @@ const TransportBookingsList = () => {
     transportBookings,
     bookingsLoading,
     deleteTransportBooking,
-    markVoucherSent,
-    markInvoiceSent,
-    markSupplierPaid,
     isDeleting,
   } = useTransportBookings();
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -138,53 +135,12 @@ const TransportBookingsList = () => {
                     <MultiCurrencyDisplay amount={booking.total_cost} currency={booking.currency as SupportedCurrency} />
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span>المبلغ المدفوع:</span>
-                  <span className="text-primary">
-                    <MultiCurrencyDisplay amount={booking.paid_amount} currency={booking.currency as SupportedCurrency} />
-                  </span>
-                </div>
-                {booking.remaining_amount && booking.remaining_amount > 0 && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span>المبلغ المتبقي:</span>
-                    <span className="text-destructive font-medium">
-                      <MultiCurrencyDisplay amount={booking.remaining_amount} currency={booking.currency as SupportedCurrency} />
-                    </span>
-                  </div>
-                )}
               </div>
+              <BookingListFinance booking={booking} />
 
               <div className="text-sm">
                 <span className="text-muted-foreground">المورد: </span>
                 <span className="font-medium">{booking.supplier_name}</span>
-              </div>
-
-              {/* Document status badges with actions */}
-              <div className="flex flex-wrap gap-2 text-xs">
-                <Badge
-                  variant={booking.invoice_sent ? "default" : "secondary"}
-                  className="cursor-pointer"
-                  onClick={() => !booking.invoice_sent && markInvoiceSent(booking.id)}
-                >
-                  {booking.invoice_sent ? <CheckCircle className="h-3 w-3 ml-1" /> : null}
-                  فاتورة {booking.invoice_sent ? "✓" : "✗"}
-                </Badge>
-                <Badge
-                  variant={booking.voucher_sent ? "default" : "secondary"}
-                  className="cursor-pointer"
-                  onClick={() => !booking.voucher_sent && markVoucherSent(booking.id)}
-                >
-                  {booking.voucher_sent ? <CheckCircle className="h-3 w-3 ml-1" /> : null}
-                  قسيمة {booking.voucher_sent ? "✓" : "✗"}
-                </Badge>
-                <Badge
-                  variant={booking.supplier_payment_sent ? "default" : "secondary"}
-                  className="cursor-pointer"
-                  onClick={() => !booking.supplier_payment_sent && markSupplierPaid(booking.id)}
-                >
-                  {booking.supplier_payment_sent ? <CheckCircle className="h-3 w-3 ml-1" /> : null}
-                  دفع مورد {booking.supplier_payment_sent ? "✓" : "✗"}
-                </Badge>
               </div>
 
               {booking.special_requests && (
@@ -201,9 +157,9 @@ const TransportBookingsList = () => {
                   فتح الحجز
                 </Button>
                 <Button size="sm" variant="outline"
-                  onClick={() => !booking.invoice_sent && markInvoiceSent(booking.id)}>
+                  onClick={() => navigate(`/bookings/${booking.id}?tab=documents`)}>
                   <DollarSign className="h-4 w-4 ml-1" />
-                  فاتورة
+                  المستندات
                 </Button>
                 <Button size="sm" variant="ghost" className="text-destructive"
                   onClick={() => setDeleteId(booking.id)}>

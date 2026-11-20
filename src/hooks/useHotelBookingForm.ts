@@ -10,6 +10,8 @@ import { useHotelBookingSubmission } from "@/hooks/useHotelBookingSubmission";
 import { useAutoCalculations } from "@/hooks/useAutoCalculations";
 import { useCurrentEmployeeEnhanced } from "@/hooks/useCurrentEmployeeEnhanced";
 import { toast } from "sonner";
+import { useParentBookingFields } from '@/contexts/ParentBookingContext';
+import type { SupportedCurrency } from '@/types/currency';
 
 interface UseHotelBookingFormProps {
   booking?: HotelBooking | null;
@@ -18,6 +20,7 @@ interface UseHotelBookingFormProps {
 
 export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormProps) => {
   const { currentEmployee } = useCurrentEmployeeEnhanced();
+  const { customer: bookingCustomer, currency: bookingCurrency } = useParentBookingFields();
   
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<NewHotelBooking>({
     defaultValues: booking ? {
@@ -44,7 +47,8 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
       payment_due_date: booking.payment_due_date,
       supplier_id: (booking as any).supplier_id || '',
     } : {
-      currency: 'EGP',
+      currency: (bookingCurrency || 'EGP') as SupportedCurrency,
+      customer_name: bookingCustomer?.name,
       booking_agent_name: currentEmployee?.full_name || 'مستخدم غير محدد'
     }
   });
@@ -105,12 +109,13 @@ export const useHotelBookingForm = ({ booking, onSuccess }: UseHotelBookingFormP
 
   const {
     suppliers,
-    selectedCustomer,
+    selectedCustomer: chosenCustomer,
     selectedRequests,
     setSelectedRequests,
     handleCustomerSelect,
     fetchExistingRequests
   } = useHotelBookingData({ booking });
+  const selectedCustomer = bookingCustomer ?? chosenCustomer;
 
   const { validateBookingData } = useHotelBookingValidation();
   const { isSubmitting, submitBooking } = useHotelBookingSubmission({ booking, onSuccess });

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getFriendlyDatabaseError } from '@/utils/databaseErrors';
+import { invalidateSpecializedBookingLists } from '@/lib/specializedBookingFinance';
 
 export const useInvoiceActions = () => {
   const queryClient = useQueryClient();
@@ -37,8 +38,9 @@ export const useInvoiceActions = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (invoice) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      void invalidateSpecializedBookingLists(queryClient, invoice.organization_id);
       toast.success('تم تحديث حالة الفاتورة بنجاح');
     },
     onError: (error: any) => {
@@ -59,6 +61,7 @@ export const useInvoiceActions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      void invalidateSpecializedBookingLists(queryClient);
       toast.success('تم حذف الفاتورة بنجاح');
     },
     onError: (error: any) => {
@@ -86,8 +89,9 @@ export const useInvoiceActions = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (invoice) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      void invalidateSpecializedBookingLists(queryClient, invoice.organization_id);
       toast.success('تم تحديث الفاتورة بنجاح');
     },
     onError: (error: any) => {

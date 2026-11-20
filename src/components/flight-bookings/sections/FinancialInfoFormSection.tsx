@@ -8,6 +8,7 @@ import { CreditCard } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import SupplierSelectionSection from "./SupplierSelectionSection";
 import { FlightBookingFormData } from "../hooks/useFlightBookingForm";
+import { useParentBookingFields } from '@/contexts/ParentBookingContext';
 
 interface FinancialInfoFormSectionProps {
   form: UseFormReturn<FlightBookingFormData>;
@@ -26,6 +27,7 @@ const FinancialInfoFormSection = ({
   supplierCost,
   totalProfit
 }: FinancialInfoFormSectionProps) => {
+  const { bookingId, currency: bookingCurrency } = useParentBookingFields();
   return (
     <Card>
       <CardHeader>
@@ -48,7 +50,7 @@ const FinancialInfoFormSection = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>العملة</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                {bookingCurrency ? <div className="text-sm font-medium" dir="ltr">{bookingCurrency}</div> : <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر العملة" />
@@ -60,7 +62,7 @@ const FinancialInfoFormSection = ({
                     <SelectItem value="SAR">ريال سعودي (ر.س)</SelectItem>
                     <SelectItem value="EUR">يورو (€)</SelectItem>
                   </SelectContent>
-                </Select>
+                </Select>}
                 <FormMessage />
               </FormItem>
             )}
@@ -104,7 +106,7 @@ const FinancialInfoFormSection = ({
             )}
           />
 
-          <FormField
+          {!bookingId && <FormField
             control={form.control}
             name="paid_amount"
             render={({ field }) => (
@@ -121,7 +123,7 @@ const FinancialInfoFormSection = ({
                 <FormMessage />
               </FormItem>
             )}
-          />
+          />}
         </div>
 
         <div className="bg-gray-50 p-4 rounded-lg">
