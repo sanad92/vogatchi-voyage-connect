@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Check, ListChecks, StickyNote, Plus, AlertTriangle, Clock, Calendar, CheckCircle2 } from 'lucide-react';
 import type { Workspace } from './types';
+import { bookingTaskDueBucket } from '@/lib/bookingTaskDue';
 import { isBookingTaskCompleted, isBookingTaskOpen, type BookingTask } from '@/hooks/useBookingWorkspace';
 
 interface Props {
@@ -36,6 +37,12 @@ export const TasksTab = ({ workspace, highlightedTaskId }: Props) => {
   const [priority, setPriority] = useState<BookingTask['priority']>('normal');
   const [dueAt, setDueAt] = useState('');
   const [saving, setSaving] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const submit = async () => {
     if (!title.trim()) return;
@@ -57,9 +64,6 @@ export const TasksTab = ({ workspace, highlightedTaskId }: Props) => {
   };
 
   const buckets = useMemo(() => {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const endOfToday = startOfToday + 86400000;
     const groups: Record<Bucket, BookingTask[]> = { overdue: [], today: [], upcoming: [], completed: [] };
     for (const t of workspace.tasks) {
       if (isBookingTaskCompleted(t)) {
@@ -67,16 +71,13 @@ export const TasksTab = ({ workspace, highlightedTaskId }: Props) => {
         continue;
       }
       if (!isBookingTaskOpen(t)) continue;
-      const due = t.due_at ? new Date(t.due_at).getTime() : null;
-      if (due !== null && due < startOfToday) groups.overdue.push(t);
-      else if (due !== null && due < endOfToday) groups.today.push(t);
-      else groups.upcoming.push(t);
+      groups[bookingTaskDueBucket(t.due_at, now)].push(t);
     }
     const focusedCompleted = groups.completed.find(task => task.id === highlightedTaskId);
     groups.completed = groups.completed.slice(0, 10);
     if (focusedCompleted && !groups.completed.includes(focusedCompleted)) groups.completed.push(focusedCompleted);
     return groups;
-  }, [workspace.tasks, highlightedTaskId]);
+  }, [workspace.tasks, highlightedTaskId, now]);
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
@@ -194,7 +195,7 @@ const BucketSection = ({
                 {t.description && <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>}
                 {t.due_at && (
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {new Date(t.due_at).toLocaleString('ar-EG')}
+                    {new Date(t.due_at).toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' })}
                   </p>
                 )}
               </div>
