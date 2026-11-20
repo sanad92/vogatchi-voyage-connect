@@ -75,9 +75,12 @@ export const useTransportBookings = () => {
 
       // Trigger confirmation notification
       try {
-        await supabase.functions.invoke('send-booking-confirmation', {
+        const { data: confirmation, error: confirmationError } = await supabase.functions.invoke('send-booking-confirmation', {
           body: { bookingId: data.id, bookingType: 'transport' }
         });
+        if (confirmationError || confirmation?.success !== true) {
+          console.warn('Confirmation was not fully processed (non-blocking):', confirmationError ?? confirmation?.results);
+        }
       } catch (e) {
         console.warn('Confirmation send failed (non-blocking):', e);
       }

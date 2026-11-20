@@ -293,6 +293,7 @@ export async function graphSend(
   settings: WaSettings,
   payload: Record<string, unknown>,
   correlationId: string = crypto.randomUUID(),
+  signal?: AbortSignal,
 ): Promise<SendResult> {
   const gv = settings.api_version || Deno.env.get('META_GRAPH_API_VERSION') || 'v22.0';
   const proof = await appSecretProof(settings.access_token);
@@ -320,6 +321,7 @@ export async function graphSend(
       method: 'POST',
       headers: { Authorization: `Bearer ${settings.access_token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      signal,
     });
   } catch (e) {
     console.error(JSON.stringify({ tag: 'wa.send.network', correlationId, message: String((e as Error)?.message ?? e) }));

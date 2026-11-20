@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { rememberSubscriptionCheckout } from '@/lib/subscriptionCheckoutReturn';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -185,7 +186,7 @@ const PaymentPage = () => {
       if (error) throw error;
 
       if (data?.iframe_url) {
-        // Redirect to Paymob payment iframe
+        rememberSubscriptionCheckout(user.id, orgId, data.checkout_id ?? prepared.checkout_session_id, String(data.order_id ?? ''));
         window.location.href = data.iframe_url;
       } else {
         throw new Error('لم يتم استلام رابط الدفع');

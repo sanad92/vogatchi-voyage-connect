@@ -102,6 +102,9 @@ export default function PaymentOrders() {
     [accounts, setAccounts] = useState<Record<string, string>>({});
   const { data: treasuryData = [] } = useTreasuryAccounts();
   const treasury = treasuryData as TreasuryAccount[];
+  const selectedTreasury = (order: Order) => treasury.find(account =>
+    account.id === accounts[order.id] && account.currency === order.currency &&
+    (!order.pilgrimage_b2b_agreement_id || account.treasury_kind === 'bank'));
   const approve = useApproveSupplierPO();
   const pay = useRecordSupplierPayment();
   const query = useQuery({
@@ -365,21 +368,24 @@ export default function PaymentOrders() {
                                   onChange={event => setReferences(previous => ({ ...previous, [r.id]: event.target.value }))} />}
                                 <Button
                                   size="sm"
-                                  disabled={!accounts[r.id] || pay.isPending || (r.pilgrimage_b2b_agreement_id ? !references[r.id]?.trim() :
+                                  disabled={!selectedTreasury(r) || pay.isPending || (r.pilgrimage_b2b_agreement_id ? !references[r.id]?.trim() :
                                     r.currency !== 'EGP' && !(Number(exchangeRates[r.id]) > 0 && Number.isFinite(Number(exchangeRates[r.id]))))}
-                                  onClick={() =>
+                                  onClick={() => {
+                                    const account = selectedTreasury(r);
+                                    if (!account) return;
                                     pay.mutate({
                                       po_id: r.id,
                                       amount: r.remainingAmount,
                                       currency: r.currency,
                                       exchange_rate: r.pilgrimage_b2b_agreement_id || r.currency === 'EGP' ? 1 : Number(exchangeRates[r.id]),
                                       reference: r.pilgrimage_b2b_agreement_id ? references[r.id]?.trim() : null,
-                                      treasury_account_id: accounts[r.id],
+                                      method: account.treasury_kind === 'cash' ? 'cash' : 'bank_transfer',
+                                      treasury_account_id: account.id,
                                       payment_date: new Date()
                                         .toISOString()
                                         .slice(0, 10),
-                                    })
-                                  }
+                                    });
+                                  }}
                                 >
                                 صرف المتبقي ({r.remainingAmount.toLocaleString('ar-EG')} {r.currency})
                                 </Button>

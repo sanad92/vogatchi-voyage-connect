@@ -13,7 +13,7 @@ import { callUntypedRpc } from '@/lib/supabaseRpc';
 type ReceiptReview = {
   payment_id: string | null;
   movement_id?: string;
-  payment_date: string;
+  payment_date: string | null;
   amount: number;
   currency: string;
   reference_number: string | null;
@@ -22,16 +22,27 @@ type ReceiptReview = {
   booking_number: string | null;
   invoice_id: string | null;
   invoice_number: string | null;
-  reason: 'account_missing' | 'deposit_unmatched' | 'receipt_missing' | 'receipt_not_current' | 'deposit_mismatch';
+  reason: 'account_missing' | 'deposit_unmatched' | 'receipt_missing' | 'receipt_not_current' | 'deposit_mismatch'
+    | 'legacy_paid_invoice_evidence_missing';
 };
 
 const pageSize = 50;
+const reviewTabs = {
+  receipts: { label: 'دفعات تحتاج مراجعة', rpc: 'list_treasury_receipt_review', reference: 'مرجع الدفعة',
+    emptyMessage: 'لا توجد دفعات تحتاج مراجعة في هذه الصفحة.' },
+  deposits: { label: 'إيداعات التحصيل المرتبطة', rpc: 'list_treasury_deposit_review', reference: 'مرجع الإيداع',
+    emptyMessage: 'لا توجد إيداعات تحصيل مرتبطة تحتاج مراجعة في هذه الصفحة.' },
+  legacyInvoices: { label: 'فواتير تاريخية تحتاج إثبات تحصيل', rpc: 'list_legacy_paid_invoice_review', reference: 'مرجع الفاتورة',
+    emptyMessage: 'لا توجد فواتير من التسوية القديمة تحتاج إثبات تحصيل في هذه الصفحة.' },
+} as const;
+const reviewDirections = ['receipts', 'deposits', 'legacyInvoices'] as const;
 const reviewReasons: Record<ReceiptReview['reason'], string> = {
   account_missing: 'حساب الاستلام غير محدد',
   deposit_unmatched: 'الإيداع يحتاج مطابقة',
   receipt_missing: 'الدفعة المرتبطة غير موجودة',
   receipt_not_current: 'الدفعة المرتبطة غير مكتملة أو معكوسة',
   deposit_mismatch: 'بيانات الإيداع مختلفة عن الدفعة',
+  legacy_paid_invoice_evidence_missing: 'مسجلة مدفوعة في تسوية قديمة بلا إيصال مكتمل مرتبط',
 };
 
 export function TreasuryReceiptReview({
@@ -43,13 +54,14 @@ export function TreasuryReceiptReview({
   canReviewDeposits: boolean;
 }) {
   const [offset, setOffset] = useState(0);
-  const [direction, setDirection] = useState<'receipts' | 'deposits'>('receipts');
-  const isDepositReview = canReviewDeposits && direction === 'deposits';
+  const [direction, setDirection] = useState<keyof typeof reviewTabs>('receipts');
+  const activeDirection = canReviewDeposits ? direction : 'receipts';
+  const activeTab = reviewTabs[activeDirection];
+  const isLegacyReview = activeDirection === 'legacyInvoices';
   const review = useQuery({
-    queryKey: ['treasury-receipt-review', orgId, isDepositReview, offset],
+    queryKey: ['treasury-receipt-review', orgId, activeDirection, offset],
     queryFn: async () => {
-      const rpc = isDepositReview ? 'list_treasury_deposit_review' : 'list_treasury_receipt_review';
-      const { data, error } = await callUntypedRpc<ReceiptReview[]>(rpc, { _org: orgId, _offset: offset });
+      const { data, error } = await callUntypedRpc<ReceiptReview[]>(activeTab.rpc, { _org: orgId, _offset: offset });
       if (error) throw error;
       return data ?? [];
     },
@@ -67,11 +79,18 @@ export function TreasuryReceiptReview({
       <CardContent>
         {canReviewDeposits && (
           <div className="mb-4 flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant={isDepositReview ? 'outline' : 'default'} aria-pressed={!isDepositReview}
-              onClick={() => { setDirection('receipts'); setOffset(0); }}>دفعات تحتاج مراجعة</Button>
-            <Button type="button" size="sm" variant={isDepositReview ? 'default' : 'outline'} aria-pressed={isDepositReview}
-              onClick={() => { setDirection('deposits'); setOffset(0); }}>إيداعات التحصيل المرتبطة</Button>
+            {reviewDirections.map(tab => (
+              <Button key={tab} type="button" size="sm" variant={activeDirection === tab ? 'default' : 'outline'}
+                aria-pressed={activeDirection === tab} onClick={() => { setDirection(tab); setOffset(0); }}>
+                {reviewTabs[tab].label}
+              </Button>
+            ))}
           </div>
+        )}
+        {isLegacyReview && (
+          <p className="mb-4 text-sm text-muted-foreground">
+            المبلغ الظاهر هو المسجّل كمدفوع في الفاتورة القديمة. طابقه بمستند التحصيل أو كشف الحساب.
+          </p>
         )}
         {review.isLoading ? (
           <p className="py-6 text-center text-muted-foreground">جارٍ التحميل…</p>
@@ -79,24 +98,24 @@ export function TreasuryReceiptReview({
           <ListLoadError message="تعذّر تحميل نتائج المطابقة" retry={() => void review.refetch()} pending={review.isFetching} />
         ) : !rows.length ? (
           <p className="py-6 text-center text-muted-foreground">
-            {isDepositReview ? 'لا توجد إيداعات تحصيل مرتبطة تحتاج مراجعة في هذه الصفحة.' : 'لا توجد دفعات تحتاج مراجعة في هذه الصفحة.'}
+            {activeTab.emptyMessage}
           </p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>التاريخ</TableHead>
-                <TableHead>{isDepositReview ? 'مرجع الإيداع' : 'مرجع الدفعة'}</TableHead>
+                <TableHead>{isLegacyReview ? 'تاريخ إصدار الفاتورة' : 'التاريخ'}</TableHead>
+                <TableHead>{activeTab.reference}</TableHead>
                 <TableHead>الحجز / الفاتورة</TableHead>
-                <TableHead>حساب الاستلام</TableHead>
-                <TableHead className="text-end">المبلغ</TableHead>
+                {!isLegacyReview && <TableHead>حساب الاستلام</TableHead>}
+                <TableHead className="text-end">{isLegacyReview ? 'المبلغ المسجّل كمدفوع' : 'المبلغ'}</TableHead>
                 <TableHead>سبب المراجعة</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.slice(0, pageSize).map(row => (
-                <TableRow key={row.movement_id ?? row.payment_id}>
-                  <TableCell className="whitespace-nowrap"><bdi>{row.payment_date}</bdi></TableCell>
+                <TableRow key={row.movement_id ?? row.payment_id ?? row.invoice_id}>
+                  <TableCell className="whitespace-nowrap"><bdi>{row.payment_date ?? '—'}</bdi></TableCell>
                   <TableCell className="font-mono" title={row.movement_id ?? row.payment_id ?? undefined}>
                     <bdi>{row.reference_number || (row.movement_id ?? row.payment_id)?.slice(0, 8) || '—'}</bdi>
                   </TableCell>
@@ -117,7 +136,7 @@ export function TreasuryReceiptReview({
                     )}
                     {!row.booking_number && !row.invoice_number && '—'}
                   </TableCell>
-                  <TableCell>{row.account_name || '—'}</TableCell>
+                  {!isLegacyReview && <TableCell>{row.account_name || '—'}</TableCell>}
                   <TableCell className="whitespace-nowrap text-end"><bdi>{formatMoney(row.amount, row.currency)}</bdi></TableCell>
                   <TableCell>
                     <Badge variant="outline" className="whitespace-nowrap">

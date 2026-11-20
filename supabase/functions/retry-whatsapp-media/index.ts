@@ -86,8 +86,8 @@ serve(async (req) => {
       });
     }
 
-    // Fetch the message
-    const { data: message, error: msgErr } = await supabase
+    // Authorize the message through the caller's conversation visibility before retrying it.
+    const { data: message, error: msgErr } = await userClient
       .from('whatsapp_messages')
       .select('id, organization_id, conversation_id, message_id, media_provider_id, media_mime_type, media_storage_path, media_download_attempts')
       .eq('id', messageId)
