@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { createHmac, randomUUID } from 'node:crypto';
+import { registerHooks } from 'node:module';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
-import { handleMetaLeadWebhook, verifyMetaFormRoute } from '../supabase/functions/_shared/meta-lead-ads.ts';
+import { verifyMetaFormRoute } from '../supabase/functions/_shared/meta-lead-ads.ts';
 
 const [orgA, orgB, ownerA, ownerB, otherA] = Array.from({ length: 5 }, () => randomUUID());
 const readSql = name => readFile(new URL('../supabase/migrations/' + name, import.meta.url), 'utf8');
@@ -50,12 +51,85 @@ const fetchGraph = async (url, options) => {
     ],
   });
 };
-const deps = { secret: bodySecret, verifyToken, resolve, save, send: fetchGraph };
-const post = (body, signature = sign(body)) => handleMetaLeadWebhook(new Request('https://example.test/webhook', {
+// Run the deployed entrypoints and JS client locally. The fixture owns every
+// network response, and only the HTTP transport and Deno registration are mocked.
+const supabaseUrl = 'https://supabase-safar-test.example';
+const apiKeys = { anon: 'synthetic-anon-key', service: 'synthetic-service-key' };
+const accounts = new Map([[ownerA, ownerA], [ownerB, ownerB], [otherA, otherA]]);
+const settings = {
+  SUPABASE_URL: supabaseUrl,
+  SUPABASE_ANON_KEY: apiKeys.anon,
+  SUPABASE_SERVICE_ROLE_KEY: apiKeys.service,
+  META_LEAD_ADS_APP_SECRET: bodySecret,
+  META_LEAD_ADS_VERIFY_TOKEN: verifyToken,
+};
+let registered;
+globalThis.Deno = { env: { get: key => settings[key] }, serve(handler) { registered = handler; } };
+
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier.startsWith('npm:@supabase/supabase-js@')) {
+      return nextResolve('@supabase/supabase-js', context);
+    }
+    return nextResolve(specifier, context);
+  },
+});
+const rpc = {
+  meta_lead_ads_routes_list: ['_org_id', '_actor_id'],
+  meta_lead_ads_route_write: ['_org_id', '_actor_id', '_page_id', '_form_id', '_expected_revision', '_page_token'],
+  meta_lead_ads_route_resolve: ['_page_id', '_form_id', '_leadgen_id'],
+  meta_lead_ads_import: ['_page_id', '_form_id', '_leadgen_id', '_revision', '_name', '_email', '_phone', '_campaign_id'],
+};
+globalThis.fetch = async (url, options) => {
+  const target = new URL(url);
+  if (target.origin === 'https://graph.facebook.com') return fetchGraph(url, options);
+  assert.equal(target.origin, supabaseUrl, 'the fixture only permits its synthetic Supabase and Graph responses');
+  const headers = new Headers(options.headers);
+  if (target.pathname === '/auth/v1/user') {
+    assert.equal(headers.get('apikey'), apiKeys.anon);
+    const id = accounts.get(headers.get('authorization')?.slice('Bearer '.length));
+    return id ? Response.json({ id, is_anonymous: false }) : Response.json({ msg: 'Unknown fixture user' }, { status: 401 });
+  }
+  assert.equal(headers.get('apikey'), apiKeys.service);
+  const name = target.pathname.split('/').at(-1);
+  assert.ok(target.pathname.startsWith('/rest/v1/rpc/') && Object.hasOwn(rpc, name));
+  const input = JSON.parse(options.body);
+  assert.deepEqual(Object.keys(input).sort(), rpc[name].toSorted(), 'PostgREST RPC argument names must match');
+  const names = rpc[name];
+  const bindings = names.map((name, index) => name + ' => $' + (index + 1)).join(',');
+  const values = names.map(name => input[name]);
+  try {
+    const returnsRows = name.endsWith('_list') || name.endsWith('_resolve');
+    const query = returnsRows ? 'SELECT * FROM public.' + name + '(' + bindings + ')'
+      : 'SELECT public.' + name + '(' + bindings + ') AS value';
+    const response = await database.query(query, values);
+    if (!returnsRows) return Response.json(response.rows[0].value);
+    // A POST RPC's maybeSingle asks PostgREST for singular content negotiation.
+    if (headers.get('accept') === 'application/vnd.pgrst.object+json') {
+      if (response.rows.length === 1) return Response.json(response.rows[0]);
+      return Response.json({ code: 'PGRST116', details: 'The result contains ' + response.rows.length + ' rows' }, { status: 406 });
+    }
+    return Response.json(response.rows);
+  } catch (error) {
+    return Response.json({ code: error.code, message: error.message },
+      { status: error.code === '42501' ? 403 : 400 });
+  }
+};
+await import('../supabase/functions/meta-lead-ads-config/index.ts');
+const configure = registered;
+await import('../supabase/functions/meta-lead-ads-webhook/index.ts');
+const webhook = registered;
+assert.notEqual(configure, webhook);
+const configPost = (actor, organizationId, action, fields = {}) => configure(new Request('https://example.test/config', {
+  method: 'POST',
+  headers: { authorization: 'Bearer ' + actor },
+  body: JSON.stringify({ organizationId, action, ...fields }),
+}));
+const post = (body, signature = sign(body)) => webhook(new Request('https://example.test/webhook', {
   method: 'POST', headers: { 'X-Hub-Signature-256': signature }, body,
-}), deps);
-const get = (key, challenge = 'sample-challenge') => handleMetaLeadWebhook(new Request('https://example.test/webhook?' +
-  new URLSearchParams({ 'hub.mode': 'subscribe', 'hub.verify_token': key, 'hub.challenge': challenge })), deps);
+}));
+const get = (key, challenge = 'sample-challenge') => webhook(new Request('https://example.test/webhook?' +
+  new URLSearchParams({ 'hub.mode': 'subscribe', 'hub.verify_token': key, 'hub.challenge': challenge })));
 
 try {
   await database.exec(`
@@ -63,7 +137,7 @@ try {
     CREATE ROLE authenticated;
     CREATE ROLE service_role;
     CREATE SCHEMA auth;
-    CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULL::uuid $$;
+    CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     CREATE SCHEMA vault;
     CREATE TABLE vault.secrets (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), secret text NOT NULL);
     CREATE VIEW vault.decrypted_secrets AS SELECT id, secret AS decrypted_secret FROM vault.secrets;
@@ -82,6 +156,10 @@ try {
         SELECT _permission = 'admin_settings' AND m.role IN ('owner', 'admin') AND m.is_active
         FROM public.organization_members m WHERE m.organization_id = _org AND m.user_id = _actor
       $$;
+    CREATE FUNCTION public.has_org_permission(_org uuid, _permission text) RETURNS boolean LANGUAGE sql STABLE AS $$
+      SELECT _permission = 'crm_view' AND EXISTS (SELECT 1 FROM public.organization_members
+        WHERE organization_id = _org AND user_id = auth.uid() AND is_active)
+    $$;
     CREATE FUNCTION public.user_belongs_to_org(_user uuid, _org uuid) RETURNS boolean LANGUAGE sql STABLE AS $$
       SELECT EXISTS (SELECT 1 FROM public.organization_members m WHERE m.user_id = _user AND m.organization_id = _org AND m.is_active)
     $$;
@@ -98,7 +176,11 @@ try {
   const history = await readSql('20260812122240_911dab31-ed74-4a14-ad9d-7c478a6af254.sql');
   await database.exec(history.slice(0, history.indexOf('-- 2) event-bus trigger')));
   const attribution = await readSql('20261120002247_show_sales_lead_campaign_attribution.sql');
-  await database.exec('CREATE SCHEMA operations_private; ' + attribution.slice(attribution.indexOf('CREATE FUNCTION operations_private.protect_meta_lead_attribution')));
+  await database.exec('CREATE SCHEMA operations_private; ALTER TABLE public.sop_leads ADD COLUMN next_follow_up_at timestamptz');
+  const hardening = await readSql('20260828085456_crm_core_hardening.sql');
+  await database.exec(hardening.slice(hardening.indexOf('CREATE OR REPLACE FUNCTION public.normalize_phone_digits'),
+    hardening.indexOf('CREATE OR REPLACE FUNCTION public.prevent_duplicate_customer_phone')));
+  await database.exec(attribution);
   await database.exec(await readSql('20261120002308_connect_meta_instant_forms_to_crm.sql'));
 
   await database.exec('SET ROLE authenticated');
@@ -112,10 +194,18 @@ try {
 
   await verifyMetaFormRoute(page, form, token, fetchGraph);
   await assert.rejects(verifyMetaFormRoute(page, '9000', token, fetchGraph), { message: 'route_not_verified' });
-  assert.equal((await connect(orgA, ownerA, page, form, null, token)).rows[0].saved, true);
-  assert.equal((await connect(orgB, ownerB, page, form, null, token)).rows[0].saved, false);
-  assert.deepEqual((await list(orgB, ownerB)).rows, []);
-  const [route] = (await list(orgA, ownerA)).rows;
+  assert.equal((await configPost('unknown', orgA, 'list')).status, 401);
+  const connectInput = { page, form, revision: null, pageToken: token };
+  const beforeDeniedConnect = requests.length;
+  assert.equal((await configPost(otherA, orgA, 'connect', connectInput)).status, 403);
+  assert.equal(requests.length, beforeDeniedConnect);
+  const firstConnection = await configPost(ownerA, orgA, 'connect', connectInput);
+  assert.equal(firstConnection.status, 200, await firstConnection.text());
+  assert.equal((await configPost(ownerB, orgB, 'connect', connectInput)).status, 409);
+  assert.deepEqual(await (await configPost(ownerB, orgB, 'list')).json(), { routes: [], webhookConfigured: true });
+  const listed = await (await configPost(ownerA, orgA, 'list')).json();
+  assert.equal(listed.webhookConfigured, true);
+  const [route] = listed.routes;
   assert.equal(route.active, true);
   assert.ok(!JSON.stringify(route).includes(token));
 
@@ -162,7 +252,20 @@ try {
   assert.equal((await database.query('SELECT count(*)::int AS count FROM vault.secrets')).rows[0].count, 0);
   assert.ok(!(await database.query('SELECT details FROM public.admin_audit_log')).rows.some(row => JSON.stringify(row).includes(token)));
   assert.equal((await database.query('SELECT count(*)::int as count FROM public.sop_lead_stage_history')).rows[0].count, 2);
-  console.log('Meta Lead Ads signed requests, exact tenant routing, provider replay, CRM defaults, token permissions and optional campaign passed.');
+  const visibleFor = (org, campaign) => database.query(
+    "SELECT organization_id, stage, contact_name, lead_source, campaign FROM public.sop_search_leads(_org=>$1,_source=>'meta_lead_ads',_search=>$2)",
+    [org, campaign],
+  );
+  await database.exec("SET ROLE authenticated");
+  await database.query("SELECT set_config('request.jwt.claim.sub',$1,false)", [ownerA]);
+  assert.deepEqual((await visibleFor(orgA, '4455')).rows, [{
+    organization_id: orgA, stage: 'new', contact_name: 'Demo Traveler', lead_source: 'meta_lead_ads', campaign: '4455',
+  }]);
+  await assert.rejects(visibleFor(orgB, '4455'), /غير مصرح/);
+  await database.query("SELECT set_config('request.jwt.claim.sub',$1,false)", [ownerB]);
+  assert.deepEqual((await visibleFor(orgB, '4455')).rows, []);
+  await assert.rejects(visibleFor(orgA, '4455'), /غير مصرح/);
+  console.log('Actual config and webhook adapters via Supabase JS, SQL import, and authenticated CRM search passed on synthetic HTTP and PGlite.');
 } finally {
   await database.close();
 }
