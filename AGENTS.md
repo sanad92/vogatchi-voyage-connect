@@ -17,3 +17,9 @@
 - For each workstream, record its owner, scope, dependencies, and acceptance criteria. Identify the owner of each shared file or interface before editing. Use separate branches or worktrees for concurrent repository changes and coordinate shared changes through the assigned owner.
 - Share interim findings that affect another workstream as soon as they are verified. Attach the relevant files, revision, test results, and exact blockers to each handoff. If work depends on another result, move to the next independent task while that dependency is resolved.
 - Sequence only the work that genuinely depends on another result. Integrate compatible changes as they become ready and verify the combined affected paths before reporting completion or releasing them. Treat a review of a proposal or an individual branch as evidence for that scope.
+
+## Autonomous task ownership
+
+- Give each agent an outcome, scope, and acceptance criteria when assigning work. The agent owns the task through implementation or review, verification, and handoff. Continue authorized work without waiting for a new prompt between routine steps. Make reasonable, reversible decisions within the agreed scope and record assumptions that affect the result.
+- Diagnose failures, retry safely, and fix recoverable issues within the assignment. When a dependency is blocked, report the exact dependency and what is needed to resolve it, then continue independent work. Bring decisions outside the agreed scope or actions that require authorization to the coordinator.
+- Close a task with the verified result, relevant files or revision, and checks run. Record unresolved cases and the next owner for any genuine blocker.
