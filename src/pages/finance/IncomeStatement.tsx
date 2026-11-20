@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, TrendingUp } from 'lucide-react';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useIncomeStatementV2, type IncomeStatementV2Row } from '@/hooks/useFinancialReports';
 import { useCostCenters } from '@/hooks/useCostCenters';
-import { usePermissionCheck } from '@/hooks/usePermissionCheck';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
+import ReportDownloadButtons from '@/components/export/ReportDownloadButtons';
 import PageHeader from '@/components/layout/PageHeader';
 import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
 import { downloadCsv } from '@/lib/reportCsv';
@@ -23,12 +25,15 @@ const bookingTypeLabels: Record<string, string> = {
   flight: 'طيران',
   transport: 'نقل',
   car_rental: 'تأجير سيارات',
+  umrah: 'عمرة',
+  hajj: 'حج',
 };
 
 export default function IncomeStatement() {
   usePageTitle('قائمة الدخل');
   const navigate = useNavigate();
-  const { hasPermission } = usePermissionCheck();
+  const { hasPermission, getPermissionScope } = useSupabasePermissions();
+  const { currentOrganization } = useOrganization();
   const today = new Date().toISOString().slice(0, 10);
   const firstDay = `${today.slice(0, 4)}-01-01`;
   const [start, setStart] = useState(firstDay);
@@ -37,8 +42,8 @@ export default function IncomeStatement() {
   const [costCenterId, setCostCenterId] = useState('all');
   const [bookingType, setBookingType] = useState('all');
   const { data: costCenters = [], isLoading: costCentersLoading } = useCostCenters();
-  const invalidPeriod = start > end;
-  const { data: rows = [], isLoading, error } = useIncomeStatementV2(
+  const invalidPeriod = !start || !end || start > end;
+  const { data: rows = [], isFetching, error } = useIncomeStatementV2(
     start,
     end,
     currency,
@@ -65,8 +70,18 @@ export default function IncomeStatement() {
     navigate(`/general-ledger?${params.toString()}`);
   };
 
-  const exportCsv = () => {
-    const data: unknown[][] = [];
+  const reportColumns = ['القسم', 'كود الحساب', 'اسم الحساب', 'المبلغ', 'العملة'];
+  const reportScope = [
+    currentOrganization?.name ?? '',
+    `الفترة المحاسبية: ${start} – ${end}`,
+    `العملة: ${currency}`,
+    `مركز التكلفة: ${costCenters.find((center) => center.id === costCenterId)?.code ?? 'كل المراكز'}`,
+    `نوع الحجز: ${bookingTypeLabels[bookingType] ?? 'كل الأنواع'}`,
+  ];
+  const hasExportScope = hasPermission('reports_export') && getPermissionScope('reports_export') === 'organization';
+  const canExport = hasExportScope && !invalidPeriod && !isFetching && !error && rows.length > 0;
+  const buildExportRows = () => {
+    const data: (string | number)[][] = [];
     appendCsvSection(data, 'الإيرادات', report.revenue);
     data.push(['إجمالي الإيرادات', '', '', report.revenueTotal, currency]);
     appendCsvSection(data, 'تكلفة الخدمات', report.costOfSales);
@@ -75,7 +90,7 @@ export default function IncomeStatement() {
     appendCsvSection(data, 'المصروفات التشغيلية', report.operatingExpenses);
     data.push(['إجمالي المصروفات التشغيلية', '', '', report.operatingExpensesTotal, currency]);
     data.push(['صافي الربح / الخسارة', '', '', report.netIncome, currency]);
-    downloadCsv(`income-statement-${start}_${end}-${currency}.csv`, ['القسم', 'كود الحساب', 'اسم الحساب', 'المبلغ', 'العملة'], data);
+    return data;
   };
 
   return (
@@ -107,23 +122,29 @@ export default function IncomeStatement() {
               </SelectContent>
             </Select>
           </div>
-          <Button variant="outline" onClick={exportCsv} disabled={!hasPermission('reports_export') || rows.length === 0 || invalidPeriod} title={!hasPermission('reports_export') ? 'لا تملك صلاحية تصدير التقارير' : undefined}>
+          <Button variant="outline" onClick={() => downloadCsv(`income-statement-${start}_${end}-${currency}.csv`, reportColumns, buildExportRows())} disabled={!canExport}>
             <Download className="h-4 w-4 ml-2" />تصدير CSV
           </Button>
+          {hasExportScope && <ReportDownloadButtons
+            key={JSON.stringify([currentOrganization?.id, start, end, currency, costCenterId, bookingType])}
+            title="قائمة الدخل" scope={reportScope} columns={reportColumns}
+            loadRows={async () => buildExportRows()} disabled={!canExport}
+          />}
         </CardContent>
       </Card>
 
       {invalidPeriod && <p className="text-sm text-destructive">تاريخ البداية يجب ألا يكون بعد تاريخ النهاية.</p>}
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      {!invalidPeriod && !isFetching && !error && rows.length > 0 && <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <SummaryCard label={`الإيرادات (${currency})`} value={report.revenueTotal} tone="good" />
         <SummaryCard label="تكلفة الخدمات" value={report.costOfSalesTotal} />
         <SummaryCard label="مجمل الربح" value={report.grossProfit} tone={report.grossProfit >= 0 ? 'good' : 'bad'} />
         <SummaryCard label="المصروفات التشغيلية" value={report.operatingExpensesTotal} />
         <SummaryCard label={`صافي الربح (${fmt(report.netMargin)}%)`} value={report.netIncome} tone={report.netIncome >= 0 ? 'good' : 'bad'} />
-      </div>
+      </div>}
 
-      {isLoading ? <p className="text-sm text-muted-foreground text-center py-8">جارٍ تحميل قائمة الدخل…</p>
+      {invalidPeriod ? null
+        : isFetching ? <p className="text-sm text-muted-foreground text-center py-8">جارٍ تحميل قائمة الدخل…</p>
         : error ? <p className="text-sm text-destructive text-center py-8">تعذر تحميل قائمة الدخل: {(error as Error).message}</p>
         : rows.length === 0 ? <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">لا توجد حركات أرباح وخسائر مطابقة للفلاتر.</CardContent></Card>
         : <div className="space-y-4">
@@ -139,7 +160,7 @@ export default function IncomeStatement() {
 
 const sumRows = (rows: IncomeStatementV2Row[]) => rows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
 
-const appendCsvSection = (target: unknown[][], section: string, rows: IncomeStatementV2Row[]) => {
+const appendCsvSection = (target: (string | number)[][], section: string, rows: IncomeStatementV2Row[]) => {
   rows.forEach((row) => target.push([section, row.account_code, row.account_name_ar || row.account_name, row.amount, row.currency]));
 };
 

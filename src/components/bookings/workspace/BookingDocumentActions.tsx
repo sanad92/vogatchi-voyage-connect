@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { buildInvoiceModel, buildVoucherModel } from '@/lib/travelDocuments';
+import { bookingVoucherState } from '@/lib/bookingVoucher';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { useWorkspaceVouchers } from '@/hooks/useWorkspaceVouchers';
 import { useBookingDocumentSources } from '@/hooks/useBookingDocumentSources';
 import { InvoiceDocument } from '@/components/documents/travel/InvoiceDocument';
@@ -25,6 +27,11 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
   const qc = useQueryClient();
   const booking: any = workspace.booking;
   const customer: any = workspace.customer;
+  const { hasPermission } = useSupabasePermissions();
+  const [checkedVoucherState, setCheckedVoucherState] = useState<ReturnType<typeof bookingVoucherState>>();
+  useEffect(() => setCheckedVoucherState(undefined), [booking?.id, booking?.status, booking?.workflow_stage]);
+  const voucherState = checkedVoucherState ?? bookingVoucherState(booking);
+  const canIssue = Boolean(booking?.id && hasPermission('bookings_view') && hasPermission('documents_create') && voucherState === 'current');
   const { getSource } = useBookingDocumentSources({
     booking,
     customer,
@@ -58,11 +65,6 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
     const orgId = booking?.organization_id;
     if (!orgId) return null;
     const filePath = `${orgId}/${docType}/${docNumber.replace(/[^a-zA-Z0-9-]/g, '_')}.pdf`;
-    const { error: upErr } = await supabase.storage
-      .from('documents')
-      .upload(filePath, blob, { contentType: 'application/pdf', upsert: true });
-    if (upErr) throw upErr;
-
     const payload = {
       organization_id: orgId,
       booking_id: booking.id,
@@ -79,43 +81,90 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
       ...extra,
     };
 
-    const { data: existingDoc } = await anyClient
-      .from('generated_documents')
-      .select('id')
+    const generatedDocs = supabase.from('generated_documents');
+    const { data: existingDoc, error: lookupError } = await generatedDocs
+      .select('id, file_path, booking_id, document_type')
       .eq('organization_id', orgId)
       .eq('document_number', docNumber)
       .maybeSingle();
+    if (lookupError) throw lookupError;
+    if (existingDoc && (existingDoc.booking_id !== booking.id || existingDoc.document_type !== docType)) {
+      throw new Error('رقم المستند مسجل لحجز أو نوع مختلف. تعذّر حفظ نسخة جديدة.');
+    }
 
-    if (existingDoc?.id) {
-      await anyClient.from('generated_documents').update(payload).eq('id', existingDoc.id);
-    } else {
-      await anyClient.from('generated_documents').insert(payload);
+    // Storage needs a visible metadata record before its upload permission check.
+    let insertedId: string | undefined;
+    if (!existingDoc) {
+      const { data, error } = await generatedDocs.insert(payload).select('id').single();
+      if (error) throw error;
+      insertedId = data.id;
+    } else if (existingDoc.file_path !== filePath) {
+      const { error } = await generatedDocs.update({ file_path: filePath }).eq('id', existingDoc.id);
+      if (error) throw error;
+    }
+
+    const { error: uploadError } = await supabase.storage
+      .from('documents')
+      .upload(filePath, blob, { contentType: 'application/pdf', upsert: true });
+    if (uploadError) {
+      if (insertedId) {
+        await generatedDocs.delete().eq('id', insertedId);
+      } else if (existingDoc && existingDoc.file_path !== filePath) {
+        await generatedDocs.update({ file_path: existingDoc.file_path }).eq('id', existingDoc.id).eq('file_path', filePath);
+      }
+      throw uploadError;
+    }
+
+    if (existingDoc) {
+      const { error } = await generatedDocs.update(payload).eq('id', existingDoc.id);
+      if (error) throw error;
     }
     return filePath;
   };
 
-  /** Opens a stored PDF through a short-lived link minted for the current member. */
-  const openStoredPdf = async (path: string) => {
-    if (!path || /^https?:/i.test(path)) return;
-    const { data, error } = await supabase.storage.from('documents').createSignedUrl(path, 300);
-    if (error || !data?.signedUrl) { toast.error('تعذّر فتح الملف'); return; }
-    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+  const verifyVoucherEligibility = async () => {
+    const { data, error } = await supabase.from('bookings').select('status, workflow_stage')
+      .eq('id', booking.id).eq('organization_id', booking.organization_id).single();
+    if (error) throw new Error('تعذّر التحقق من حالة الحجز.');
+    const state = bookingVoucherState(data);
+    setCheckedVoucherState(state);
+    if (state === 'cancelled') throw new Error('الحجز ملغي. الفاوتشر السابق متاح في الأرشيف للمعاينة فقط.');
+    if (state !== 'current') throw new Error('يجب تأكيد الحجز قبل إصدار الفاوتشر.');
   };
 
-  /** Ensures the voucher business record exists, then opens the premium preview. */
+  const openStoredVoucher = async (path: string) => {
+    if (!path || /^https?:/i.test(path)) return;
+    const tab = window.open('', '_blank');
+    if (!tab) {
+      toast.error('اسمح بالنوافذ المنبثقة لفتح الفاوتشر.');
+      return;
+    }
+    tab.opener = null;
+    try {
+      await verifyVoucherEligibility();
+      const { data, error } = await supabase.storage.from('documents').createSignedUrl(path, 60);
+      if (error || !data?.signedUrl) throw new Error('تعذّر فتح الفاوتشر.');
+      if (!tab.closed) tab.location.replace(data.signedUrl);
+    } catch (error) {
+      tab.close();
+      toast.error(error instanceof Error ? error.message : 'تعذّر فتح الفاوتشر.');
+    }
+  };
+
+  /** Ensures the voucher business record exists, then opens its preview. */
   const handleIssueVoucher = async () => {
-    if (!booking?.id) return;
+    if (!canIssue || busy === 'voucher') return;
     setBusy('voucher');
     try {
-      const { data: vouchers, error } = await vouchersQ.refetch();
-      if (error) throw error;
-      const existing = vouchers?.[0];
-      const voucherNumber =
-        existing?.voucher_number ||
+      await verifyVoucherEligibility();
+      const result = await vouchersQ.refetch();
+      if (result.error) throw result.error;
+      let existing = result.data?.[0];
+      const voucherNumber = existing?.voucher_number ||
         `VCH-${(booking.booking_number || booking.id.slice(0, 8)).replace(/^BK-/, '')}`;
 
       if (!existing) {
-        const { error } = await anyClient.from('booking_vouchers').insert({
+        const { error } = await supabase.from('booking_vouchers').upsert({
           organization_id: booking.organization_id,
           booking_id: booking.id,
           voucher_number: voucherNumber,
@@ -124,12 +173,14 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
             voucher_number: voucherNumber,
             customer: customer?.name || booking?.customer_name || null,
           },
-        });
+        }, { onConflict: 'booking_id', ignoreDuplicates: true });
         if (error) throw error;
-        qc.invalidateQueries({ queryKey: ['workspace-vouchers', booking.id] });
+        const current = await vouchersQ.refetch();
+        if (current.error || !current.data?.[0]) throw new Error('تعذّر قراءة الفاوتشر بعد الحفظ.');
+        existing = current.data[0];
       }
 
-      setPreview({ type: 'voucher', voucherNumber, issuedAt: existing?.issued_at ?? null });
+      setPreview({ type: 'voucher', voucherNumber: existing.voucher_number, issuedAt: existing.issued_at });
     } catch (e: any) {
       toast.error(e.message || 'تعذّر إصدار الفاوتشر');
     } finally {
@@ -139,39 +190,25 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
 
   /** Store the rendered PDF against the existing voucher/document records (no duplicates). */
   const persistVoucherPdf = async (blob: Blob, voucherNumber: string) => {
-    try {
-      const url = await persistDocument(
-        blob,
-        'voucher',
-        voucherNumber,
-        0,
-        booking?.currency || workspace.financials.currency,
-      );
-      const existing = (vouchersQ.data ?? []).find((v: any) => v.voucher_number === voucherNumber);
-      if (existing) {
-        await anyClient.from('booking_vouchers').update({ pdf_url: url }).eq('id', existing.id);
-      }
-      qc.invalidateQueries({ queryKey: ['workspace-vouchers', booking?.id] });
-      qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking?.id] });
-    } catch {
-      /* download still works even if storage save fails */
-    }
+    await verifyVoucherEligibility();
+    const url = await persistDocument(
+      blob, 'voucher', voucherNumber, 0, booking?.currency || workspace.financials.currency,
+    );
+    if (!url) throw new Error('تعذّر حفظ الفاوتشر.');
+    const { error } = await supabase.from('booking_vouchers').update({ pdf_url: url })
+      .eq('organization_id', booking.organization_id).eq('booking_id', booking.id).eq('voucher_number', voucherNumber)
+      .select('id').single();
+    if (error) throw error;
+    void qc.invalidateQueries({ queryKey: ['workspace-vouchers', booking.id] });
+    void qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking.id] });
   };
 
   const persistInvoicePdf = async (blob: Blob, inv: any, docNumber: string) => {
-    try {
-      await persistDocument(
-        blob,
-        'invoice',
-        docNumber,
-        Number(inv.final_amount ?? inv.total_amount ?? 0),
-        inv.currency || workspace.financials.currency,
-        { invoice_id: inv.id },
-      );
-      qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking?.id] });
-    } catch {
-      /* download still works even if storage save fails */
-    }
+    await persistDocument(
+      blob, 'invoice', docNumber, Number(inv.final_amount ?? inv.total_amount ?? 0),
+      inv.currency || workspace.financials.currency, { invoice_id: inv.id },
+    );
+    void qc.invalidateQueries({ queryKey: ['workspace-generated-docs', booking?.id] });
   };
 
 
@@ -188,7 +225,7 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={handleIssueVoucher} disabled={!booking?.id || busy === 'voucher'}>
+          <Button size="sm" onClick={handleIssueVoucher} disabled={!canIssue || busy === 'voucher'}>
             {busy === 'voucher' ? (
               <Loader2 className="h-4 w-4 ml-1 animate-spin" />
             ) : (
@@ -196,12 +233,16 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
             )}
             {vouchers.length ? 'إعادة إصدار الفاوتشر' : 'إصدار فاوتشر'}
           </Button>
-          {vouchers[0]?.pdf_url && !/^https?:/i.test(vouchers[0].pdf_url) && (
-            <Button size="sm" variant="outline" onClick={() => openStoredPdf(vouchers[0].pdf_url)}>
+          {voucherState === 'current' && vouchers[0]?.pdf_url && !/^https?:/i.test(vouchers[0].pdf_url) && (
+            <Button size="sm" variant="outline" onClick={() => openStoredVoucher(vouchers[0].pdf_url)}>
               <Download className="h-4 w-4 ml-1" /> تحميل آخر فاوتشر
             </Button>
           )}
         </div>
+
+        {voucherState === 'cancelled' && <p className="text-sm text-destructive">الحجز ملغي. الفاوتشرات السابقة متاحة للمعاينة المؤرشفة فقط.</p>}
+        {voucherState === 'unconfirmed' && <p className="text-sm text-muted-foreground">أكّد الحجز قبل إصدار الفاوتشر.</p>}
+        {voucherState === 'current' && !canIssue && <p className="text-sm text-muted-foreground">يلزم الحصول على صلاحية إصدار المستندات.</p>}
 
         {vouchers.length > 0 && (
           <div className="space-y-1.5">
@@ -214,7 +255,7 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px]">فاوتشر</Badge>
+                  <Badge variant="outline" className="text-[10px]">{voucherState === 'current' ? 'فاوتشر' : 'مؤرشف'}</Badge>
                   <Button
                     size="sm"
                     variant="outline"
@@ -277,9 +318,12 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
           onOpenChange={(o) => !o && setPreview(null)}
           title={`فاوتشر ${voucherModel.voucherNumber}`}
           fileName={`${voucherModel.voucherNumber}.pdf`}
+          readOnly={!canIssue}
+          beforeOutput={verifyVoucherEligibility}
+          requireSavedCopy
           onGenerated={(blob) => persistVoucherPdf(blob, voucherModel.voucherNumber)}
         >
-          {(ref) => <VoucherDocument ref={ref} model={voucherModel} />}
+          {(ref) => <VoucherDocument ref={ref} model={voucherModel} state={voucherState} />}
         </DocumentPreviewDialog>
       )}
     </Card>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { supabase } from '@/integrations/supabase/client';
 import { amount, pilgrimNetPaid } from '@/lib/pilgrimage/operations';
+import type { PrivateRule } from '@/lib/pilgrimage/roomPricing';
+import PilgrimagePrivateGroupAmendment from './PilgrimagePrivateGroupAmendment';
 import { money, ROOM } from './pilgrimage-documents';
 
 type Action = 'room_category' | 'cancel' | 'transfer';
@@ -26,6 +28,7 @@ type Program = {
   travel_scope: string;
   departure_date: string | null;
   uses_room_inventory?: boolean;
+  inventory_private_prices?: Partial<Record<Room, PrivateRule>>;
 } & Record<`price_${Room}`, number>;
 type Passenger = {
   id: string;
@@ -36,7 +39,9 @@ type Passenger = {
   paid_amount: number;
   reserved_refunds?: number;
   b2b_roster_entry_id?: string | null;
+  gender?: string | null;
   inventory_booking_id?: string | null;
+  inventory_room_mode?: string;
   unified_booking_id?: string | null;
   manual_allotment_booking?: boolean;
 };
@@ -65,6 +70,8 @@ const ERRORS: Record<string, string> = {
   pilgrimage_operation_refresh_required: 'الأسعار أو المدفوعات اتغيرت. حدّث الصفحة وراجع التسوية.',
   pilgrimage_passenger_not_changeable: 'الطلب يشمل مسافرًا لم يعد متاحًا للتعديل.',
   pilgrimage_transfer_program_unavailable: 'البرنامج البديل غير متاح، أو العملة أو نوع المسار مختلف.',
+  pilgrimage_transfer_inventory_mode_mismatch: 'اختار دفعة بديلة بنفس نظام تخصيص المقاعد والغرف.',
+  pilgrimage_private_room_requires_group_amendment: 'تعديل الغرفة الخاصة يحتاج إجراءً على الحجز بالكامل.',
   pilgrimage_refund_customer_required: 'اربط المسافر بملف عميل قبل إنشاء طلب استرداد.',
   pilgrimage_refund_payment_required: 'راجع الدفعات الأصلية وسعر التحويل مع المالية.',
   program_capacity_reached: 'البرنامج البديل مكتمل.',
@@ -77,22 +84,28 @@ const ERRORS: Record<string, string> = {
   room_capacity_exceeded: 'الغرفة المختارة مكتملة.',
   room_category_conflict: 'رقم الغرفة مسجل لفئة مختلفة.',
   room_family_group_required: 'تأكد من تسجيل المجموعة العائلية قبل التسكين المشترك.',
+  umrah_inventory_air_seats_exhausted: 'مفيش مقاعد طيران متاحة في الدفعة المطلوبة.',
+  umrah_inventory_rooms_exhausted: 'الفئة المطلوبة مفيهاش سرير متاح مناسب للمسافر في كل المدن المطلوبة.',
+  umrah_inventory_price_changed: 'تعرفة السرير اتغيرت. حدّث الصفحة وراجع السعر.',
+  pilgrimage_sales_confirmation_required: 'الدفعة المطلوبة محتاجة اعتماد البيع قبل تسجيل التعديل.',
 };
 
 const db = supabase as any;
 
-export default function PilgrimageOperations({ orgId, program, programs, passengers, canManage, canCancel, canViewRefunds, onChanged }: {
+export default function PilgrimageOperations({ orgId, program, programs, passengers, canManage, canCancel, canCreateReplacement, canViewRefunds, onChanged }: {
   orgId: string;
   program: Program;
   programs: Program[];
   passengers: Passenger[];
   canManage: boolean;
   canCancel: boolean;
+  canCreateReplacement: boolean;
   canViewRefunds: boolean;
   onChanged: () => void;
 }) {
   const { toast } = useToast();
   const cache = useQueryClient();
+  const navigate = useNavigate();
   const [action, setAction] = useState<Action | null>(null);
   const [selected, setSelected] = useState<Record<string, string>>({});
   const [fees, setFees] = useState<Record<string, string>>({});
@@ -113,9 +126,14 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
     },
   });
   const active = passengers.filter((person) => !person.b2b_roster_entry_id && !['cancelled', 'traveled', 'completed'].includes(person.status));
-  const amendable = active.filter((person) => !person.inventory_booking_id || person.manual_allotment_booking);
+  const usesRoomStock = Boolean(program.uses_room_inventory);
+  const amendable = active.filter((person) => {
+    if (usesRoomStock) return canCancel && canCreateReplacement && Boolean(person.unified_booking_id)
+      && person.inventory_room_mode === 'shared' && (person.gender === 'male' || person.gender === 'female');
+    return !person.inventory_booking_id || (person.manual_allotment_booking && canCancel && canCreateReplacement);
+  });
   const eligible = action === 'cancel' ? active : amendable;
-  const targets = programs.filter((option) => option.id !== program.id && !option.uses_room_inventory && option.status === 'open'
+  const targets = programs.filter((option) => option.id !== program.id && Boolean(option.uses_room_inventory) === usesRoomStock && option.status === 'open'
     && option.program_type === program.program_type && option.currency === program.currency && option.travel_scope === program.travel_scope);
   const destination = action === 'transfer' ? targets.find((option) => option.id === targetId) : program;
   const newPrice = action === 'cancel' ? 0 : amount(destination?.[`price_${room}`]);
@@ -182,10 +200,19 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
     <div className="space-y-4">
       <Card className="space-y-3 p-4">
         <h2 className="font-semibold">تعديلات وإلغاءات المسافرين</h2>
+        {usesRoomStock && (
+          <p className="text-sm text-muted-foreground">الغرف المشتركة تتعدل لكل مسافر حسب الرصيد. الغرفة الخاصة تتعدل لكل المسافرين معًا لما يكون الحجز من غير دفعات والإجمالي يفضل زي ما هو.</p>
+        )}
         {canManage && !['departed', 'completed', 'cancelled'].includes(program.status) && (
           <div className="flex flex-wrap gap-2">
-            {!program.uses_room_inventory && <Button variant="outline" disabled={!amendable.length} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>}
-            {canCancel && !program.uses_room_inventory && <Button variant="outline" disabled={!amendable.length || !targets.length} onClick={() => open('transfer')}>{ACTIONS.transfer}</Button>}
+            <Button variant="outline" disabled={!amendable.length || (usesRoomStock && program.status !== 'open')} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>
+            {canCancel && <Button variant="outline" disabled={!amendable.length || !targets.length} onClick={() => open('transfer')}>{ACTIONS.transfer}</Button>}
+            {usesRoomStock && canCancel && canCreateReplacement && <PilgrimagePrivateGroupAmendment
+              orgId={orgId} program={program} targets={targets} passengers={passengers} onChanged={bookingId => {
+                void cache.invalidateQueries({ queryKey: ['pilgrimage-operations', orgId, program.id] });
+                onChanged();
+                navigate(`/bookings/${bookingId}?tab=financials`);
+              }} />}
             {canCancel && <Button variant="destructive" disabled={!active.length} onClick={() => open('cancel')}>{ACTIONS.cancel}</Button>}
           </div>
         )}
@@ -217,9 +244,9 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
         {action && <DialogContent dir="rtl" className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader><DialogTitle>{ACTIONS[action]}</DialogTitle>
             <DialogDescription>{action === 'transfer'
-              ? 'يُحرر مقعد المسافر في البرنامج القديم ويُحجز له مقعد في البرنامج البديل.'
+              ? usesRoomStock ? 'يُحجز للمسافر مقعد وسرير مناسب في الدفعة البديلة، ويتحرر رصيده في الدفعة الأصلية بعد نجاح العملية.' : 'يُحرر مقعد المسافر في البرنامج القديم ويُحجز له مقعد في البرنامج البديل.'
               : action === 'room_category'
-                ? 'تتغير تعرفة المسافر، وتقدر توزعه على مجموعة من الفئة الجديدة من تبويب التسكين.'
+                ? usesRoomStock ? 'السيستم بيخصص سريرًا من الفئة الجديدة حسب التسكين الرجالي أو الحريمي، وبيسوّي الفاتورة الأصلية.' : 'تتغير تعرفة المسافر، وتقدر توزعه على مجموعة من الفئة الجديدة من تبويب التسكين.'
                 : 'تتحرر مقاعد المسافرين المختارين ويُسجل أي مبلغ زائد عن الغرامة كطلب استرداد.'}</DialogDescription>
           </DialogHeader>
           <fieldset disabled={Boolean(submission)} className="space-y-3 disabled:opacity-60">
@@ -257,7 +284,7 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
                 <Input className="w-28" id={`operation-fee-${person.id}`} type="number" min={0} max={person.total_price} step="0.01"
                   value={fees[person.id] ?? '0'} onChange={(event) => { setFees({ ...fees, [person.id]: event.target.value }); setApproved(false); }} />
               </div>}
-              {person.manual_allotment_booking && action !== 'cancel' ? <div className="space-y-1 text-muted-foreground">
+              {person.unified_booking_id && action !== 'cancel' ? <div className="space-y-1 text-muted-foreground">
                 <p>السعر السابق {money(person.total_price, program.currency)} · سعر التسجيل البديل {money(newPrice, program.currency)}</p>
                 <p>يُسوّى التسجيل الأصلي وتصدر فاتورة للحجز البديل. أي رصيد متاح من التسوية يترحّل للفاتورة الجديدة حتى قيمتها.</p>
               </div> : person.unified_booking_id ? <p className="text-muted-foreground">

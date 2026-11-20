@@ -30,6 +30,14 @@ type Availability = {
   available_seats: number | null;
 };
 
+type RoomInventoryProgram = {
+  id: string;
+  name: string;
+  program_type: Availability['program_type'];
+  departure_date: string | null;
+  return_date: string | null;
+};
+
 const labels = { umrah: 'عمرة', hajj: 'حج' };
 const initialFilters = { type: 'all', from: '', to: '', party: '1', room: 'quad' };
 const alternativeLimit = 5;
@@ -40,8 +48,10 @@ const actions = {
 };
 type SearchAction = keyof typeof actions;
 
-export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenSale }: {
+export default function PilgrimageAvailabilitySearch({ orgId, roomInventoryPrograms, onBack, onOpenSale, onOpenRoomInventory }: {
   orgId: string;
+  roomInventoryPrograms: RoomInventoryProgram[];
+  onOpenRoomInventory: (id: string, programType: Availability['program_type']) => void;
   onBack: () => void;
   onOpenSale: (id: string, programType: Availability['program_type']) => void;
 }) {
@@ -128,6 +138,11 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenSale
     },
   });
   const visibleResults = suggestDates ? alternatives : results;
+  const matchingRoomInventory = roomInventoryPrograms.filter(program =>
+    (submitted.type === 'all' || program.program_type === submitted.type)
+    && (!submitted.from || (program.departure_date && program.departure_date >= submitted.from))
+    && (!submitted.to || (program.departure_date && program.departure_date <= submitted.to)),
+  );
   const refreshSearch = () => qc.invalidateQueries({ queryKey: searchKey });
 
   const customerQuery = useQuery({
@@ -195,7 +210,7 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenSale
   return <div className="space-y-5">
     <Button variant="ghost" onClick={onBack}><ArrowRight className="h-4 w-4 me-1" />العودة إلى البرامج</Button>
     <PageHeader title="بحث توافر الحج والعمرة" icon={Search}
-      description="ابحث في رصيد مقاعد برامجك واحجز من حصة البرنامج." />
+      description="ابحث في رصيد مقاعد البرامج أو افتح رصيد الدفعات ذات الغرف المتعاقد عليها." />
     <Card className="p-4">
       <form className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-6" onSubmit={event => {
         event.preventDefault();
@@ -233,13 +248,29 @@ export default function PilgrimageAvailabilitySearch({ orgId, onBack, onOpenSale
       </form>
     </Card>
 
-    <p className="text-sm text-muted-foreground">فئة الغرفة تحدد سعر الفرد. التسكين من صفحة البرنامج.</p>
+    {matchingRoomInventory.length > 0 && <section className="space-y-3" aria-labelledby="room-inventory-programs">
+      <h2 id="room-inventory-programs" className="text-lg font-semibold">دفعات الحجز المباشر من رصيد المقاعد والغرف</h2>
+      <p className="text-sm text-muted-foreground">افتح رصيد الدفعة للتحقق من المقاعد وفئة الغرفة وعدد المسافرين قبل الحجز.</p>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {matchingRoomInventory.map(program => <Card key={program.id} className="space-y-3 p-4">
+          <h3 className="font-semibold">{program.name}</h3>
+          <p className="text-sm text-muted-foreground">
+            {labels[program.program_type]} · <span dir="ltr">{program.departure_date || '—'}</span>
+            {program.return_date && <> إلى <span dir="ltr">{program.return_date}</span></>}
+          </p>
+          <Button variant="outline" onClick={() => onOpenRoomInventory(program.id, program.program_type)}>عرض رصيد الدفعة</Button>
+        </Card>)}
+      </div>
+    </section>}
+
+    <h2 className="text-lg font-semibold">نتائج توافر مقاعد البرامج</h2>
+    <p className="text-sm text-muted-foreground">فئة الغرفة تحدد سعر الفرد في هذه النتائج. التسكين من صفحة البرنامج.</p>
     {results.isLoading && <p role="status">جاري تحميل التوافر…</p>}
     {results.isError && <Card className="flex items-center justify-between gap-3 p-4" role="alert">
       <p>تعذر تحميل التوافر. راجع الصلاحيات أو حاول مرة أخرى.</p>
       <Button variant="outline" onClick={() => results.refetch()}>إعادة المحاولة</Button>
     </Card>}
-    {noMatches && <Card className="p-6 text-center">مفيش برامج مطابقة للفترة والعدد وفئة الغرفة.</Card>}
+    {noMatches && <Card className="p-6 text-center">مفيش برامج على رصيد المقاعد تطابق الفترة والعدد وفئة الغرفة.</Card>}
     {suggestDates && alternatives.isLoading && <p role="status">جاري البحث عن مواعيد بديلة…</p>}
     {suggestDates && alternatives.isError && <Card className="flex items-center justify-between gap-3 p-4" role="alert">
       <p>تعذر تحميل المواعيد البديلة.</p>

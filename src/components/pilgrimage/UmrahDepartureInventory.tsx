@@ -12,11 +12,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
+import { privateRoomTotal, type PrivateRule } from '@/lib/pilgrimage/roomPricing';
 import { money, ROOM, ROOM_SIZE } from './pilgrimage-documents';
 
 type City = 'makkah' | 'madinah';
 type Room = 'quad' | 'triple' | 'double' | 'single';
-type PrivateRule = { method: 'fixed'; per_person: Record<string, number> } | { method: 'supplement'; per_empty_bed: number };
 type Program = {
   id: string;
   uses_room_inventory: boolean;
@@ -140,10 +140,8 @@ export default function UmrahDepartureInventory({
   const sharedPrice = Number(program[`price_${room}`]);
   const occupied = travelers.length;
   const roomSize = ROOM_SIZE[room];
-  const total = mode === 'shared' ? sharedPrice * occupied
-    : priceRule?.method === 'fixed' ? (priceRule.per_person[occupied] ?? 0) * occupied
-    : priceRule?.method === 'supplement' ? sharedPrice * occupied + priceRule.per_empty_bed * (roomSize - occupied) : 0;
-  const totalPrice = Math.round(total * 100) / 100;
+  const totalPrice = mode === 'shared' ? Math.round(sharedPrice * occupied * 100) / 100
+    : privateRoomTotal(priceRule, sharedPrice, occupied, roomSize);
   const availableSeats = Math.max(0, program.capacity - passengers.filter((person) => person.status !== 'cancelled').length);
   const validBooking = registrationOpen && canBook && customer && totalPrice > 0 && occupied <= availableSeats
     && (mode !== 'private' || occupied <= roomSize)
@@ -196,7 +194,9 @@ export default function UmrahDepartureInventory({
           {program.uses_room_inventory ? 'إضافة غرف أو ضبط السعر الخاص' : 'إعداد رصيد الغرف'}
         </Button>}
       </div>
-      {!program.uses_room_inventory && <p className="text-sm text-muted-foreground">أدخل عدد الغرف المتعاقد عليها لكل مدينة وفئة قبل بدء الحجز على الرصيد.</p>}
+      {program.uses_room_inventory
+        ? <p className="text-sm text-muted-foreground">الحجز المباشر يثبت مقاعد الطيران والتسكين من هذا الرصيد.</p>
+        : <p className="text-sm text-muted-foreground">أدخل عدد الغرف المتعاقد عليها لكل مدينة وفئة قبل بدء الحجز على الرصيد.</p>}
       {stock.isLoading && <p className="text-sm">جارٍ تحميل رصيد الغرف…</p>}
       {stock.isError && <Button variant="outline" onClick={() => stock.refetch()}>تعذر تحميل رصيد الغرف. إعادة المحاولة</Button>}
       {!!stock.data?.length && <div className="overflow-x-auto"><table className="w-full text-start text-sm">
