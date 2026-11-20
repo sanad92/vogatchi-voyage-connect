@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Phone, User } from 'lucide-react';
 import type { SopLead } from '@/hooks/useSop';
 import { PAYMENT_POLICY_LABELS } from '@/lib/sop';
-import { LEAD_SOURCE_LABELS } from '@/lib/leadPipeline';
+import { getLeadCampaignLabel, LEAD_SOURCE_LABELS } from '@/lib/leadPipeline';
 
 const Row = ({ label, value }: { label: string; value?: React.ReactNode }) => {
   if (value === null || value === undefined || value === '' ) return null;
@@ -60,6 +60,7 @@ export const SopLeadBrief = ({ lead }: { lead: SopLead }) => {
         </div>
 
         <div className="grid gap-1.5 border-t pt-2">
+          <Row label="الحملة" value={getLeadCampaignLabel(lead.campaign)} />
           <Row label="الوجهة" value={[lead.destination, lead.city].filter(Boolean).join(' - ') || undefined} />
           <Row label="التواريخ" value={dates} />
           <Row label="عدد المسافرين" value={pax} />

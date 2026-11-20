@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import MetaLeadAdsSettings from './MetaLeadAdsSettings';
 
 type Provider = 'travelport' | 'sabre' | 'eta' | 'zatca';
 type Environment = 'preproduction' | 'production';
@@ -180,6 +181,7 @@ function CompanyApiConnections({ organizationId }: { organizationId: string }) {
           </Card>
         ))}
       </div>
+      <MetaLeadAdsSettings organizationId={organizationId} />
       {selected && <ConnectionDialog {...selected} organizationId={organizationId} onClose={() => setSelected(null)} onSaved={refresh} />}
       {showEtaSamples && <EtaSamplesDialog organizationId={organizationId}
         connection={query.data?.connections.find(row => row.provider === 'eta')} onClose={() => setShowEtaSamples(false)} />}
