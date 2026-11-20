@@ -1,0 +1,23 @@
+# Safar ERP release on Lovable Cloud
+
+The release candidate is the GitHub pull request head. As of this rehearsal, [#125](https://github.com/sanad92/vogatchi-voyage-connect/pull/125) targets `main`, and [#126](https://github.com/sanad92/vogatchi-voyage-connect/pull/126) targets the branch for #125. Verify the target again before release. Merging into `main` changes the code synced into the production editor when that branch is active. Lovable's publish controls govern the website snapshot. An accepted draft can change production backend objects before a new website snapshot is published.
+
+## Prepare the ERP test target on Lovable Cloud
+
+1. Record the exact candidate commit and CI result. Keep the production Lovable project on its current branch while testing. Use a separate, unpublished Lovable project with its own built-in Cloud backend, separate users and synthetic companies. In the Lovable controls, verify the project identity, database status and API origin. Check the actual preview API origin before the first sign-in, RPC or upload.
+2. If creating that project from GitHub code, Lovable supports **Import project → Upload code**. Lovable Git sync creates a new repository for the new project. In the archive, omit the tracked `.env` and any other `.env` files, dependency folders and build output. Review the importer changes against the candidate commit. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from the test backend. Confirm the project identity in `supabase/config.toml` targets the test environment before using any deployment command.
+3. Install and verify the ERP test schema before exercising the candidate. Use the [historical schema checkpoints](isolated-schema-bootstrap-checkpoints.md) and [database restore drill](isolated-database-restore-rehearsal.md). A fresh replay needs the reviewed legacy file ordering, extension support and seed review. Inspect cron jobs and SQL for fixed production project URLs before enabling schedules. Keep outbound integrations disabled until their separate tests have dedicated provider credentials, test destinations and a verified API origin.
+
+The project preview and active Git branch do not establish database isolation. A Lovable draft can share production data. Even a draft with example data uses the parent project's live secrets and connectors. For this drill, use a separately identified Cloud backend and dedicated test credentials.
+
+## Paymob sandbox subscription check
+
+The existing Paymob staging project is for Safar ERP subscription checkout and activation. Validate it with the authentication, organization and subscription billing schema required by the checkout. ERP fixtures for bookings, pilgrimage, company finance and email belong in the separate Lovable Cloud test target.
+
+1. In the Paymob dashboard's **Test** mode, select the sandbox card integration and confirm its callback and redirect target the test environment. Configure the test-only secret/public key pair and HMAC in Lovable's secret settings. Set `PAYMOB_INTEGRATION_ID` explicitly, and set `PAYMOB_WALLET_INTEGRATION_ID` only for a verified sandbox wallet integration. The current checkout has a fallback when explicit IDs are missing, so verify the expected ID in the Paymob test dashboard before opening checkout. Keep configuration values out of logs and reports.
+2. Deploy the candidate subscription billing schema and matching `create-payment`, `paymob-webhook` and relevant billing functions to the Paymob test backend. Use a restricted preview bound to that backend and confirm the webhook URL uses it. Use a synthetic company, test card and Paymob Test activity only.
+3. Verify a pending subscription before callback acceptance. Complete checkout and confirm the signed callback matches the expected intention, amount and currency. Confirm subscription activation, redirect status, duplicate callback handling and retry behavior. Also check that a cancel or failure leaves the subscription unactivated. Repeat plan and company checks before considering the result ready for release.
+
+Record the tested candidate SHA, isolated project identifier, provider mode, expected and observed subscription outcomes and callback references. Code merge, migrations, and production publish require their own release decision.
+
+[Lovable Git sync](https://docs.lovable.dev/integrations/github) · [Lovable code import](https://docs.lovable.dev/features/projects/import-project) · [Lovable draft backends and secrets](https://docs.lovable.dev/features/drafts) · [Lovable publishing](https://docs.lovable.dev/features/publish) · [Paymob Test and Live integration settings](https://developers.paymob.com/paymob-docs/need-help/setup-guides/getting-integration-credentials)

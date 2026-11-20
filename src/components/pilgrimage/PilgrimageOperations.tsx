@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { supabase } from '@/integrations/supabase/client';
 import { amount, pilgrimNetPaid } from '@/lib/pilgrimage/operations';
+import type { PrivateRule } from '@/lib/pilgrimage/roomPricing';
+import PilgrimagePrivateGroupAmendment from './PilgrimagePrivateGroupAmendment';
 import { money, ROOM } from './pilgrimage-documents';
 
 type Action = 'room_category' | 'cancel' | 'transfer';
@@ -26,6 +28,7 @@ type Program = {
   travel_scope: string;
   departure_date: string | null;
   uses_room_inventory?: boolean;
+  inventory_private_prices?: Partial<Record<Room, PrivateRule>>;
 } & Record<`price_${Room}`, number>;
 type Passenger = {
   id: string;
@@ -102,6 +105,7 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
 }) {
   const { toast } = useToast();
   const cache = useQueryClient();
+  const navigate = useNavigate();
   const [action, setAction] = useState<Action | null>(null);
   const [selected, setSelected] = useState<Record<string, string>>({});
   const [fees, setFees] = useState<Record<string, string>>({});
@@ -197,12 +201,18 @@ export default function PilgrimageOperations({ orgId, program, programs, passeng
       <Card className="space-y-3 p-4">
         <h2 className="font-semibold">تعديلات وإلغاءات المسافرين</h2>
         {usesRoomStock && (
-          <p className="text-sm text-muted-foreground">النقل وتغيير الفئة متاحان لمسافري الغرف المشتركة حسب المقاعد والأسرّة المتاحة. تعديل الغرف الخاصة يحتاج إجراءً على الحجز بالكامل.</p>
+          <p className="text-sm text-muted-foreground">الغرف المشتركة تتعدل لكل مسافر حسب الرصيد. الغرفة الخاصة تتعدل لكل المسافرين معًا لما يكون الحجز من غير دفعات والإجمالي يفضل زي ما هو.</p>
         )}
         {canManage && !['departed', 'completed', 'cancelled'].includes(program.status) && (
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" disabled={!amendable.length || (usesRoomStock && program.status !== 'open')} onClick={() => open('room_category')}>{ACTIONS.room_category}</Button>
             {canCancel && <Button variant="outline" disabled={!amendable.length || !targets.length} onClick={() => open('transfer')}>{ACTIONS.transfer}</Button>}
+            {usesRoomStock && canCancel && canCreateReplacement && <PilgrimagePrivateGroupAmendment
+              orgId={orgId} program={program} targets={targets} passengers={passengers} onChanged={bookingId => {
+                void cache.invalidateQueries({ queryKey: ['pilgrimage-operations', orgId, program.id] });
+                onChanged();
+                navigate(`/bookings/${bookingId}?tab=financials`);
+              }} />}
             {canCancel && <Button variant="destructive" disabled={!active.length} onClick={() => open('cancel')}>{ACTIONS.cancel}</Button>}
           </div>
         )}

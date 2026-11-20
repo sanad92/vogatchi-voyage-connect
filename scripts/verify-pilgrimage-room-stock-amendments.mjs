@@ -20,19 +20,24 @@ try {
       ADD COLUMN mahram_relation text, ADD COLUMN room_group text, ADD COLUMN notes text,
       ADD COLUMN visa_number text, ADD COLUMN portal_barcode text,
       ADD COLUMN vaccination_done boolean, ADD COLUMN cancelled_at timestamptz;
-    ALTER TABLE public.customer_payments ADD COLUMN amount_base numeric;
+    ALTER TABLE public.customer_payments ADD COLUMN amount_base numeric, ADD COLUMN booking_id uuid, ADD COLUMN invoice_id uuid;
     CREATE SCHEMA private;
     GRANT USAGE ON SCHEMA auth TO authenticated;
     CREATE SCHEMA pilgrimage_operations_private;
     CREATE SCHEMA refund_balance_private;
+    CREATE SCHEMA trip_amendment_private;
     CREATE FUNCTION public.can_org_write(org uuid) RETURNS boolean LANGUAGE sql STABLE
       AS 'SELECT public.user_belongs_to_org(auth.uid(), org)';
     CREATE FUNCTION public.has_org_permission(org uuid, permission text) RETURNS boolean LANGUAGE sql STABLE
       AS 'SELECT public.user_belongs_to_org(auth.uid(), org) AND
           (permission <> ''bookings_cancel'' OR coalesce(current_setting(''test.deny_cancel'', true), '''') <> ''true'')';
-    CREATE TABLE public.bookings (id uuid PRIMARY KEY, organization_id uuid, customer_id uuid, booking_type text);
+    CREATE TABLE public.bookings (id uuid PRIMARY KEY, organization_id uuid, customer_id uuid, booking_type text,
+      currency text DEFAULT 'EGP', status text DEFAULT 'confirmed', is_demo boolean DEFAULT false, selling_price numeric);
     CREATE TABLE public.invoices (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid,
-      booking_id uuid, remaining_amount numeric);
+      booking_id uuid, remaining_amount numeric, final_amount numeric, total_paid_amount numeric DEFAULT 0);
+    GRANT SELECT ON public.invoices, public.bookings TO authenticated;
+    CREATE TABLE public.fixture_supplier_docs (booking_id uuid PRIMARY KEY);
+    CREATE TABLE public.fixture_closed_groups (booking_id uuid PRIMARY KEY);
     CREATE TABLE public.refund_requests (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid,
       amount numeric, status text);
     CREATE TABLE public.refund_balance_settlements (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), invoice_id uuid, amount numeric);
@@ -95,8 +100,8 @@ try {
     LANGUAGE plpgsql SECURITY DEFINER AS $$
     BEGIN
       PERFORM pilgrimage_inventory_private.create_booking(org,program,booking,customer,room,mode,travelers,price);
-      INSERT INTO public.bookings VALUES (booking, org, customer, 'umrah');
-      INSERT INTO public.invoices (organization_id,booking_id,remaining_amount) VALUES(org,booking,price);
+      INSERT INTO public.bookings (id,organization_id,customer_id,booking_type,selling_price) VALUES(booking,org,customer,'umrah',price);
+      INSERT INTO public.invoices (organization_id,booking_id,remaining_amount,final_amount) VALUES(org,booking,price,price);
       INSERT INTO pilgrimage_inventory_private.booking_staff VALUES(booking,org,auth.uid(),seller,NULL);
       UPDATE public.umrah_inventory_bookings SET booking_id=booking WHERE id=booking;
       RETURN booking;
@@ -107,6 +112,18 @@ try {
     RETURNS uuid LANGUAGE sql AS $$
       INSERT INTO public.refund_balance_settlements(invoice_id,amount) VALUES($7,$5) RETURNING id;
     $$;
+    CREATE FUNCTION trip_amendment_private.can_settle_cancellation(org uuid) RETURNS boolean
+    LANGUAGE sql AS 'SELECT public.has_org_permission(org, ''bookings_cancel'')';
+    CREATE FUNCTION trip_amendment_private.cancellation_preview(b public.bookings) RETURNS jsonb
+    LANGUAGE sql AS $$
+      SELECT jsonb_build_object('invoices', jsonb_agg(jsonb_build_object('paid', i.total_paid_amount,'due',i.remaining_amount)))
+      FROM public.invoices i WHERE i.booking_id=b.id AND i.organization_id=b.organization_id
+    $$;
+    CREATE FUNCTION trip_amendment_private.supplier_cancellation_preview(b public.bookings) RETURNS jsonb
+    LANGUAGE sql AS $$
+      SELECT CASE WHEN EXISTS (SELECT FROM public.fixture_supplier_docs WHERE booking_id=b.id)
+        THEN '[{}]'::jsonb ELSE '[]'::jsonb END
+    $$;
     CREATE FUNCTION simulate_cancelled_passenger() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
     DECLARE refund uuid;
     BEGIN
@@ -115,6 +132,17 @@ try {
           VALUES(NEW.organization_id,1500,'approved') RETURNING id INTO refund;
         UPDATE public.pilgrimage_operations SET refund_id=refund
           WHERE pilgrim_id=NEW.id AND transaction_id=txid_current();
+      END IF;
+      IF EXISTS (SELECT FROM public.pilgrimage_operations WHERE pilgrim_id=NEW.id AND transaction_id=txid_current()
+          AND request->>'scope'='private_room_group') THEN
+        UPDATE public.invoices SET remaining_amount=remaining_amount-NEW.total_price WHERE booking_id=NEW.inventory_booking_id;
+        UPDATE public.bookings SET selling_price=selling_price-NEW.total_price WHERE id=NEW.inventory_booking_id;
+        -- The production trigger inserts a unique close record whenever it sees
+        -- the last traveler leave. A bulk UPDATE would try that twice.
+        IF NOT EXISTS (SELECT FROM public.pilgrims WHERE inventory_booking_id=NEW.inventory_booking_id AND status<>'cancelled') THEN
+          INSERT INTO public.fixture_closed_groups VALUES(NEW.inventory_booking_id);
+          UPDATE public.bookings SET status='cancelled' WHERE id=NEW.inventory_booking_id;
+        END IF;
       END IF;
       RETURN NEW;
     END $$;
@@ -131,21 +159,24 @@ try {
     .replace("'replacement_id', operation.replacement_id);",
       "'replacement_id', operation.replacement_id, 'replacement_booking_id', operation.replacement_booking_id);"));
   await db.exec(migration('amend_room_stock_pilgrimage_passengers.sql'));
+  await db.exec(migration('amend_unpaid_private_pilgrimage_room_groups.sql'));
 
   const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
   const [org, foreign, manager, agent, customer, source, destination, blocked, nonStock,
-    foreignProgram, travelerBooking, takenBooking, privateBooking] =
-    [1, 2, 11, 12, 101, 601, 602, 603, 604, 605, 611, 612, 613].map(id);
+    foreignProgram, groupDestination, travelerBooking, takenBooking, privateBooking] =
+    [1, 2, 11, 12, 101, 601, 602, 603, 604, 605, 606, 611, 612, 613].map(id);
   const rows = async (sql, ...params) => (await db.query(sql, params)).rows;
   const value = async (sql, ...params) => Object.values((await rows(sql, ...params))[0])[0];
-  for (const [program, company, stock] of [[source,org,true], [destination,org,true], [blocked,org,true], [nonStock,org,false], [foreignProgram,foreign,true]]) {
+  for (const [program, company, stock] of [[source,org,true], [destination,org,true], [blocked,org,true],
+    [nonStock,org,false], [foreignProgram,foreign,true], [groupDestination,org,true]]) {
     await db.query(`INSERT INTO public.pilgrimage_programs
       (id,organization_id,name,capacity,makkah_nights,madinah_nights,price_quad,price_double,departure_date,return_date,
        uses_room_inventory,inventory_private_prices)
       VALUES($1,$2,'Synthetic departure',3,3,2,2500,3000,current_date+7,current_date+12,$3,
-        '{"quad":{"method":"fixed","per_person":{"2":3000}}}')`, [program,company,stock]);
+        '{"quad":{"method":"fixed","per_person":{"2":3000}},"double":{"method":"supplement","per_empty_bed":0}}')`, [program,company,stock]);
   }
-  for (const [program, category] of [[source,'quad'],[source,'double'],[destination,'quad'],[blocked,'quad']]) {
+  for (const [program, category] of [[source,'quad'],[source,'double'],[destination,'quad'],[blocked,'quad'],
+    [groupDestination,'quad'],[groupDestination,'double']]) {
     await db.query(`INSERT INTO public.umrah_rooming_groups(organization_id,program_id,city,gender,room_type,group_number,created_by,inventory_room)
       SELECT $1::uuid,$2::uuid,city,'male',$3,n,$4::uuid,true FROM unnest(ARRAY['makkah','madinah']) city
       CROSS JOIN generate_series(1,CASE WHEN $2=$5 AND $3='quad' THEN 2 ELSE 1 END) n`, [org,program,category,manager,source]);
@@ -216,6 +247,67 @@ try {
   assert.equal(await value('SELECT count(*)::int FROM public.refund_requests'), 2);
   assert.equal(await value('SELECT count(*)::int FROM public.pilgrimage_operations'), 2);
   console.log('Room-stock amendment, same-gender placement, atomic rollback, tenant gate, private-family guard and retry passed.');
+
+  const groupAmend = (booking, operationId, target, room = 'quad', total = 6000, reason = 'Family agreed to move') =>
+    value('SELECT public.amend_pilgrimage_private_group($1,$2,$3,$4,$5,$6,$7)', org, booking, id(operationId), target, room, total, reason);
+  const groupStatus = booking => value('SELECT status FROM public.bookings WHERE id=$1', booking);
+  const groupDue = booking => value('SELECT remaining_amount::int FROM public.invoices WHERE booking_id=$1', booking);
+  await db.exec('SET ROLE authenticated');
+  await assert.rejects(groupAmend(privateBooking, 630, foreignProgram), /pilgrimage_transfer_program_unavailable/);
+  await assert.rejects(groupAmend(privateBooking, 630, blocked), /umrah_inventory_rooms_exhausted/);
+  assert.equal(await groupDue(privateBooking), 6000);
+  assert.equal(await groupStatus(privateBooking), 'confirmed');
+  assert.equal(await value('SELECT count(*)::int FROM public.pilgrimage_operations'), 2);
+
+  await db.exec('RESET ROLE');
+  await db.query('UPDATE public.invoices SET total_paid_amount=100,remaining_amount=5900 WHERE booking_id=$1', [privateBooking]);
+  await db.exec('SET ROLE authenticated');
+  await assert.rejects(groupAmend(privateBooking, 630, groupDestination), /pilgrimage_private_group_finance_review_required/);
+  await db.exec('RESET ROLE');
+  await db.query('UPDATE public.invoices SET total_paid_amount=0,remaining_amount=6000 WHERE booking_id=$1', [privateBooking]);
+  await db.query("INSERT INTO public.customer_payments(id,organization_id,booking_id,amount,status) VALUES($1,$2,$3,100,'pending')",
+    [id(640), org, privateBooking]);
+  await db.exec('SET ROLE authenticated');
+  await assert.rejects(groupAmend(privateBooking, 630, groupDestination), /pilgrimage_private_group_finance_review_required/);
+  await db.exec('RESET ROLE');
+  await db.query('DELETE FROM public.customer_payments WHERE id=$1', [id(640)]);
+  await db.query('INSERT INTO fixture_supplier_docs VALUES($1)', [privateBooking]);
+  await db.exec('SET ROLE authenticated');
+  await assert.rejects(groupAmend(privateBooking, 630, groupDestination), /pilgrimage_private_group_finance_review_required/);
+  await db.exec('RESET ROLE');
+  await db.query('DELETE FROM fixture_supplier_docs WHERE booking_id=$1', [privateBooking]);
+  await db.query("UPDATE public.pilgrimage_programs SET inventory_private_prices=jsonb_set(inventory_private_prices,'{quad,per_person,2}','3100') WHERE id=$1",
+    [groupDestination]);
+  await db.exec('SET ROLE authenticated');
+  await assert.rejects(groupAmend(privateBooking, 630, groupDestination), /umrah_inventory_price_changed/);
+  assert.equal(await groupDue(privateBooking), 6000);
+  assert.equal(await groupStatus(privateBooking), 'confirmed');
+  assert.equal(await value("SELECT count(*)::int FROM public.pilgrims WHERE inventory_booking_id=$1 AND status='registered'", privateBooking), 2);
+
+  await db.query("SELECT set_config('test.user_id',$1,false)", [agent]);
+  await assert.rejects(groupAmend(privateBooking, 630, source, 'double'), {code:'42501'});
+  await db.query("SELECT set_config('test.user_id',$1,false)", [manager]);
+  const category = await groupAmend(privateBooking, 630, source, 'double');
+  assert.deepEqual(category, {id:id(630), replacement_booking_id:id(630), passenger_count:2});
+  assert.deepEqual(await groupAmend(privateBooking, 630, source, 'double'), category);
+  await assert.rejects(groupAmend(privateBooking, 630, source, 'double', 6000, 'Another reason'), /pilgrimage_operation_id_used/);
+  assert.equal(await groupDue(privateBooking), 0);
+  assert.equal(await groupStatus(privateBooking), 'cancelled');
+  const movedGroup = await groupAmend(id(630), 631, groupDestination, 'double');
+  assert.equal(movedGroup.passenger_count, 2);
+  const [privateRooms] = await rows(`SELECT count(*)::int AS passengers, count(DISTINCT p.makkah_rooming_group_id)::int AS makkah,
+      count(DISTINCT p.madinah_rooming_group_id)::int AS madinah, array_agg(DISTINCT p.gender ORDER BY p.gender) AS genders,
+      array_agg(DISTINCT m.gender ORDER BY m.gender) AS makkah_modes
+    FROM public.pilgrims p JOIN public.umrah_rooming_groups m ON m.id=p.makkah_rooming_group_id
+    WHERE p.inventory_booking_id=$1 AND p.status='registered'`, id(631));
+  assert.deepEqual(privateRooms, {passengers:2,makkah:1,madinah:1,genders:['female','male'],makkah_modes:['family']});
+  assert.equal(await groupDue(id(631)), 6000);
+  assert.equal(await value("SELECT count(*)::int FROM public.pilgrimage_operations WHERE request->>'group_operation_id'=$1", id(631)), 2);
+  await db.exec('RESET ROLE');
+  assert.equal(await value('SELECT count(*)::int FROM public.fixture_closed_groups'), 2);
+  await db.exec('SET ROLE anon');
+  await assert.rejects(groupAmend(privateBooking, 630, source, 'double'), {code:'42501'});
+  console.log('Whole unpaid private room repricing rejection, stock rollback, equal-price change and move passed.');
 } finally {
   await db.close();
 }
