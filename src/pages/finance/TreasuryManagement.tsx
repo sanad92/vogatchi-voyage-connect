@@ -46,6 +46,7 @@ export default function TreasuryManagement() {
   const canTransfer = hasPermission('banking_transfer') && getPermissionScope('banking_transfer') === 'organization';
   const canCount = hasPermission('banking_transactions') && getPermissionScope('banking_transactions') === 'organization';
   const canReviewReceipts = hasPermission('financial_view') && getPermissionScope('financial_view') === 'organization';
+  const canReviewDeposits = hasPermission('invoices_view') && getPermissionScope('invoices_view') === 'organization';
   const accountsQuery = useTreasuryAccounts();
   const accounts: BankAccount[] = accountsQuery.data ?? [];
   const transfersQuery = useQuery({
@@ -172,8 +173,8 @@ export default function TreasuryManagement() {
       </Card>
 
       {orgId && <CashTreasuryCounts key={orgId} orgId={orgId} accounts={accounts} canRecord={canCount} />}
-      {orgId && canReviewReceipts && <TreasuryReceiptReview key={`receipt-review-${orgId}`} orgId={orgId}
-        canViewBookings={hasPermission('bookings_view')} canViewInvoices={hasPermission('invoices_view')} />}
+      {orgId && canReviewReceipts && <TreasuryReceiptReview key={`receipt-review-${orgId}-${canReviewDeposits}`} orgId={orgId}
+        canViewBookings={hasPermission('bookings_view')} canViewInvoices={hasPermission('invoices_view')} canReviewDeposits={canReviewDeposits} />}
 
       <Card>
         <CardHeader><CardTitle className="text-base">أحدث التحويلات الداخلية</CardTitle></CardHeader>

@@ -78,6 +78,7 @@ jobs:
           node scripts/verify-customer-marketing-permissions.mjs
           node scripts/verify-booking-automation-access.mjs
           node scripts/verify-sales-customer-context.mjs
+          node scripts/verify-legacy-booking-links.mjs
           node scripts/verify-public-booking-intake.mjs
           node scripts/verify-scoped-report-rows.mjs
           node scripts/verify-dom-translation-state.mjs

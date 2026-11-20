@@ -1,4 +1,4 @@
-CREATE FUNCTION public.list_treasury_deposit_review(_org uuid, _offset integer DEFAULT 0)
+CREATE OR REPLACE FUNCTION public.list_treasury_deposit_review(_org uuid, _offset integer DEFAULT 0)
 RETURNS TABLE (
   movement_id uuid,
   payment_id uuid,
@@ -19,6 +19,10 @@ BEGIN
   IF auth.uid() IS NULL OR NOT coalesce(public.user_belongs_to_org(auth.uid(), _org), false)
     OR NOT EXISTS (
       SELECT 1 FROM public._org_permission_state(_org, auth.uid(), 'financial_view') p
+      WHERE p.granted AND p.data_scope = 'organization'
+    ) OR NOT EXISTS (
+      -- Restricted B2B payments also require company-wide invoice access.
+      SELECT 1 FROM public._org_permission_state(_org, auth.uid(), 'invoices_view') p
       WHERE p.granted AND p.data_scope = 'organization'
     ) THEN
     RAISE EXCEPTION 'treasury_receipt_review_denied' USING ERRCODE = '42501';

@@ -14,6 +14,7 @@ const foreign = id(7);
 const booking = id(8);
 const invoice = id(9);
 const foreignBooking = id(10);
+const financeOnly = id(93);
 
 try {
   await db.exec(`
@@ -28,7 +29,8 @@ try {
     AS 'SELECT EXISTS (SELECT 1 FROM public.members WHERE user_id=$1 AND organization_id=$2)';
     CREATE FUNCTION public._org_permission_state(uuid,uuid,text) RETURNS TABLE(granted boolean, data_scope text)
     LANGUAGE sql STABLE SECURITY DEFINER
-    AS 'SELECT $3 = ''financial_view'', scope FROM public.members WHERE organization_id=$1 AND user_id=$2';
+    AS 'SELECT ($3 = ''financial_view'' OR ($3 = ''invoices_view'' AND $2 <> ''${financeOnly}''::uuid)), scope
+      FROM public.members WHERE organization_id=$1 AND user_id=$2';
     CREATE TABLE public.bank_accounts (id uuid, organization_id uuid, account_name text, currency text);
     CREATE TABLE public.bookings (id uuid, organization_id uuid, booking_number text);
     CREATE TABLE public.invoices (id uuid, organization_id uuid, invoice_number text, booking_id uuid);
@@ -46,13 +48,16 @@ try {
     CREATE POLICY fixture_payments ON public.customer_payments FOR SELECT TO authenticated
     USING (public.user_belongs_to_org(auth.uid(), organization_id));
     GRANT SELECT ON public.customer_payments, public.bank_account_transactions, public.bank_accounts, public.bookings, public.invoices TO authenticated;
-    INSERT INTO public.members VALUES ('${org}', '${owner}', 'organization'), ('${org}', '${scoped}', 'own'), ('${otherOrg}', '${foreign}', 'organization');
+    INSERT INTO public.members VALUES ('${org}', '${owner}', 'organization'), ('${org}', '${scoped}', 'own'),
+      ('${otherOrg}', '${foreign}', 'organization'), ('${org}', '${financeOnly}', 'organization');
     INSERT INTO public.bank_accounts VALUES ('${account}', '${org}', 'Office cash', 'EGP'), ('${wrongAccount}', '${otherOrg}', 'Other cash', 'EGP');
     INSERT INTO public.bookings VALUES ('${booking}', '${org}', 'BK-TEST'), ('${foreignBooking}', '${otherOrg}', 'OTHER-BOOKING');
     INSERT INTO public.invoices VALUES ('${invoice}', '${org}', 'INV-TEST', '${booking}');
   `);
   await db.exec(readFileSync(new URL('../supabase/migrations/20261119173503_list_receipts_for_treasury_review.sql', import.meta.url), 'utf8'));
-  await db.exec(readFileSync(new URL('../supabase/migrations/20261119232020_review_linked_customer_receipt_deposits.sql', import.meta.url), 'utf8'));
+  const depositMigration = readFileSync(new URL('../supabase/migrations/20261119232020_review_linked_customer_receipt_deposits.sql', import.meta.url), 'utf8');
+  await db.exec(depositMigration);
+  await db.exec(depositMigration);
 
   const receipt = (number, { target = account, reference = 'R-' + number, company = org, status = 'completed', method = 'cash', demo = false, bookingId = null } = {}) =>
     db.query(`INSERT INTO public.customer_payments VALUES
@@ -121,6 +126,9 @@ try {
   assert.equal((await list(org, 50)).rows.length, 18);
   await assert.rejects(list(otherOrg), /treasury_receipt_review_denied/);
   await assert.rejects(deposits(otherOrg), /treasury_receipt_review_denied/);
+  await as(financeOnly);
+  assert.equal((await list()).rows.length, 51);
+  await assert.rejects(deposits(), /treasury_receipt_review_denied/);
   await as(scoped);
   await assert.rejects(list(), /treasury_receipt_review_denied/);
   await assert.rejects(deposits(), /treasury_receipt_review_denied/);
@@ -128,6 +136,7 @@ try {
   await assert.rejects(list(), /treasury_receipt_review_denied/);
   await db.exec('RESET ROLE; SET ROLE anon');
   await assert.rejects(list(), /permission denied/);
+  await assert.rejects(deposits(), /permission denied/);
   console.log('Treasury review isolates company data, flags ambiguous or missing deposits, and finds orphaned or mismatched linked movements.');
 } finally {
   await db.close();

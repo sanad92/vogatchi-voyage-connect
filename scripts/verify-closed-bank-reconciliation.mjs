@@ -46,6 +46,7 @@ try {
   await db.exec(`CREATE TRIGGER trg_bank_balance_update AFTER INSERT OR UPDATE OR DELETE
     ON public.bank_account_transactions FOR EACH ROW EXECUTE FUNCTION public.update_bank_balance_on_transaction()`);
   await db.exec(migration);
+  await db.exec(migration);
 
   const inReviewMovement = (await withdraw('2026-11-10')).rows[0].id;
   const close = () => db.query('SELECT public.close_bank_reconciliation($1) AS result', [session]);

@@ -2,7 +2,7 @@
 CREATE INDEX IF NOT EXISTS bank_reconciliation_closed_end_idx
   ON public.bank_reconciliation_sessions (bank_account_id, statement_end) WHERE status = 'closed';
 
-CREATE FUNCTION public.guard_closed_bank_reconciliation_movements()
+CREATE OR REPLACE FUNCTION public.guard_closed_bank_reconciliation_movements()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $function$
 DECLARE
@@ -42,7 +42,7 @@ END;
 $function$;
 
 REVOKE ALL ON FUNCTION public.guard_closed_bank_reconciliation_movements() FROM PUBLIC, anon, authenticated;
-CREATE TRIGGER guard_closed_bank_reconciliation_movements
+CREATE OR REPLACE TRIGGER guard_closed_bank_reconciliation_movements
   BEFORE INSERT OR UPDATE OF bank_account_id, transaction_date, created_at, amount, transaction_type, currency, organization_id
     OR DELETE ON public.bank_account_transactions
   FOR EACH ROW EXECUTE FUNCTION public.guard_closed_bank_reconciliation_movements();

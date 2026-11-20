@@ -35,17 +35,18 @@ const reviewReasons: Record<ReceiptReview['reason'], string> = {
 };
 
 export function TreasuryReceiptReview({
-  orgId, canViewBookings, canViewInvoices,
+  orgId, canViewBookings, canViewInvoices, canReviewDeposits,
 }: {
   orgId: string;
   canViewBookings: boolean;
   canViewInvoices: boolean;
+  canReviewDeposits: boolean;
 }) {
   const [offset, setOffset] = useState(0);
   const [direction, setDirection] = useState<'receipts' | 'deposits'>('receipts');
-  const isDepositReview = direction === 'deposits';
+  const isDepositReview = canReviewDeposits && direction === 'deposits';
   const review = useQuery({
-    queryKey: ['treasury-receipt-review', orgId, direction, offset],
+    queryKey: ['treasury-receipt-review', orgId, isDepositReview, offset],
     queryFn: async () => {
       const rpc = isDepositReview ? 'list_treasury_deposit_review' : 'list_treasury_receipt_review';
       const { data, error } = await callUntypedRpc<ReceiptReview[]>(rpc, { _org: orgId, _offset: offset });
@@ -64,12 +65,14 @@ export function TreasuryReceiptReview({
         <CardDescription>طابق الدفعة مع الإيصال أو كشف الحساب قبل اعتماد أي تسوية.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant={isDepositReview ? 'outline' : 'default'} aria-pressed={!isDepositReview}
-            onClick={() => { setDirection('receipts'); setOffset(0); }}>دفعات تحتاج مراجعة</Button>
-          <Button type="button" size="sm" variant={isDepositReview ? 'default' : 'outline'} aria-pressed={isDepositReview}
-            onClick={() => { setDirection('deposits'); setOffset(0); }}>إيداعات التحصيل المرتبطة</Button>
-        </div>
+        {canReviewDeposits && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant={isDepositReview ? 'outline' : 'default'} aria-pressed={!isDepositReview}
+              onClick={() => { setDirection('receipts'); setOffset(0); }}>دفعات تحتاج مراجعة</Button>
+            <Button type="button" size="sm" variant={isDepositReview ? 'default' : 'outline'} aria-pressed={isDepositReview}
+              onClick={() => { setDirection('deposits'); setOffset(0); }}>إيداعات التحصيل المرتبطة</Button>
+          </div>
+        )}
         {review.isLoading ? (
           <p className="py-6 text-center text-muted-foreground">جارٍ التحميل…</p>
         ) : review.isError ? (

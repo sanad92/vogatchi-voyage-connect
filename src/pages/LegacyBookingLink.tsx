@@ -6,14 +6,15 @@ import { supabase } from '@/integrations/supabase/client';
 
 type LegacyBookingType = 'hotel' | 'flight';
 
-async function resolveBookingId(orgId: string, id: string, type: LegacyBookingType) {
+export async function resolveBookingId(orgId: string, id: string, type: LegacyBookingType) {
   const tablename = type === 'hotel' ? 'hotel_bookings' : 'flight_bookings';
-  const { data: canonical, error: canonicalError } = await supabase.from('bookings')
+  const findCanonical = (bookingId: string) => supabase.from('bookings')
     .select('id')
     .eq('organization_id', orgId)
     .eq('booking_type', type)
-    .or(`id.eq.${id},and(legacy_table.eq.${tablename},legacy_id.eq.${id})`)
+    .eq('id', bookingId)
     .maybeSingle();
+  const { data: canonical, error: canonicalError } = await findCanonical(id);
   if (canonicalError) throw canonicalError;
   if (canonical) return { canonicalId: canonical.id };
 
@@ -30,22 +31,30 @@ async function resolveBookingId(orgId: string, id: string, type: LegacyBookingTy
       .maybeSingle();
   if (result.error) throw result.error;
   const legacy = result.data;
+
+  if (legacy?.booking_id) {
+    const { data: parent, error: parentError } = await findCanonical(legacy.booking_id);
+    if (parentError) throw parentError;
+    if (parent) return { canonicalId: parent.id };
+  }
+
+  // Several bookings can refer to the same historical ID. A conflicting alias
+  // must not redirect the user to an arbitrary canonical booking.
+  const { data: aliases, error: aliasError } = await supabase.from('bookings')
+    .select('id')
+    .eq('organization_id', orgId)
+    .eq('booking_type', type)
+    .eq('legacy_table', tablename)
+    .eq('legacy_id', id)
+    .limit(2);
+  if (aliasError) throw aliasError;
+  if (aliases?.length === 1) return { canonicalId: aliases[0].id };
   if (!legacy) return null;
 
   const details = 'internal_booking_number' in legacy
     ? { reference: legacy.internal_booking_number, service: legacy.hotel_name, start: legacy.check_in_date, end: legacy.check_out_date }
     : { reference: legacy.booking_reference, service: legacy.flight_number, start: legacy.departure_date, end: legacy.arrival_date };
-  const legacyDetails = { ...details, customer: legacy.customer_name };
-  if (!legacy.booking_id) return { details: legacyDetails };
-
-  const { data: parent, error: parentError } = await supabase.from('bookings')
-    .select('id')
-    .eq('organization_id', orgId)
-    .eq('booking_type', type)
-    .eq('id', legacy.booking_id)
-    .maybeSingle();
-  if (parentError) throw parentError;
-  return parent ? { canonicalId: parent.id } : { details: legacyDetails };
+  return { details: { ...details, customer: legacy.customer_name } };
 }
 
 export function LegacyBookingLink({ type }: { type: LegacyBookingType }) {
