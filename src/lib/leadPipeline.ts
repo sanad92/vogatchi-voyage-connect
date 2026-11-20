@@ -12,12 +12,18 @@ export const LEAD_SOURCE_LABELS: Record<string, string> = {
   whatsapp: 'واتساب',
   website: 'الموقع',
   facebook: 'فيسبوك',
+  meta_lead_ads: 'نماذج إعلانات Meta',
   instagram: 'إنستجرام',
   referral: 'ترشيح',
   walk_in: 'زيارة مباشرة',
   repeat: 'عميل متكرر',
   phone: 'مكالمة',
   other: 'أخرى',
+};
+
+export const getLeadCampaignLabel = (campaign: string | null | undefined) => {
+  const value = campaign?.trim();
+  return value?.startsWith('pilgrimage:') ? 'طلبات اهتمام العمرة' : value || null;
 };
 
 export const LEAD_ACTIVITY_LABELS: Record<SopLeadActivity['activity_type'], string> = {

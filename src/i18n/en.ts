@@ -1,5 +1,14 @@
 /** English translations keyed by the Arabic source string. Missing keys fall back to Arabic. */
 export const EN_DICTIONARY: Record<string, string> = {
+  "طلب الإلغاء بانتظار المراجعة المالية": "Cancellation request awaiting finance review",
+  "رُفض طلب الإلغاء": "Cancellation request declined",
+  "اعتُمد الإلغاء وحُررت المقاعد": "Cancellation approved and seats released",
+  "أُقفلت بعد الإلغاء": "Closed after cancellation",
+  "حالة الإلغاء": "Cancellation status",
+  "مرجع الإشعار الدائن": "Credit note reference",
+  "تم صرف الاسترداد": "Refund paid",
+  "مستحق للاسترداد": "Refund due",
+  "تحديث الاتفاقات": "Refresh agreements",
   "دفعات تحتاج مراجعة": "Payments to review",
   "طابق الدفعة مع الإيصال أو كشف الحساب قبل اعتماد أي تسوية.": "Compare each payment with its receipt or bank statement before approving an adjustment.",
   "تعذّر تحميل الدفعات للمراجعة": "Could not load payments for review",

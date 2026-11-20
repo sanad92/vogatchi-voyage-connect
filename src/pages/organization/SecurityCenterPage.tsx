@@ -7,12 +7,15 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Save, Key, Lock } from 'lucide-react';
-import { useSecuritySettings } from '@/hooks/useSecuritySettings';
+import { useSecuritySettings, type SecuritySettings } from '@/hooks/useSecuritySettings';
+import { BROWSER_SESSION_INACTIVITY_MINUTES } from '@/lib/browserSessionActivity';
+
+type EditableSecuritySettings = Pick<SecuritySettings, 'mfa_required' | 'password_policy'>;
 
 export default function SecurityCenterPage() {
   const { data, save, setPin } = useSecuritySettings();
-  const [form, setForm] = useState<any>({
-    mfa_required: false, session_timeout_min: 480, ip_allowlist: [],
+  const [form, setForm] = useState<EditableSecuritySettings>({
+    mfa_required: false,
     password_policy: { min_length: 8, require_upper: true, require_number: true, require_symbol: false },
   });
   const [pin, setPinValue] = useState('');
@@ -20,7 +23,7 @@ export default function SecurityCenterPage() {
 
   useEffect(() => {
     if (data) {
-      setForm(data);
+      setForm({ mfa_required: data.mfa_required, password_policy: data.password_policy });
       setIpList((data.ip_allowlist ?? []).join('\n'));
     }
   }, [data]);
@@ -48,8 +51,9 @@ export default function SecurityCenterPage() {
               <Switch checked={!!form.mfa_required} onCheckedChange={(v) => setForm({ ...form, mfa_required: v })} />
             </div>
             <div>
-              <Label>مدة الجلسة (دقيقة)</Label>
-              <Input type="number" value={form.session_timeout_min ?? 480} onChange={(e) => setForm({ ...form, session_timeout_min: parseInt(e.target.value) || 480 })} />
+              <Label htmlFor="browser-session-timeout">مهلة عدم النشاط في المتصفح (بالدقائق)</Label>
+              <Input id="browser-session-timeout" type="number" value={BROWSER_SESSION_INACTIVITY_MINUTES} readOnly />
+              <p className="mt-1 text-xs text-muted-foreground">تُطبّق المهلة على جلسات المتصفح في كل المؤسسات.</p>
             </div>
             <div className="border-t pt-3 space-y-2">
               <Label className="text-xs font-semibold">سياسة كلمة المرور</Label>

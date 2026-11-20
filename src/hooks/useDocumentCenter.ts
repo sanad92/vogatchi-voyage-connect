@@ -132,14 +132,9 @@ export function useDocumentCenter(filter: DocumentFilter = {}) {
       if (!orgId) throw new Error('No organization');
       const { data: u } = await supabase.auth.getUser();
       const safeName = input.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const ts = Date.now();
-      const path = `${orgId}/uploads/${input.category}/${ts}_${safeName}`;
+      const path = `${orgId}/uploads/${input.category}/${crypto.randomUUID()}_${safeName}`;
 
-      const { error: upErr } = await supabase.storage
-        .from('documents')
-        .upload(path, input.file, { contentType: input.file.type, upsert: false });
-      if (upErr) throw upErr;
-
+      // Storage verifies read permissions when creating the object.
       const { data, error } = await (supabase as any)
         .from('documents')
         .insert({
@@ -163,6 +158,14 @@ export function useDocumentCenter(filter: DocumentFilter = {}) {
         .single();
       if (error) throw error;
 
+      const { error: upErr } = await supabase.storage
+        .from('documents')
+        .upload(path, input.file, { contentType: input.file.type, upsert: false });
+      if (upErr) {
+        await (supabase as any).from('documents').delete().eq('id', data.id);
+        throw upErr;
+      }
+
       await logAudit({
         documentId: data.id,
         organizationId: orgId,
@@ -181,17 +184,23 @@ export function useDocumentCenter(filter: DocumentFilter = {}) {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const doc = listQuery.data?.find((d) => d.id === id);
-      if (doc?.file_path) {
-        await supabase.storage.from('documents').remove([doc.file_path]);
+      if (!orgId) throw new Error('اختر المؤسسة أولًا.');
+      const { data: doc, error: lookupError } = await supabase.from('documents')
+        .select('file_path').eq('id', id).eq('organization_id', orgId).single();
+      if (lookupError) throw lookupError;
+      if (doc.file_path) {
+        const { data: removedFiles, error } = await supabase.storage.from('documents').remove([doc.file_path]);
+        if (error) throw error;
+        if (!removedFiles?.length) throw new Error('تعذّر تأكيد حذف الملف من التخزين.');
       }
-      const { error } = await (supabase as any).from('documents').delete().eq('id', id);
+      const { error } = await supabase.from('documents').delete()
+        .eq('id', id).eq('organization_id', orgId).select('id').single();
       if (error) throw error;
-      if (orgId) await logAudit({ documentId: id, organizationId: orgId, action: 'deleted' });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['doc-center', orgId] });
       qc.invalidateQueries({ queryKey: ['doc-center-scope'] });
+      qc.invalidateQueries({ queryKey: ['document-deletions', orgId] });
       toast.success('تم الحذف');
     },
     onError: (e: any) => toast.error(e.message || 'فشل الحذف'),
@@ -263,18 +272,36 @@ export function useDocumentCenter(filter: DocumentFilter = {}) {
 }
 
 export function useDocumentAudit(documentId?: string) {
+  const orgId = useOrgId();
   return useQuery({
-    queryKey: ['doc-audit', documentId],
-    enabled: !!documentId,
+    queryKey: ['doc-audit', orgId, documentId],
+    enabled: Boolean(orgId && documentId),
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('document_audit_log')
         .select('*')
-        .eq('document_id', documentId)
+        .eq('organization_id', orgId!)
+        .eq('document_id', documentId!)
         .order('created_at', { ascending: false })
         .limit(100);
       if (error) throw error;
       return data ?? [];
+    },
+  });
+}
+
+export function useDocumentDeletionAudit(enabled: boolean) {
+  const orgId = useOrgId();
+  return useQuery({
+    queryKey: ['document-deletions', orgId],
+    enabled: Boolean(orgId && enabled),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('document_audit_log')
+        .select('id, document_id, actor_id, created_at')
+        .eq('organization_id', orgId!).eq('action', 'deleted')
+        .order('created_at', { ascending: false }).order('id', { ascending: false }).limit(100);
+      if (error) throw error;
+      return data;
     },
   });
 }
