@@ -30,18 +30,6 @@ export const useSecuritySettings = () => {
     enabled: !!orgId,
   });
 
-  const save = useMutation({
-    mutationFn: async (patch: Partial<SecuritySettings>) => {
-      if (!orgId) throw new Error('no org');
-      const { error } = await (supabase as any)
-        .from('security_settings')
-        .upsert({ organization_id: orgId, ...patch }, { onConflict: 'organization_id' });
-      if (error) throw error;
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['security-settings'] }); toast.success('تم حفظ إعدادات الأمان'); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
   const setPin = useMutation({
     mutationFn: async (pin: string) => {
       if (!orgId) throw new Error('no org');
@@ -52,5 +40,5 @@ export const useSecuritySettings = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  return { ...query, save, setPin };
+  return { ...query, setPin };
 };
