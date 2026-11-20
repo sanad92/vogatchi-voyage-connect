@@ -22,14 +22,25 @@ type Agreement = {
   capacity: number;
   status: string;
   invoice: { number: string; paid: number; remaining: number; status: string } | null;
+  cancellation?: {
+    status: 'requested' | 'rejected' | 'approved';
+    credit_note: string | null;
+    refund: { status: 'due' | 'paid'; amount: number; currency: string } | null;
+  } | null;
   roster: { id: string; name: string; room_type: string | null }[];
 };
 
 const roomNames: Record<string, string> = { single: 'فردية', double: 'ثنائية', triple: 'ثلاثية', quad: 'رباعية' };
+const cancellationLabels = {
+  requested: 'طلب الإلغاء بانتظار المراجعة المالية',
+  rejected: 'رُفض طلب الإلغاء',
+  approved: 'اعتُمد الإلغاء وحُررت المقاعد',
+};
 const money = (amount: number, currency: string) => `${Number(amount).toLocaleString('ar-EG')} ${currency}`;
 
 function AgencyAgreement({ agreement, userId }: { agreement: Agreement; userId: string }) {
   const queryClient = useQueryClient();
+  const { cancellation } = agreement;
   const [name, setName] = useState('');
   const [room, setRoom] = useState('none');
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
@@ -67,9 +78,19 @@ function AgencyAgreement({ agreement, userId }: { agreement: Agreement; userId: 
             <div><dt>المحصّل</dt><dd className="font-medium">{money(agreement.invoice.paid, agreement.currency)}</dd></div>
             <div><dt>المتبقي على الفاتورة {agreement.invoice.number}</dt>
               <dd className="font-medium">{money(agreement.invoice.remaining, agreement.currency)}</dd></div>
+            {agreement.invoice.status === 'cancelled' && <div><dt>حالة الفاتورة</dt>
+              <dd className="font-medium">أُقفلت بعد الإلغاء</dd></div>}
           </> : <div><dt>الفاتورة</dt><dd>لم تصدر بعد</dd></div>}
         </dl>
-        {agreement.status === 'voided' && <p className="text-sm text-muted-foreground">الاتفاق ملغى</p>}
+        {cancellation ? <dl className="space-y-2 rounded-lg border p-4 text-sm">
+          <div><dt className="text-muted-foreground">حالة الإلغاء</dt>
+            <dd className="font-medium">{cancellationLabels[cancellation.status]}</dd></div>
+          {cancellation.credit_note && <div><dt className="text-muted-foreground">مرجع الإشعار الدائن</dt>
+            <dd className="font-medium break-all" dir="ltr">{cancellation.credit_note}</dd></div>}
+          {cancellation.refund && <div><dt className="text-muted-foreground">
+            {cancellation.refund.status === 'paid' ? 'تم صرف الاسترداد' : 'مستحق للاسترداد'}
+          </dt><dd className="font-medium">{money(cancellation.refund.amount, cancellation.refund.currency)}</dd></div>}
+        </dl> : agreement.status === 'voided' && <p className="text-sm text-muted-foreground">الاتفاق ملغى</p>}
         <div>
           <h2 className="font-semibold">كشف المسافرين</h2>
           {agreement.roster.length
@@ -107,6 +128,8 @@ export default function PilgrimageAgencyPortal() {
   const query = useQuery({
     queryKey: ['pilgrimage-agency-portal', user?.id],
     enabled: !!user && profile?.is_active !== false,
+    refetchOnWindowFocus: true,
+    staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await callUntypedRpc<Agreement[]>('get_pilgrimage_agency_portal');
       if (error) throw new Error(error.message);
@@ -121,6 +144,8 @@ export default function PilgrimageAgencyPortal() {
         <h1 className="text-2xl font-bold">بوابة وكيل الحج والعمرة</h1>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline"><Link to="/">Safar ERP</Link></Button>
+          {user && profile?.is_active !== false && <Button type="button" variant="outline" disabled={query.isFetching}
+            onClick={() => void query.refetch()}>تحديث الاتفاقات</Button>}
           {user && <Button type="button" variant="ghost" onClick={() => void signOut()}>تسجيل الخروج</Button>}
         </div>
       </div>

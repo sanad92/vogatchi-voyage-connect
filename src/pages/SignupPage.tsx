@@ -22,6 +22,7 @@ const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
   const { signUp, loading, isLoggedIn } = useOptimizedAuth();
   const { hasOrganization, loading: orgLoading } = useOrganization();
   const [searchParams] = useSearchParams();
@@ -75,6 +76,9 @@ const SignupPage = () => {
       } else {
         setError('فشل في إنشاء الحساب. يرجى المحاولة مرة أخرى.');
       }
+    } else if (result.confirmationRequired) {
+      setConfirmationEmail(email.trim().toLowerCase());
+      setPassword('');
     }
   };
 
@@ -96,7 +100,15 @@ const SignupPage = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSignUp} className="space-y-5">
+        {confirmationEmail ? (
+          <Alert role="status">
+            <AlertDescription className="space-y-3">
+              <p className="font-semibold">راجع بريد العمل لإكمال التسجيل</p>
+              <p>افتح رسالة التأكيد على <bdi>{confirmationEmail}</bdi> وتابع من الرابط. لو الرسالة مش ظاهرة، راجع البريد غير المرغوب فيه.</p>
+              <Button type="button" variant="outline" onClick={() => setConfirmationEmail(null)}>تغيير البريد</Button>
+            </AlertDescription>
+          </Alert>
+        ) : <form onSubmit={handleSignUp} className="space-y-5">
           {error && (
             <Alert className="border-destructive/50 bg-destructive/10">
               <AlertDescription className="text-destructive">{error}</AlertDescription>
@@ -187,7 +199,7 @@ const SignupPage = () => {
               </div>
             )}
           </Button>
-        </form>
+        </form>}
 
         <div className="text-center text-sm text-muted-foreground">
           لديك حساب بالفعل؟{' '}

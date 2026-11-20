@@ -13389,6 +13389,7 @@ export type Database = {
       subscriptions: {
         Row: {
           activated_by: string | null
+          cancellation_scheduled_at: string | null
           created_at: string
           expires_at: string | null
           grace_period_days: number | null
@@ -13405,6 +13406,7 @@ export type Database = {
         }
         Insert: {
           activated_by?: string | null
+          cancellation_scheduled_at?: string | null
           created_at?: string
           expires_at?: string | null
           grace_period_days?: number | null
@@ -13421,6 +13423,7 @@ export type Database = {
         }
         Update: {
           activated_by?: string | null
+          cancellation_scheduled_at?: string | null
           created_at?: string
           expires_at?: string | null
           grace_period_days?: number | null
@@ -19458,6 +19461,16 @@ export type Database = {
           target_table: string
         }[]
       }
+      get_subscription_checkout_status: {
+        Args: { p_checkout_id: string }
+        Returns: {
+          status: string
+          amount_cents: number
+          currency: string
+          transaction_id: string | null
+          activated_at: string | null
+        }[]
+      }
       platform_billing_followup: {
         Args: never
         Returns: {
@@ -19644,6 +19657,10 @@ export type Database = {
           _sale_id: string
           _terms: string
         }
+        Returns: string
+      }
+      platform_extend_subscription: {
+        Args: { p_subscription_id: string; p_days: number }
         Returns: string
       }
       prepare_subscription_checkout: {
@@ -20404,6 +20421,10 @@ export type Database = {
           _to: Database["public"]["Enums"]["sop_lead_stage"]
         }
         Returns: Json
+      }
+      schedule_subscription_cancellation: {
+        Args: { p_organization_id: string; p_subscription_id: string }
+        Returns: string
       }
       start_impersonation: {
         Args: { _org_pin: string; _reason: string; _target_org_id: string }

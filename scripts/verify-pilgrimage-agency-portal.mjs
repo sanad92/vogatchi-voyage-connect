@@ -48,6 +48,7 @@ INSERT INTO invoices(organization_id, pilgrimage_b2b_agreement_id, invoice_numbe
 const original = readFileSync('scripts/deploy-pilgrimage-b2b-roster.sql', 'utf8');
 await db.exec(original.slice(original.indexOf('CREATE OR REPLACE FUNCTION public.add_pilgrimage_b2b_roster_name'), original.indexOf('CREATE OR REPLACE FUNCTION public.remove_pilgrimage_b2b_roster_name')));
 await db.exec(readFileSync('supabase/migrations/20261113233607_pilgrimage_agency_portal.sql', 'utf8'));
+await db.exec(readFileSync('supabase/migrations/20261119231332_show_agency_cancellation_refunds.sql', 'utf8'));
 await db.exec(`INSERT INTO pilgrimage_portal_private.agreement_access(agreement_id,email,granted_by)
  VALUES ('${otherAgreement}', 'agent@two.example', '${admin}')`);
 
@@ -66,6 +67,7 @@ let data = await list();
 assert.equal(data.length, 1);
 assert.equal(data[0].invoice.remaining, 13000);
 assert.equal(data[0].capacity, 2);
+assert.equal(data[0].cancellation, null);
 await assert.rejects(manage(agreement, 'agent@two.example'), { code: '42501' });
 await assert.rejects(add(otherAgreement, uid(20), 'Wrong tenant passenger'), { code: '42501' });
 const first = await add(agreement, uid(21), 'First passenger');

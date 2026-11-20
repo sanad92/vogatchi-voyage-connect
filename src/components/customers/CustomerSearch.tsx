@@ -46,6 +46,7 @@ const CustomerSearch = ({ onCustomerSelect, onNewCustomer, selectedCustomer }: C
         .from('customers')
         .select('id, name, phone, email, nationality')
         .eq('organization_id', orgId)
+        .is('archived_at', null)
         .or(`name.ilike.%${sanitizeSearchTerm(debouncedSearchTerm)}%,phone.ilike.%${sanitizeSearchTerm(debouncedSearchTerm)}%,email.ilike.%${sanitizeSearchTerm(debouncedSearchTerm)}%`)
         .order('name')
         .limit(50); // حد أقصى من الخادم

@@ -66,7 +66,9 @@ export default function QuoteDetails() {
   const canEdit = hasPermission('quotes_edit');
   const approved = !!(quote as any).review_approved_at;
   const eligibleStatus = ['draft', 'sent', 'accepted'].includes(quote.status);
-  const canConvert = eligibleStatus && hasAllPermissions(['quotes_view', 'quotes_edit', 'bookings_create', 'invoices_create']);
+  const canReviseItinerary = canEdit && hasPermission('quotes_create')
+    && items.length > 0 && items.every(item => item.details?.itinerary_builder === true);
+  const canConvert = eligibleStatus && Boolean(quote.customer_id) && hasAllPermissions(['quotes_view', 'quotes_edit', 'bookings_create', 'invoices_create']);
 
   const handleConvert = async () => {
     if (!canConvert || convertToBooking.isPending) return;
@@ -114,7 +116,12 @@ export default function QuoteDetails() {
         </div>
 
         <div className="flex flex-wrap gap-2 print:hidden">
-          {canEdit && items.length > 0 && items.every(item => item.details?.itinerary_builder === true) && <Button variant="outline" size="sm" onClick={() => navigate('/quotes/itinerary-builder?revise=' + encodeURIComponent(quote.id))}><Pencil className="h-4 w-4 ml-1" />نسخة قابلة للتعديل</Button>}
+          {canReviseItinerary && (
+            <Button variant="outline" size="sm" onClick={() => navigate('/quotes/itinerary-builder?revise=' + encodeURIComponent(quote.id))}>
+              <Pencil className="h-4 w-4 ml-1" />
+              {quote.customer_id ? 'نسخة قابلة للتعديل' : 'ربط عميل في نسخة جديدة'}
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4 ml-1" />طباعة نسخة العميل</Button>
           {hasPermission('whatsapp_view') && (quote.status !== 'draft' || sourceConversationId) &&
             <QuoteWhatsAppFollowupButton quote={quote} sourceConversationId={sourceConversationId} />}
@@ -154,6 +161,7 @@ export default function QuoteDetails() {
           <CardHeader><CardTitle className="text-base">بيانات العميل</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">الاسم</span><span>{quote.customer_name || quote.customers?.name}</span></div>
+            {!quote.customer_id && eligibleStatus && <p className="text-muted-foreground">يلزم ربط عميل مسجّل بالشركة قبل تحويل العرض إلى حجز.</p>}
             {quote.customers?.phone && <div className="flex justify-between"><span className="text-muted-foreground">الهاتف</span><span dir="ltr">{quote.customers.phone}</span></div>}
             {quote.customers?.email && <div className="flex justify-between"><span className="text-muted-foreground">البريد</span><span>{quote.customers.email}</span></div>}
           </CardContent>

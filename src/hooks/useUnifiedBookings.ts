@@ -45,6 +45,7 @@ export interface UnifiedBooking {
 export interface BookingFilters {
   type?: BookingType;
   status?: BookingStatus;
+  customerId?: string | null;
   search?: string;
   startDate?: string;
   endDate?: string;
@@ -80,11 +81,11 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
   const { user } = useOptimizedAuth();
   const creationRequest = useRef<BookingCreationRequest | null>(null);
   const queryClient = useQueryClient();
-  const { type, status, search, startDate, endDate, page = 1, pageSize = 20 } = filters;
+  const { type, status, customerId, search, startDate, endDate, page = 1, pageSize = 20 } = filters;
 
   const searchTerm = sanitizeSearchTerm(search ?? '');
   const bookingsQuery = useQuery({
-    queryKey: ['unified-bookings', orgId, type, status, searchTerm, startDate, endDate, page, pageSize],
+    queryKey: ['unified-bookings', orgId, type, status, searchTerm, startDate, endDate, page, pageSize, customerId],
     queryFn: async () => {
       let q = supabase
         .from('bookings')
@@ -93,6 +94,7 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
       if (orgId) q = q.eq('organization_id', orgId);
       if (type) q = q.eq('booking_type', type);
       if (status) q = q.eq('status', status);
+      if (customerId) q = q.eq('customer_id', customerId);
       if (startDate) q = q.gte('start_date', startDate);
       if (endDate) q = q.lte('start_date', endDate);
       if (searchTerm) {
@@ -109,7 +111,7 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
       if (error) throw error;
       return { data: data as UnifiedBooking[], count: count || 0 };
     },
-    enabled: !!orgId,
+    enabled: !!orgId && customerId !== null,
   });
 
   const createBooking = useMutation({

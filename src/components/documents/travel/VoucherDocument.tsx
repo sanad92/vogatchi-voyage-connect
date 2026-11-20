@@ -1,9 +1,11 @@
 import { forwardRef } from 'react';
+import type { bookingVoucherState } from '@/lib/bookingVoucher';
 import type { VoucherDocModel } from '@/lib/travelDocuments';
 import { DocFooter, DocHeader, DocSectionTitle, FactGrid, ServiceSectionCard } from './DocumentParts';
 
 interface Props {
   model: VoucherDocModel;
+  state: ReturnType<typeof bookingVoucherState>;
 }
 
 /**
@@ -11,13 +13,14 @@ interface Props {
  * By contract this component receives `VoucherDocModel`, which carries no
  * monetary fields at all — never add price, cost, totals or payment data here.
  */
-export const VoucherDocument = forwardRef<HTMLDivElement, Props>(({ model }, ref) => (
+export const VoucherDocument = forwardRef<HTMLDivElement, Props>(({ model, state }, ref) => (
   <article ref={ref} dir="rtl" className="doc-sheet flex flex-col">
     <DocHeader
       brand={model.brand}
-      titleAr="فاوتشر تأكيد الحجز"
+      titleAr={state === 'current' ? 'فاوتشر تأكيد الحجز' : 'معاينة فاوتشر مؤرشف'}
       titleEn="Travel Voucher"
-      badge={{ label: 'حجز مؤكد', tone: 'ok' }}
+      badge={state === 'current' ? { label: 'حجز مؤكد', tone: 'ok' }
+        : { label: state === 'cancelled' ? 'حجز ملغي' : 'حجز غير مؤكد', tone: 'warn' }}
       meta={[
         { label: 'رقم الفاوتشر', value: model.voucherNumber },
         { label: 'مرجع الحجز', value: model.bookingReference || '—' },
@@ -45,7 +48,7 @@ export const VoucherDocument = forwardRef<HTMLDivElement, Props>(({ model }, ref
       </section>
 
       <section>
-        <DocSectionTitle>الخدمات المؤكدة</DocSectionTitle>
+        <DocSectionTitle>{state === 'current' ? 'الخدمات المؤكدة' : 'الخدمات المسجلة'}</DocSectionTitle>
         {model.sections.map((s, i) => (
           <ServiceSectionCard key={`${s.kind}-${i}`} section={s} />
         ))}
@@ -91,7 +94,8 @@ export const VoucherDocument = forwardRef<HTMLDivElement, Props>(({ model }, ref
               '—'}
           </p>
           <p className="doc-muted text-[11px] mt-2">
-            يرجى إبراز هذا الفاوتشر عند الوصول لمقدّم الخدمة.
+            {state === 'current' ? 'يرجى إبراز هذا الفاوتشر عند الوصول لمقدّم الخدمة.'
+              : 'هذا المستند مؤرشف ولا يُستخدم كتأكيد لدى مقدم الخدمة.'}
           </p>
         </div>
       </section>

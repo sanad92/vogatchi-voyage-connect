@@ -23,7 +23,7 @@ const PRESETS = [
 ];
 
 export const FollowupsPanel: React.FC<Props> = ({ conversationId }) => {
-  const { followups, isLoading, create, complete, cancel, snooze, isCreating } =
+  const { followups, isLoading, isError, refetch, create, complete, cancel, snooze, isCreating } =
     useConversationFollowups(conversationId);
   const [note, setNote] = useState('');
   const [customTime, setCustomTime] = useState('');
@@ -55,8 +55,9 @@ export const FollowupsPanel: React.FC<Props> = ({ conversationId }) => {
     setCustomTime('');
   };
 
-  const active = followups.filter((f) => f.status === 'pending');
-  const past = followups.filter((f) => f.status !== 'pending');
+  const active = followups.filter(f => f.status === 'pending' || f.status === 'sending');
+  const past = followups.filter(f => f.status !== 'pending' && f.status !== 'sending')
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
 
   return (
     <div className="space-y-4">
@@ -151,6 +152,11 @@ export const FollowupsPanel: React.FC<Props> = ({ conversationId }) => {
         <h4 className="text-xs font-semibold text-muted-foreground">التذكيرات النشطة</h4>
         {isLoading ? (
           <p className="text-xs text-muted-foreground">جاري التحميل...</p>
+        ) : isError ? (
+          <div className="flex items-center gap-2">
+            <p role="alert" className="text-xs text-destructive">تعذّر تحميل المتابعات</p>
+            <Button size="sm" variant="ghost" onClick={() => void refetch()}>إعادة المحاولة</Button>
+          </div>
         ) : active.length === 0 ? (
           <p className="text-xs text-muted-foreground p-3 text-center border border-dashed rounded">
             لا توجد تذكيرات نشطة
@@ -158,12 +164,13 @@ export const FollowupsPanel: React.FC<Props> = ({ conversationId }) => {
         ) : (
           active.map((f) => {
             const remindDate = new Date(f.remind_at);
-            const isDue = remindDate <= new Date();
+            const sending = f.status === 'sending';
+            const isDue = !sending && remindDate <= new Date();
             return (
               <Card key={f.id} className={`p-2.5 ${isDue ? 'border-destructive/50 bg-destructive/5' : ''}`}>
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <Badge variant={isDue ? 'destructive' : 'secondary'} className="text-[10px]">
-                    {isDue ? 'مستحق' : formatDistanceToNow(remindDate, { locale: ar, addSuffix: true })}
+                    {sending ? 'قيد الإرسال' : isDue ? 'مستحق' : formatDistanceToNow(remindDate, { locale: ar, addSuffix: true })}
                   </Badge>
                   <span className="text-[10px] text-muted-foreground">
                     {format(remindDate, 'yyyy-MM-dd HH:mm')}
@@ -179,7 +186,7 @@ export const FollowupsPanel: React.FC<Props> = ({ conversationId }) => {
                 {f.last_error && (
                   <p className="text-[10px] text-destructive mb-2">{f.last_error}</p>
                 )}
-                <div className="flex gap-1">
+                {!sending && <div className="flex gap-1">
                   <Button size="sm" variant="outline" className="h-6 text-[10px] flex-1" onClick={() => complete(f.id)}>
                     <Check className="w-3 h-3 me-1" />
                     منجز
@@ -190,7 +197,7 @@ export const FollowupsPanel: React.FC<Props> = ({ conversationId }) => {
                   <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => cancel(f.id)}>
                     <X className="w-3 h-3" />
                   </Button>
-                </div>
+                </div>}
               </Card>
             );
           })
@@ -212,6 +219,7 @@ export const FollowupsPanel: React.FC<Props> = ({ conversationId }) => {
                       : '✗ ملغى'}
               </span>
               {f.note && <span> — {f.note}</span>}
+              {f.last_error && <p className="text-destructive">{f.last_error}</p>}
             </div>
           ))}
         </div>

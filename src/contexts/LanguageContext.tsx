@@ -43,7 +43,9 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         dom.startDomTranslation({ ...(auto.default as Record<string, string>), ...EN_DICTIONARY });
       });
     } else {
-      import('@/i18n/domTranslator').then((dom) => dom.stopDomTranslation());
+      import('@/i18n/domTranslator').then((dom) => {
+        if (!cancelled) dom.stopDomTranslation();
+      });
     }
     return () => { cancelled = true; };
   }, [language]);

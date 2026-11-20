@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
 import { toast } from 'sonner';
 
 export interface AutomationStep {
@@ -75,7 +76,7 @@ export function useBookingAutomation(bookingId?: string) {
 
   const runAll = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any).rpc('run_booking_automation', { p_booking_id: bookingId });
+      const { error } = await callUntypedRpc<string>('run_authorized_booking_automation', { p_booking_id: bookingId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -87,7 +88,7 @@ export function useBookingAutomation(bookingId?: string) {
 
   const retryStep = useMutation({
     mutationFn: async (stepId: string) => {
-      const { error } = await (supabase as any).rpc('retry_booking_automation_step', { p_step_id: stepId });
+      const { error } = await callUntypedRpc<string>('retry_authorized_booking_automation_step', { p_step_id: stepId });
       if (error) throw error;
     },
     onSuccess: () => {

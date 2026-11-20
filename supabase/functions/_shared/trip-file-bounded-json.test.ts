@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readBoundedJsonBody } from './trip-file-bounded-json';
+import { readBoundedJsonBody } from './trip-file-bounded-json.ts';
 
 const utf8 = new TextEncoder();
 const stream = (...chunks: Uint8Array[]) => new ReadableStream<Uint8Array>({
@@ -36,5 +36,14 @@ const tooLarge = new ReadableStream<Uint8Array>({
 });
 await assert.rejects(readBoundedJsonBody(tooLarge, 1024), /json_body_too_large/);
 assert.equal(cancelled, true, 'rejecting a large response must cancel the stream');
+
+let cancelledWithoutLength = false;
+const unboundedHotelbedsResponse = new Response(new ReadableStream<Uint8Array>({
+  pull(controller) { controller.enqueue(new Uint8Array(64 * 1024)); },
+  cancel() { cancelledWithoutLength = true; },
+}), { headers: { 'content-type': 'application/json' } });
+assert.equal(unboundedHotelbedsResponse.headers.get('content-length'), null);
+await assert.rejects(readBoundedJsonBody(unboundedHotelbedsResponse.body, 128 * 1024), /json_body_too_large/);
+assert.equal(cancelledWithoutLength, true, 'a Hotelbeds response without Content-Length must stop at the byte cap');
 
 console.log('Trip File bounded JSON: exact byte limits, UTF-8, split chunks and cancellation passed');

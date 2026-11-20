@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Moon, Plus, Users, ArrowRight, Pencil, Wallet, FileText, Printer, FileSpreadsheet, Ban, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
@@ -169,11 +170,11 @@ const Pilgrimage = () => {
     queryKey: ['umrah-unified-links', orgId, programId],
     enabled: !!orgId && !!programId && usesGroupedRooming,
     queryFn: async () => {
-      const { data, error } = await sb.from('umrah_inventory_bookings').select('id,booking_id,availability_sale_id')
+      const { data, error } = await sb.from('umrah_inventory_bookings').select('id,booking_id,availability_sale_id,mode')
         .eq('organization_id', orgId).eq('program_id', programId).not('booking_id', 'is', null);
       if (error) throw error;
-      return new Map<string, { booking_id: string; availability_sale_id: string | null }>(
-        data.map((row: { id: string; booking_id: string; availability_sale_id: string | null }) => [row.id, row]),
+      return new Map<string, { booking_id: string; availability_sale_id: string | null; mode: string }>(
+        data.map((row: { id: string; booking_id: string; availability_sale_id: string | null; mode: string }) => [row.id, row]),
       );
     },
   });
@@ -181,6 +182,7 @@ const Pilgrimage = () => {
   const programPilgrims = useMemo(() => pilgrims.filter((g) => g.program_id === programId)
     .map((g) => ({ ...g, reserved_refunds: operationRefunds.data?.get(g.id) ?? 0,
       unified_booking_id: reservationLinks.data?.get(g.inventory_booking_id)?.booking_id ?? null,
+      inventory_room_mode: reservationLinks.data?.get(g.inventory_booking_id)?.mode,
       manual_allotment_booking: !!reservationLinks.data?.get(g.inventory_booking_id)?.availability_sale_id })),
     [pilgrims, programId, operationRefunds.data, reservationLinks.data]);
   const approvedEdit = useBookingStaff(
@@ -320,29 +322,15 @@ const Pilgrimage = () => {
       if (!pay.clientRef) throw new Error('تعذر إنشاء معرف العملية؛ أغلق النافذة وافتحها مجددًا');
       const treasury = treasuries.find((t) => t.id === pay.treasury);
       if (!treasury || treasury.currency !== program.currency ||
-        (pay.method === 'cash' && treasury.treasury_kind !== 'cash') ||
-        (pay.method !== 'cash' && treasury.treasury_kind === 'cash'))
+        treasury.treasury_kind !== (pay.method === 'cash' ? 'cash' : 'bank'))
         throw new Error('اختر خزينة أو حسابًا مناسبًا لطريقة الدفع وبنفس عملة البرنامج');
-      const payload = {
-        organization_id: orgId, pilgrim_id: g.id, customer_id: g.customer_id, amount: pay.amount,
-        amount_base: Math.round(pay.amount * pay.exchangeRate * 100) / 100,
-        exchange_rate: pay.exchangeRate, client_ref: pay.clientRef,
-        currency: program.currency || 'EGP', payment_method: pay.method, treasury_account_id: pay.treasury,
-        reference_number: pay.reference || null, payment_date: pay.date,
-        notes: `${program.name} · ${g.full_name}`, status: 'completed',
-      };
-      const { data, error } = await sb.from('customer_payments').insert(payload).select('*').single();
-      if (error) {
-        if (error.code !== '23505') throw error;
-        const prior = await sb.from('customer_payments').select('*')
-          .eq('organization_id', orgId).eq('client_ref', pay.clientRef).maybeSingle();
-        if (prior.error || !prior.data ||
-          prior.data.pilgrim_id !== g.id || Number(prior.data.amount) !== Number(pay.amount) ||
-          prior.data.currency !== program.currency || prior.data.status !== 'completed' ||
-          prior.data.treasury_account_id !== pay.treasury)
-          throw error;
-        return { p: prior.data, g: { ...g, paid_amount: Number(g.paid_amount) + Number(pay.amount) } };
-      }
+      const { data, error } = await callUntypedRpc<Tables<'customer_payments'>>('record_pilgrimage_passenger_receipt', {
+        _pilgrim_id: g.id, _amount: pay.amount, _exchange_rate: pay.exchangeRate,
+        _method: pay.method, _treasury_account_id: pay.treasury, _payment_date: pay.date,
+        _reference: pay.reference || null, _client_ref: pay.clientRef,
+      });
+      if (error) throw error;
+      if (!data) throw new Error('تعذر تأكيد تسجيل الدفعة');
       return { p: data, g: { ...g, paid_amount: Number(g.paid_amount) + Number(pay.amount) } };
     },
     onSuccess: ({ p, g }) => {
@@ -357,6 +345,16 @@ const Pilgrimage = () => {
     Boolean(g.passport_expiry && program?.return_date && g.passport_expiry < program.return_date);
 
   if (availabilityOpen && orgId) return <PilgrimageAvailabilitySearch key={orgId} orgId={orgId}
+    roomInventoryPrograms={programs.filter(program => program.uses_room_inventory && program.status === 'open'
+      && program.sales_confirmed_at && pilgrimageSalesIssues(program).length === 0)}
+    onOpenRoomInventory={(id, programType) => setParams(current => {
+      const next = new URLSearchParams(current);
+      for (const key of ['view', 'sale', 'passenger', 'editing_booking']) next.delete(key);
+      next.set('program', id);
+      next.set('type', programType);
+      next.set('tab', 'inventory');
+      return next;
+    })}
     onBack={() => setParams(current => {
       const next = new URLSearchParams(current);
       next.delete('view');
@@ -456,12 +454,13 @@ const Pilgrimage = () => {
           badge={<Badge variant="outline">{programStatusLabel(program)}</Badge>}
           actions={<div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={program.uses_room_inventory ? () => goToProgramTab('inventory') : openAvailability}>
-              <Search className="h-4 w-4 me-1" />بحث التوافر
+              <Search className="h-4 w-4 me-1" />
+              {program.uses_room_inventory ? 'عرض رصيد المقاعد والغرف' : 'بحث توافر المقاعد'}
             </Button>
             {canManage && <Button variant="outline" onClick={editProgram}><Pencil className="h-4 w-4 me-1" />تعديل البرنامج</Button>}
             {program.uses_room_inventory ? hasPermission('bookings_create') && <Button disabled={!!registrationBlock}
               title={registrationBlock || undefined} onClick={() => { goToProgramTab('inventory'); setInventoryBookingOpen(true); }}>
-              <Plus className="h-4 w-4 me-1" />حجز من الرصيد
+              <Plus className="h-4 w-4 me-1" />حجز مباشر من الرصيد
             </Button> : <Button disabled={!!registrationBlock} title={registrationBlock || undefined} onClick={() => {
               setEditingPilgrim(null); setGf({ ...EMPTY_PILGRIM, gender: usesGroupedRooming ? null : EMPTY_PILGRIM.gender }); setPilgrimOpen(true);
             }}><Plus className="h-4 w-4 me-1" />إضافة {label}</Button>}
@@ -469,6 +468,9 @@ const Pilgrimage = () => {
         />
         <Card className="space-y-3 p-4">
           <h2 className="text-sm font-semibold">إدارة البرنامج</h2>
+          {program.uses_room_inventory && <p className="text-sm text-muted-foreground">
+            الحجز المباشر لهذه الدفعة من رصيد المقاعد والغرف المتعاقد عليها.
+          </p>}
           {needsSalesApproval && <p className="text-sm text-muted-foreground">{salesConfirmationRequired}</p>}
           <div className="flex flex-wrap gap-2">
             {canManage && needsSalesApproval && <Button size="sm" onClick={editProgram}>مراجعة اعتماد البيع</Button>}
@@ -519,6 +521,7 @@ const Pilgrimage = () => {
             <PilgrimageOperations key={`${orgId}:${program.id}`} orgId={orgId} program={program} programs={programs}
               passengers={programPilgrims} canManage={canManageOperations} onChanged={refresh}
               canCancel={hasPermission('bookings_cancel')}
+              canCreateReplacement={hasPermission('bookings_create') && hasPermission('invoices_create')}
               canViewRefunds={hasPermission('financial_view') && getPermissionScope('financial_view') === 'organization'} />
           </TabsContent>}
 
@@ -738,7 +741,7 @@ const Pilgrimage = () => {
               </F>
               <F label="الخزينة / الحساب">
                 <Select value={pay.treasury} onValueChange={(v) => setPay({ ...pay, treasury: v })}><SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
-                  <SelectContent>{treasuries.filter((t) => (t.currency || 'EGP') === (program.currency || 'EGP') && (pay.method === 'cash' ? t.treasury_kind === 'cash' : t.treasury_kind !== 'cash')).map((t) => <SelectItem key={t.id} value={t.id}>{t.account_name || t.bank_name}</SelectItem>)}</SelectContent></Select>
+                  <SelectContent>{treasuries.filter((t) => (t.currency || 'EGP') === (program.currency || 'EGP') && t.treasury_kind === (pay.method === 'cash' ? 'cash' : 'bank')).map((t) => <SelectItem key={t.id} value={t.id}>{t.account_name || t.bank_name}</SelectItem>)}</SelectContent></Select>
               </F>
               <F label="معامل التحويل إلى عملة الدفتر"><Input type="number" min="0" step="0.000001" value={pay.exchangeRate} onChange={(e) => setPay({ ...pay, exchangeRate: Number(e.target.value) })} /></F>
               <F label="رقم المرجع (اختياري)" wide><Input value={pay.reference} onChange={(e) => setPay({ ...pay, reference: e.target.value })} /></F>
@@ -834,6 +837,9 @@ const Pilgrimage = () => {
             <Card key={p.id} className="p-5 cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setProgramId(p.id)}>
               <div className="flex items-start justify-between gap-2"><h3 className="font-semibold">{p.name}</h3><Badge variant="outline">{programStatusLabel(p)}</Badge></div>
               <p className="mt-1 text-xs text-muted-foreground">{p.season} · {p.departure_date ?? '—'} ← {p.return_date ?? '—'}</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {p.uses_room_inventory ? 'رصيد مقاعد وغرف متعاقد عليها · حجز مباشر' : 'رصيد مقاعد البرنامج'}
+              </p>
               <p className="mt-3 text-sm">مكة: {p.makkah_hotel || '—'} · المدينة: {p.madinah_hotel || '—'}</p>
               <div className="mt-4 flex items-center justify-between text-sm">
                 <span className="flex items-center gap-1 text-muted-foreground"><Users className="h-4 w-4" />{count} / {p.capacity || 'بانتظار التأكيد'}</span>

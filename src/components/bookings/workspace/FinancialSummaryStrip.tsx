@@ -1,4 +1,5 @@
 import { Card } from '@/components/ui/card';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Badge } from '@/components/ui/badge';
 import type { useBookingProfitCockpit } from '@/hooks/useBookingProfitCockpit';
 
@@ -9,6 +10,7 @@ interface Props {
 const fmt = (n: number, ccy: string) => `${n.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${ccy}`;
 
 export const FinancialSummaryStrip = ({ cockpit: { data, isLoading, error } }: Props) => {
+  const { t: translate } = useLanguage();
 
   if (isLoading) {
     return <Card className="p-4 text-sm text-muted-foreground">جاري حساب المؤشرات المالية...</Card>;
@@ -45,7 +47,7 @@ export const FinancialSummaryStrip = ({ cockpit: { data, isLoading, error } }: P
 
   return (
     <Card className="p-4">
-      <div className="mb-3 flex justify-end"><Badge className={data.settlement.financially_complete ? 'bg-emerald-600' : ''} variant={data.settlement.financially_complete ? 'default' : 'secondary'}>{data.settlement.financially_complete ? 'مكتمل ماليًا' : 'تسوية مفتوحة'}</Badge></div>
+      <div className="mb-3 flex justify-end"><Badge data-no-translate className={data.settlement.financially_complete ? 'bg-emerald-600' : ''} variant={data.settlement.financially_complete ? 'default' : 'secondary'}>{translate(data.settlement.financially_complete ? 'مكتمل ماليًا' : 'تسوية مفتوحة')}</Badge></div>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {cells.map((c) => (
           <div key={c.label} className="min-w-0">

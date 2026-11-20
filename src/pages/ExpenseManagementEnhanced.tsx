@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -19,7 +19,15 @@ import ExchangeRateManager from '@/components/currency/ExchangeRateManager';
 import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
 
 const ExpenseManagementEnhanced = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab');
+  const activeTab = tab && ['rent', 'expenses', 'reports', 'settings'].includes(tab) ? tab : 'overview';
+  const setActiveTab = (nextTab: string) => {
+    const next = new URLSearchParams(params);
+    if (nextTab === 'overview') next.delete('tab');
+    else next.set('tab', nextTab);
+    setParams(next, { replace: true });
+  };
 
   return (
     <div className="w-full px-4 md:px-6 lg:px-8 py-6 space-y-6">

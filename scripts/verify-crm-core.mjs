@@ -87,6 +87,10 @@ assert.equal(leadStats.active, 1);
 assert.equal(leadStats.quoted, 1);
 assert.equal(leadStats.overdue, 1);
 assert.equal(leadStats.conversionRate, 50);
+assert.equal(leadPipeline.getLeadCampaignLabel(' 82509101 '), '82509101');
+assert.equal(leadPipeline.getLeadCampaignLabel('pilgrimage:internal-id'), 'طلبات اهتمام العمرة');
+assert.equal(leadPipeline.getLeadCampaignLabel('  '), null);
+assert.equal(leadPipeline.LEAD_SOURCE_LABELS.meta_lead_ads, 'نماذج إعلانات Meta');
 assert.equal(leadPipeline.isFollowUpToday(
   { next_follow_up_at: '2026-08-29T20:00:00Z' },
   leadNow,

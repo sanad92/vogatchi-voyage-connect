@@ -44,6 +44,8 @@ jobs:
         run: bun src/lib/pilgrimage/sales.test.ts
       - name: Test direct search bookings, hold expiry and capacity
         run: node scripts/verify-pilgrimage-availability-bookings.mjs
+      - name: Test room stock amendments and rollback
+        run: node scripts/verify-pilgrimage-room-stock-amendments.mjs
       - name: Test B2B installment cents, due dates and totals
         run: bun src/lib/pilgrimage/b2b.test.ts
       - name: Check TypeScript

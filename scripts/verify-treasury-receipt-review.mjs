@@ -40,7 +40,7 @@ try {
     CREATE TABLE public.bank_account_transactions (
       organization_id uuid, bank_account_id uuid, transaction_date date,
       source_type text, source_id uuid, reference_number text, amount numeric(12,2),
-      currency text, transaction_type text, related_invoice_id uuid
+      currency text, transaction_type text, related_invoice_id uuid, id uuid DEFAULT gen_random_uuid()
     );
     ALTER TABLE public.customer_payments ENABLE ROW LEVEL SECURITY;
     CREATE POLICY fixture_payments ON public.customer_payments FOR SELECT TO authenticated
@@ -52,15 +52,16 @@ try {
     INSERT INTO public.invoices VALUES ('${invoice}', '${org}', 'INV-TEST', '${booking}');
   `);
   await db.exec(readFileSync(new URL('../supabase/migrations/20261119173503_list_receipts_for_treasury_review.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../supabase/migrations/20261119232020_review_linked_customer_receipt_deposits.sql', import.meta.url), 'utf8'));
 
   const receipt = (number, { target = account, reference = 'R-' + number, company = org, status = 'completed', method = 'cash', demo = false, bookingId = null } = {}) =>
     db.query(`INSERT INTO public.customer_payments VALUES
       ($1,$2,$3,100,'EGP','2026-11-19',$4,$5,$6,$7,$8,$9)`,
     [id(number), company, target, reference, bookingId, invoice, status, method, demo]);
-  const deposit = (reference, { payment = null, amount = 100, currency = 'EGP', count = 1, direction = 'deposit' } = {}) =>
+  const deposit = (reference, { payment = null, amount = 100, currency = 'EGP', count = 1, direction = 'deposit', company = org } = {}) =>
     db.query(`INSERT INTO public.bank_account_transactions
       SELECT $1,$2,'2026-11-19',CASE WHEN $4::uuid IS NOT NULL THEN 'customer_payment' END,$4,$3,$5,$6,$7,$8
-      FROM generate_series(1,$9)`, [org, account, reference, payment, amount, currency, direction, invoice, count]);
+      FROM generate_series(1,$9)`, [company, account, reference, payment, amount, currency, direction, invoice, count]);
 
   await receipt(11, { target: null });
   await receipt(12, { bookingId: foreignBooking });
@@ -84,6 +85,10 @@ try {
   await deposit('R-24', { currency: 'USD' });
   await receipt(25);
   await deposit('R-25', { direction: 'withdrawal' });
+  await deposit('reversed', { payment: id(19) });
+  await deposit('orphan', { payment: id(90) });
+  await deposit('withdrawal', { payment: id(91), direction: 'withdrawal' });
+  await deposit('foreign', { payment: id(92), company: otherOrg });
 
   const as = async user => {
     await db.exec('RESET ROLE');
@@ -91,6 +96,7 @@ try {
     await db.exec('SET ROLE authenticated');
   };
   const list = (organization = org, offset = 0) => db.query('SELECT * FROM public.list_treasury_receipt_review($1,$2)', [organization, offset]);
+  const deposits = (organization = org) => db.query('SELECT * FROM public.list_treasury_deposit_review($1)', [organization]);
   await as(owner);
   const { rows } = await list();
   assert.deepEqual(rows.map(r => r.payment_id), [25, 24, 23, 17, 16, 15, 12, 11].map(id));
@@ -102,6 +108,9 @@ try {
   assert.equal(unmatched.reason, 'deposit_unmatched');
   assert.equal(unmatched.account_name, 'Office cash');
   assert.equal(unmatched.booking_id, null);
+  assert.deepEqual(Object.fromEntries((await deposits()).rows.map(row => [row.reference_number, row.reason])), {
+    'R-17': 'deposit_mismatch', reversed: 'receipt_not_current', orphan: 'receipt_missing',
+  });
   assert.deepEqual((await list(org, 7)).rows.map(r => r.payment_id), [id(11)]);
   for (let number = 100; number < 160; number += 1) {
     await db.exec('RESET ROLE');
@@ -111,13 +120,15 @@ try {
   assert.equal((await list()).rows.length, 51);
   assert.equal((await list(org, 50)).rows.length, 18);
   await assert.rejects(list(otherOrg), /treasury_receipt_review_denied/);
+  await assert.rejects(deposits(otherOrg), /treasury_receipt_review_denied/);
   await as(scoped);
   await assert.rejects(list(), /treasury_receipt_review_denied/);
+  await assert.rejects(deposits(), /treasury_receipt_review_denied/);
   await as(foreign);
   await assert.rejects(list(), /treasury_receipt_review_denied/);
   await db.exec('RESET ROLE; SET ROLE anon');
   await assert.rejects(list(), /permission denied/);
-  console.log('Receipt review isolates company data and flags missing, ambiguous, and mismatched deposits for review.');
+  console.log('Treasury review isolates company data, flags ambiguous or missing deposits, and finds orphaned or mismatched linked movements.');
 } finally {
   await db.close();
 }

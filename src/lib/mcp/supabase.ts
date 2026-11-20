@@ -1,4 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "../../integrations/supabase/types";
+import { z } from "zod";
 import type { JsonValueInput, ToolContext } from "@lovable.dev/mcp-js";
 
 type RuntimeGlobals = typeof globalThis & {
@@ -55,7 +57,7 @@ function supabasePublishableKey(): string {
 export function supabaseForUser(ctx: ToolContext) {
   const token = ctx.getToken();
   if (!token) throw new Error("supabaseForUser requires a verified OAuth token");
-  return createClient(supabaseProjectUrl(), supabasePublishableKey(), {
+  return createClient<Database>(supabaseProjectUrl(), supabasePublishableKey(), {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -77,4 +79,31 @@ export function rows(data: unknown) {
     content: [{ type: "text" as const, text: JSON.stringify(data ?? [], null, 2) }],
     structuredContent: { data: JSON.parse(JSON.stringify(data ?? [])) as JsonValueInput },
   };
+}
+
+
+export const organizationInput = z.string().uuid()
+  .describe("Organization ID returned by list_organizations. Required for accounts with more than one organization.")
+  .optional();
+
+export function activeMemberships(supabase: SupabaseClient<Database>, userId: string) {
+  return supabase.from("organization_members")
+    .select("organization_id, organizations!inner(name)")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .eq("organizations.is_active", true);
+}
+
+export async function scopedOrganization(ctx: ToolContext, organizationId?: string) {
+  const userId = ctx.getUserId();
+  if (!ctx.isAuthenticated() || !userId) return { error: unauthenticated() };
+
+  const supabase = supabaseForUser(ctx);
+  const memberships = activeMemberships(supabase, userId);
+  if (organizationId) memberships.eq("organization_id", organizationId);
+  const { data, error } = await memberships.limit(2);
+  if (error) return { error: failure("Could not check organization access.") };
+  if (!data.length) return { error: failure("Organization is unavailable to this account. Use list_organizations.") };
+  if (data.length > 1) return { error: failure("Choose an organization with list_organizations and pass its organization_id.") };
+  return { supabase, organizationId: data[0].organization_id };
 }

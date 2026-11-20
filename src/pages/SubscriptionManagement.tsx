@@ -2,8 +2,7 @@ import { useState, type ElementType } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
-import { useOrgId } from '@/hooks/useOrgId';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSubscriptionEnforcement } from '@/hooks/useSubscriptionEnforcement';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,8 +29,8 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 const SubscriptionManagement = () => {
-  const { user } = useOptimizedAuth();
-  const orgId = useOrgId();
+  const { organizationId: orgId, orgRole } = useOrganization();
+  const canManage = orgRole === 'owner' || orgRole === 'manager';
   const queryClient = useQueryClient();
   const { subscription, loading: subLoading, refetch: refetchSub } = useSubscriptionEnforcement();
 
@@ -45,6 +44,7 @@ const SubscriptionManagement = () => {
         .select('*, subscription_plans(*)')
         .eq('organization_id', orgId)
         .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .limit(1)
         .single();
       if (error && error.code !== 'PGRST116') throw error;
@@ -86,24 +86,29 @@ const SubscriptionManagement = () => {
   // Cancel subscription mutation
   const cancelMutation = useMutation({
     mutationFn: async () => {
-      if (!currentSub?.id) throw new Error('لا يوجد اشتراك');
-      const { error } = await supabase
-        .from('subscriptions')
-        .update({ status: 'cancelled' })
-        .eq('id', currentSub.id);
+      if (!orgId || !currentSub?.id) throw new Error('لا يوجد اشتراك');
+      const { data, error } = await supabase.rpc('schedule_subscription_cancellation', {
+        p_organization_id: orgId,
+        p_subscription_id: currentSub.id,
+      });
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      toast.success('تم إلغاء الاشتراك. ستستمر في الوصول حتى تاريخ الانتهاء.');
-      queryClient.invalidateQueries({ queryKey: ['my-subscription-full'] });
+    onSuccess: (expiresAt) => {
+      toast.success(`تمت جدولة الإلغاء عند انتهاء الاشتراك في ${format(new Date(expiresAt), 'dd MMMM yyyy', { locale: ar })}`);
+      queryClient.invalidateQueries({ queryKey: ['my-subscription-full', orgId] });
       refetchSub();
     },
-    onError: (error: unknown) => toast.error(error instanceof Error ? error.message : 'فشل في إلغاء الاشتراك'),
+    onError: (error: unknown) => toast.error(error instanceof Error ? error.message : 'فشل في جدولة إلغاء الاشتراك'),
   });
 
   const plan = currentSub?.subscription_plans;
-  const status = currentSub?.status;
+  const status = currentSub?.status === 'active' && subscription?.expired ? 'expired' : currentSub?.status;
   const expiresAt = currentSub?.expires_at;
+  const cancellationScheduled = Boolean(currentSub?.cancellation_scheduled_at);
+  const cancellationDate = expiresAt ? format(new Date(expiresAt), 'dd MMMM yyyy', { locale: ar }) : null;
+  const canScheduleCancellation = canManage && status === 'active' && !cancellationScheduled &&
+    Boolean(expiresAt && new Date(expiresAt).getTime() > Date.now() && plan && (plan.price_monthly > 0 || plan.price_yearly > 0));
 
   const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: ElementType }> = {
     active: { label: 'نشط', variant: 'default', icon: CheckCircle2 },
@@ -357,16 +362,24 @@ const SubscriptionManagement = () => {
           </CardContent>
         </Card>
 
-        {/* Cancel Subscription */}
-        {currentSub && status !== 'cancelled' && status !== 'expired' && plan?.price_monthly > 0 && (
+        {cancellationScheduled && status === 'active' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">الإلغاء مجدول</CardTitle>
+              <CardDescription>يظل الوصول متاحًا حتى انتهاء الاشتراك في {cancellationDate}.</CardDescription>
+            </CardHeader>
+          </Card>
+        )}
+
+        {canScheduleCancellation && (
           <Card className="border-destructive/20">
             <CardHeader>
               <CardTitle className="text-lg text-destructive flex items-center gap-2">
                 <XCircle className="h-5 w-5" />
-                إلغاء الاشتراك
+                جدولة إلغاء الاشتراك
               </CardTitle>
               <CardDescription>
-                بعد الإلغاء، ستستمر في الوصول للنظام حتى تاريخ انتهاء الاشتراك الحالي.
+                يظل الوصول متاحًا حتى تاريخ انتهاء الاشتراك الحالي.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -376,16 +389,16 @@ const SubscriptionManagement = () => {
                     {cancelMutation.isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin ml-2" />
                     ) : null}
-                    إلغاء الاشتراك
+                    جدولة إلغاء الاشتراك
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent dir="rtl">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>هل أنت متأكد من إلغاء الاشتراك؟</AlertDialogTitle>
+                    <AlertDialogTitle>هل أنت متأكد من جدولة إلغاء الاشتراك؟</AlertDialogTitle>
                     <AlertDialogDescription>
-                      سيتم إلغاء اشتراكك في خطة "{plan?.name_ar || plan?.name}".
+                      سينتهي اشتراكك في خطة «{plan?.name_ar || plan?.name}» في الموعد المحدد.
                       ستتمكن من الوصول للنظام حتى{' '}
-                      {expiresAt ? format(new Date(expiresAt), 'dd MMMM yyyy', { locale: ar }) : 'تاريخ الانتهاء'}.
+                      {cancellationDate}.
                       بعد ذلك سيتم تقييد الوصول.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -405,7 +418,7 @@ const SubscriptionManagement = () => {
         )}
 
         {/* Renew after cancellation */}
-        {status === 'cancelled' && (
+        {(status === 'cancelled' || status === 'expired') && (
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="py-6 text-center">
               <RefreshCw className="h-10 w-10 text-primary mx-auto mb-3" />

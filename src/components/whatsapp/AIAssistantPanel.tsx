@@ -8,6 +8,9 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
+import { useOrgId } from '@/hooks/useOrgId';
+import { usePermissionCheck } from '@/hooks/usePermissionCheck';
+import { reviewWhatsAppLeadDraft, type WhatsAppLeadDraft } from '@/lib/whatsappLeadDraft';
 
 interface Props {
   conversationId: string;
@@ -17,14 +20,22 @@ interface Props {
 
 interface Suggestion { text: string; label?: string; }
 
-export const AIAssistantPanel: React.FC<Props> = ({ conversationId, conversation, onInsertText }) => {
+export const AIAssistantPanel: React.FC<Props> = (props) => {
+  const orgId = useOrgId();
+  return <AIConversationAssistant key={`${orgId}:${props.conversationId}`} {...props} />;
+};
+
+const AIConversationAssistant: React.FC<Props> = ({ conversationId, conversation, onInsertText }) => {
   const qc = useQueryClient();
+  const orgId = useOrgId();
+  const { hasPermission } = usePermissionCheck();
+  const canExtract = Boolean(orgId && hasPermission('whatsapp_view') && hasPermission('crm_view') && hasPermission('crm_create'));
   const [summary, setSummary] = useState<string>(conversation.ai_summary || '');
   const [summaryAt, setSummaryAt] = useState<string | null>(conversation.ai_summary_updated_at || null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-  const [insights, setInsights] = useState<any>(null);
+  const [insights, setInsights] = useState<WhatsAppLeadDraft | null>(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
 
   const invokeFn = async (name: string, body: any) => {
@@ -61,12 +72,12 @@ export const AIAssistantPanel: React.FC<Props> = ({ conversationId, conversation
   };
 
   const extractInsights = async () => {
+    if (!orgId || !canExtract) return;
     setLoadingInsights(true);
     try {
-      const d = await invokeFn('ai-extract-lead', { conversation_id: conversationId });
-      setInsights(d.data || {});
-    } catch (e: any) {
-      toast.error(e.message);
+      setInsights(await reviewWhatsAppLeadDraft(orgId, conversationId));
+    } catch {
+      toast.error('تعذّر استخراج مسودة الطلب من هذه المحادثة');
     } finally {
       setLoadingInsights(false);
     }
@@ -146,36 +157,37 @@ export const AIAssistantPanel: React.FC<Props> = ({ conversationId, conversation
       </Card>
 
       {/* Insights */}
-      <Card>
+      {canExtract && <Card>
         <CardContent className="p-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-sm font-semibold">
-              <MessageSquareText className="h-4 w-4 text-primary" /> استخراج الطلب
+              <MessageSquareText className="h-4 w-4 text-primary" /> استخراج الطلب من النص
             </div>
-            <Button size="sm" variant="ghost" onClick={extractInsights} disabled={loadingInsights}>
+            <Button size="sm" variant="ghost" aria-label="استخراج مسودة الطلب" onClick={extractInsights} disabled={loadingInsights}>
               {loadingInsights ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
             </Button>
           </div>
           {!insights && !loadingInsights && (
-            <p className="text-xs text-muted-foreground">استخرج تلقائياً: الوجهة، التواريخ، عدد المسافرين، الميزانية.</p>
+            <p className="text-xs text-muted-foreground">استخرج الوجهة والتواريخ والأعداد والميزانية المذكورة في الرسائل الواردة.</p>
+          )}
+          {insights && Object.keys(insights).length === 0 && (
+            <p className="text-xs text-muted-foreground">لم تظهر تفاصيل طلب واضحة في الرسائل الواردة.</p>
           )}
           {insights && (
             <div className="space-y-1 text-xs">
-              {insights.summary && <div className="bg-muted/40 rounded p-2 italic">{insights.summary}</div>}
               <div className="grid grid-cols-2 gap-1.5">
                 {insights.intent && <InsightRow label="نوع الطلب" value={insights.intent} />}
                 {insights.destination_city && <InsightRow label="الوجهة" value={insights.destination_city} />}
                 {insights.check_in_date && <InsightRow label="تاريخ الوصول" value={insights.check_in_date} />}
-                {insights.nights && <InsightRow label="الليالي" value={String(insights.nights)} />}
+                {insights.check_out_date && <InsightRow label="تاريخ المغادرة" value={insights.check_out_date} />}
                 {insights.adults && <InsightRow label="بالغين" value={String(insights.adults)} />}
                 {insights.children ? <InsightRow label="أطفال" value={String(insights.children)} /> : null}
-                {insights.budget && <InsightRow label="الميزانية" value={insights.budget} />}
-                {insights.urgency && <InsightRow label="الأولوية" value={insights.urgency} />}
+                {insights.budget_amount && <InsightRow label="الميزانية" value={`${insights.budget_amount} ${insights.budget_currency}`} />}
               </div>
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card>}
     </div>
   );
 };

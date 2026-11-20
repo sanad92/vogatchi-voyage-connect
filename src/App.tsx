@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
 import SupabaseProtectedRoute from "@/components/SupabaseProtectedRoute";
+import { LegacyBookingLink } from "@/pages/LegacyBookingLink";
 import { OptimizedAuthProvider } from "@/hooks/useOptimizedAuth";
 import { MonitoringCollector } from "@/hooks/useMonitoring";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
@@ -39,6 +40,9 @@ const PageLoader = () => (
 // Public pages
 const SaaSLanding = lazy(() => import("@/pages/SaaSLanding"));
 const BookingRequest = lazy(() => import("@/pages/BookingRequest"));
+const PublicBookingSite = lazy(() => import("@/pages/PublicBookingSite"));
+const PublicCmsPage = lazy(() => import("@/pages/PublicCmsPage"));
+const PublicCompanyPage = lazy(() => import("@/pages/PublicCompanyPage"));
 const PricingPage = lazy(() => import("@/pages/PricingPage"));
 const PaymentPage = lazy(() => import("@/pages/PaymentPage"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
@@ -154,6 +158,7 @@ const PlatformFinance = lazy(() => import("@/pages/platform-admin/PlatformFinanc
 const PlatformAdminAccounts = lazy(() => import("@/pages/platform-admin/PlatformAdminAccounts"));
 const PlatformAdminPlans = lazy(() => import("@/pages/platform-admin/PlatformAdminPlans"));
 const PlatformAdminAudit = lazy(() => import("@/pages/platform-admin/PlatformAdminAudit"));
+const PlatformMetaDataDeletion = lazy(() => import("@/pages/platform-admin/PlatformMetaDataDeletion"));
 const PlatformEventBus = lazy(() => import("@/pages/platform-admin/PlatformEventBus"));
 const PlatformEventExplorer = lazy(() => import("@/pages/platform-admin/PlatformEventExplorer"));
 const PlatformAdminAnalytics = lazy(() => import("@/pages/platform-admin/PlatformAdminAnalytics"));
@@ -261,7 +266,11 @@ function App() {
                 <Route path="/" element={isPlatformAdminHost() ? <Navigate to="/platform" replace /> : <SaaSLanding />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/booking-request" element={<BookingRequest />} />
-                <Route path="/contact" element={<Navigate to="/booking-request" replace />} />
+                <Route path="/p/:companySlug/booking-request" element={<PublicBookingSite />} />
+                <Route path="/p/:companySlug/pages/:pageSlug" element={<PublicCmsPage />} />
+                <Route path="/p/booking-request" element={<Navigate to="/booking-request" replace />} />
+                <Route path="/about" element={<PublicCompanyPage page="about" />} />
+                <Route path="/contact" element={<PublicCompanyPage page="contact" />} />
                 <Route path="/payment" element={<PaymentPage />} />
                 <Route path="/login" element={isPlatformAdminHost() ? <Navigate to="/platform/login" replace /> : <LoginPage />} />
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
@@ -304,6 +313,7 @@ function App() {
                             <Route path="finance" element={<PlatformFinance />} />
                             <Route path="accounts" element={<PlatformAdminAccounts />} />
                             <Route path="audit" element={<PlatformAdminAudit />} />
+                            <Route path="meta-data-deletion" element={<PlatformMetaDataDeletion />} />
                             <Route path="event-bus" element={<PlatformEventBus />} />
                             <Route path="event-bus/:id" element={<PlatformEventExplorer />} />
                             <Route path="analytics" element={<PlatformAdminAnalytics />} />
@@ -344,10 +354,13 @@ function App() {
                               <Route path="/duplicate-customers" element={<PermissionRouteGuard requiredPermission="customers_view"><DuplicateCustomersPage /></PermissionRouteGuard>} />
                               <Route path="/data-quality" element={<DataQualityPage />} />
                               <Route path="/new-customer" element={<PermissionRouteGuard requiredPermission="customers_create"><NewCustomer /></PermissionRouteGuard>} />
+                              <Route path="/customers/new" element={<PermissionRouteGuard requiredPermission="customers_create"><NewCustomer /></PermissionRouteGuard>} />
                               <Route path="/customers/:customerId" element={<PermissionRouteGuard requiredPermission="customers_view"><CustomerDetails /></PermissionRouteGuard>} />
                               <Route path="/hotel-bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><HotelBookings /></PermissionRouteGuard>} />
+                              <Route path="/hotel-bookings/:id" element={<PermissionRouteGuard requiredPermission="bookings_view"><LegacyBookingLink type="hotel" /></PermissionRouteGuard>} />
                               <Route path="/new-hotel-booking" element={<PermissionRouteGuard requiredPermission="bookings_create"><NewHotelBooking /></PermissionRouteGuard>} />
                               <Route path="/flight-bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><FlightBookings /></PermissionRouteGuard>} />
+                              <Route path="/flight-bookings/:id" element={<PermissionRouteGuard requiredPermission="bookings_view"><LegacyBookingLink type="flight" /></PermissionRouteGuard>} />
                               <Route path="/new-flight-booking" element={<PermissionRouteGuard requiredPermission="bookings_create"><NewFlightBooking /></PermissionRouteGuard>} />
                               <Route path="/car-rentals" element={<PermissionRouteGuard requiredPermission="bookings_view"><CarRentals /></PermissionRouteGuard>} />
                               <Route path="/transport-bookings" element={<PermissionRouteGuard requiredPermission="bookings_view"><TransportBookings /></PermissionRouteGuard>} />
@@ -355,6 +368,7 @@ function App() {
                               <Route path="/pilgrimage" element={<PermissionRouteGuard requiredPermission="bookings_view"><PilgrimagePage /></PermissionRouteGuard>} />
                               <Route path="/quotes" element={<PermissionRouteGuard requiredPermission="quotes_view"><Quotes /></PermissionRouteGuard>} />
                               <Route path="/quotes/new" element={<PermissionRouteGuard requiredPermission="quotes_create"><NewQuote /></PermissionRouteGuard>} />
+                              <Route path="/new-quote" element={<PermissionRouteGuard requiredPermission="quotes_create"><NewQuote /></PermissionRouteGuard>} />
                               <Route path="/quotes/itinerary-builder" element={<PermissionRouteGuard requiredPermission="quotes_create"><ItineraryBuilder /></PermissionRouteGuard>} />
                               <Route path="/quotes/:id" element={<PermissionRouteGuard requiredPermission="quotes_view"><QuoteDetails /></PermissionRouteGuard>} />
                               <Route path="/invoices" element={<PermissionRouteGuard requiredPermission="invoices_view"><Invoices /></PermissionRouteGuard>} />
@@ -372,6 +386,7 @@ function App() {
                               <Route path="/employee-records" element={<Navigate to="/hr?tab=files" replace />} />
                               <Route path="/employee-commissions" element={<Navigate to="/hr?tab=commissions" replace />} />
                               <Route path="/expense-management" element={<PermissionRouteGuard requiredPermission="expenses_view"><ExpenseManagementEnhanced /></PermissionRouteGuard>} />
+                              <Route path="/expenses" element={<PermissionRouteGuard requiredPermission="expenses_view"><Navigate to="/expense-management?tab=expenses" replace /></PermissionRouteGuard>} />
                               <Route path="/employees-enhanced" element={<Navigate to="/team" replace />} />
                               <Route path="/employees" element={<Navigate to="/team" replace />} />
                               <Route path="/admin-settings" element={<PermissionRouteGuard requiredPermission="admin_settings"><AdminSettings /></PermissionRouteGuard>} />
@@ -380,7 +395,7 @@ function App() {
                               <Route path="/site-customization" element={<PermissionRouteGuard requiredPermission="admin_settings"><SiteCustomization /></PermissionRouteGuard>} />
                               <Route path="/payment-orders" element={<PermissionRouteGuard requiredPermission="financial_view"><PaymentOrders /></PermissionRouteGuard>} />
                               <Route path="/financial-exceptions" element={<PermissionRouteGuard requiredPermission="financial_view"><FinancialExceptions /></PermissionRouteGuard>} />
-                              <Route path="/payment-success" element={<PaymentSuccess />} />
+                              <Route path="/payment-success/:checkoutId?" element={<PaymentSuccess />} />
                               <Route path="/bank-accounts" element={<PermissionRouteGuard requiredPermission="financial_view"><BankAccounts /></PermissionRouteGuard>} />
                               <Route path="/daily-operations" element={<PermissionRouteGuard requiredPermission="bookings_view"><DailyOperations /></PermissionRouteGuard>} />
                               <Route path="/operations" element={<PermissionRouteGuard requiredPermission="bookings_view"><OperationsCommandCenter /></PermissionRouteGuard>} />

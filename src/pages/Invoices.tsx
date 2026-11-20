@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useCustomerContext } from "@/hooks/useCustomerContext";
 import { useOrgId } from "@/hooks/useOrgId";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +30,8 @@ const Invoices = () => {
   const orgId = useOrgId();
   const [params, setParams] = useSearchParams();
   const invoiceId = params.get("id");
+  const customerId = params.get("customer_id");
+  const customerContext = useCustomerContext(orgId, customerId);
   const { data: linkedInvoice } = useQuery({
     queryKey: ["invoices", "by-id", orgId, invoiceId],
     enabled: Boolean(orgId && invoiceId),
@@ -55,7 +58,7 @@ const Invoices = () => {
 
   const {
     invoices,
-    isLoading,
+    isLoading: invoicesLoading,
     updateStatus,
     deleteInvoice,
     updateInvoice,
@@ -65,12 +68,15 @@ const Invoices = () => {
     invoiceStats,
   } = useInvoicesManagement({
     organizationId: orgId,
+    customerId: customerId === null ? undefined : customerContext.data?.id ?? null,
     searchTerm: debouncedSearchTerm,
     status: filterStatus,
     bookingType: filterType,
     dateFrom,
     dateTo,
   });
+
+  const isLoading = customerContext.isLoading || invoicesLoading;
 
   useEffect(() => {
     if (invoiceId && linkedInvoice?.id === invoiceId) {
@@ -193,6 +199,9 @@ const Invoices = () => {
   };
 
   const clearFilters = () => {
+    const next = new URLSearchParams(params);
+    next.delete('customer_id');
+    setParams(next, { replace: true });
     setSearchTerm("");
     setFilterStatus("all");
     setFilterType("all");
@@ -366,7 +375,10 @@ const Invoices = () => {
             </div>
           </div>
 
-          {(searchTerm || filterStatus !== 'all' || filterType !== 'all' || dateFrom || dateTo) && (
+          {customerId !== null && !customerContext.isLoading && <p role="status" className="mt-4">
+            {customerContext.data ? `فواتير العميل ${customerContext.data.name}` : 'العميل الموجود في الرابط غير متاح في الشركة الحالية.'}
+          </p>}
+          {(customerId !== null || searchTerm || filterStatus !== 'all' || filterType !== 'all' || dateFrom || dateTo) && (
             <div className="mt-4">
               <Button variant="outline" onClick={clearFilters}>
                 مسح الفلاتر
