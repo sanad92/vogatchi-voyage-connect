@@ -346,8 +346,6 @@ export const EN_DICTIONARY: Record<string, string> = {
   'مكتمل ماليًا': 'Financially complete',
   'تسوية مفتوحة': 'Open settlement',
   'تعذر تحديث التسكين': 'Rooming could not be updated',
-  'مكتمل ماليًا': 'Financially complete',
-  'تسوية مفتوحة': 'Open settlement',
   'إلغاء الحجز وتسوية الحسابات': 'Cancel booking and settle accounts',
   'سجّل شروط الإلغاء المؤكدة. عند الاعتماد، يسوّي النظام الفواتير وأوامر الدفع وأرصدة الاسترداد.': 'Enter the confirmed cancellation terms. Approval settles invoices, payment orders, and refund balances.',
   'تأكيد إلغاء المورد': 'Supplier cancellation confirmation',
