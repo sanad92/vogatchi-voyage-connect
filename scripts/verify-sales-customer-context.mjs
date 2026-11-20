@@ -133,6 +133,8 @@ for (const [url, expected] of [
   [`/hotel-bookings/${active}`, '/hotel-bookings/:id'],
   [`/flight-bookings/${active}`, '/flight-bookings/:id'],
   [`/bookings/new?customer_id=${active}`, '/bookings/new'],
+  [`/bookings/new?type=hotel&customer_id=${active}`, '/bookings/new'],
+  [`/bookings/new?type=flight&customer_id=${active}`, '/bookings/new'],
   [`/bookings?customer_id=${active}`, '/bookings'],
   [`/invoices/new?customer_id=${active}`, '/invoices/new'],
   [`/invoices?customer_id=${active}`, '/invoices'],
@@ -148,4 +150,13 @@ for (const [url, expected] of [
 }
 assert.equal(routes.some(route => route.path === '/p/:slug'), false, 'generic CMS data has no anonymous route');
 assert.doesNotMatch(readSource('src/pages/Invoices.tsx'), /useInitialInvoices/, 'viewing an empty invoice list must not create demo data');
+const quickActions = readSource('src/components/customers/CustomerQuickActions.tsx');
+assert.match(quickActions, /\/bookings\/new\?/);
+assert.match(quickActions, /\/invoices\/new\?/);
+const whatsappCrm = readSource('src/components/whatsapp/WhatsAppCRMPanel.tsx');
+assert.match(whatsappCrm, /\/quotes\/new\?customer_id=/);
+assert.match(whatsappCrm, /\/bookings\/new\?type=hotel&customer_id=/);
+assert.match(whatsappCrm, /\/bookings\/new\?type=flight&customer_id=/);
+const conversationActions = readSource('src/components/whatsapp/ConversationActionsPanel.tsx');
+assert.doesNotMatch(conversationActions, /params\.set\('(phone|conversation_id)'|\/customers\/new\?/);
 console.log('Sales customer context passed for active and archived customers, tenant and customer list filters, invalid IDs and quick-action routes.');
