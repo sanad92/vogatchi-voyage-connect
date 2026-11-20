@@ -1,5 +1,5 @@
 import { isPilgrimageBookingType } from '@/lib/pilgrimage/operations';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useOrgId } from '@/hooks/useOrgId';
 import { useCustomerContext } from '@/hooks/useCustomerContext';
@@ -51,9 +51,10 @@ const UnifiedBookings = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const pageSize = 20;
+  useEffect(() => setPage(1), [orgId, customerId]);
 
   const { bookings, totalCount, isLoading: bookingsLoading, error, refetch, isFetching } = useUnifiedBookings({
-    customerId: customerId === null ? undefined : customer.data?.id ?? null,
+    customerId: customerId === null ? undefined : (customer.isSuccess ? customer.data?.id ?? null : null),
     type: typeFilter !== 'all' ? typeFilter as BookingType : undefined,
     status: statusFilter !== 'all' ? statusFilter as BookingStatus : undefined,
     search: search || undefined,
@@ -100,14 +101,14 @@ const UnifiedBookings = () => {
         description="حجوزات الفنادق والطيران والسيارات والنقل والحج والعمرة"
         icon={CalendarDays}
         actions={canCreateBookings() && (
-          <Button onClick={() => navigate(customer.data ? `/bookings/new?${new URLSearchParams({ customer_id: customer.data.id })}` : '/bookings/new')}>
+          <Button onClick={() => navigate('/bookings/new')}>
             <Plus className="h-4 w-4 ml-2" />
             حجز جديد
           </Button>
         )}
       />
 
-      {customerId !== null && !customer.isLoading && <p role="status">
+      {customerId !== null && !customer.isLoading && !customer.isError && <p role="status">
         {customer.data ? `حجوزات العميل ${customer.data.name}` : 'العميل الموجود في الرابط غير متاح في الشركة الحالية.'}
       </p>}
 
@@ -150,7 +151,7 @@ const UnifiedBookings = () => {
             ))}
         </Card>}
       </div>
-      {summary.isError && <ListLoadError message="تعذر تحميل ملخص الحجوزات" retry={() => void summary.refetch()} pending={summary.isFetching} />}
+      {customerId === null && summary.isError && <ListLoadError message="تعذر تحميل ملخص الحجوزات" retry={() => void summary.refetch()} pending={summary.isFetching} />}
 
       <Card>
         <CardHeader className="pb-3">
@@ -195,6 +196,8 @@ const UnifiedBookings = () => {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>
+          ) : customer.isError ? (
+            <ListLoadError message="تعذر التحقق من العميل" retry={() => void customer.refetch()} pending={customer.isFetching} />
           ) : error ? (
             <ListLoadError message="تعذر تحميل الحجوزات" retry={() => void refetch()} pending={isFetching} />
           ) : bookings.length === 0 ? (

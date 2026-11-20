@@ -1,17 +1,17 @@
-import { supabase } from '@/integrations/supabase/client';
 import type { SopLead } from '@/hooks/useSop';
-import type { WhatsAppLeadDraft } from '../../supabase/functions/_shared/whatsapp-lead-draft';
+import { callUntypedRpc } from '@/lib/supabaseRpc';
+import { extractWhatsAppLeadDraft, type WhatsAppLeadDraft } from '../../supabase/functions/_shared/whatsapp-lead-draft';
 
 export type { WhatsAppLeadDraft };
 
 export async function reviewWhatsAppLeadDraft(organizationId: string, conversationId: string): Promise<WhatsAppLeadDraft> {
-  const { data, error } = await supabase.functions.invoke<{ success: boolean; data: WhatsAppLeadDraft }>('ai-extract-lead', {
-    body: { organization_id: organizationId, conversation_id: conversationId },
+  const { data, error } = await callUntypedRpc<Array<{ content: string }>>('sop_review_whatsapp_lead_messages', {
+    _org: organizationId, _conversation: conversationId,
   });
-  if (error || !data?.success || !data.data || typeof data.data !== 'object') {
+  if (error || !Array.isArray(data)) {
     throw new Error('تعذّر استخراج مسودة الطلب من هذه المحادثة');
   }
-  return data.data;
+  return extractWhatsAppLeadDraft(data.map(({ content }) => content));
 }
 
 export function getWhatsAppLeadDraftDefaults(draft: WhatsAppLeadDraft): Partial<SopLead> {

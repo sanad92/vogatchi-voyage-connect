@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION public.update_salary_status(p_salary_id uuid, p_statu
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path = ''
 AS $function$
 DECLARE
   s public.monthly_salaries%ROWTYPE;
@@ -60,10 +60,10 @@ END;
 $function$
 ;
 
-CREATE FUNCTION operations_private.preserve_posted_salary()
+CREATE OR REPLACE FUNCTION operations_private.preserve_posted_salary()
 RETURNS trigger
 LANGUAGE plpgsql
-SET search_path TO 'public'
+SET search_path = ''
 AS $$
 BEGIN
   IF OLD.status = 'paid' THEN
@@ -86,10 +86,10 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION operations_private.preserve_posted_salary() FROM PUBLIC, anon, authenticated;
-CREATE TRIGGER preserve_posted_salary BEFORE UPDATE OR DELETE ON public.monthly_salaries
+CREATE OR REPLACE TRIGGER preserve_posted_salary BEFORE UPDATE OR DELETE ON public.monthly_salaries
 FOR EACH ROW EXECUTE FUNCTION operations_private.preserve_posted_salary();
 
-CREATE FUNCTION operations_private.guard_salary_treasury_movement()
+CREATE OR REPLACE FUNCTION operations_private.guard_salary_treasury_movement()
 RETURNS trigger
 LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
 AS $$
@@ -106,72 +106,101 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION operations_private.guard_salary_treasury_movement() FROM PUBLIC, anon, authenticated;
-CREATE TRIGGER guard_salary_treasury_movement BEFORE INSERT OR UPDATE OR DELETE ON public.bank_account_transactions
+CREATE OR REPLACE TRIGGER guard_salary_treasury_movement BEFORE INSERT OR UPDATE OR DELETE ON public.bank_account_transactions
 FOR EACH ROW EXECUTE FUNCTION operations_private.guard_salary_treasury_movement();
 
-CREATE OR REPLACE FUNCTION public.trg_salary_to_journal()
-RETURNS trigger
-LANGUAGE plpgsql SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
+-- Production accrues payroll on save and settles the existing payable on payment.
+-- Keep that attached trigger and journal pair. Change only the live treasury path.
+DO $salary_treasury$
 DECLARE
-  v_account public.bank_accounts%ROWTYPE;
-  v_currency text := upper(COALESCE(NULLIF(NEW.currency, ''), 'EGP'));
-  v_payment_date date := COALESCE(NEW.payment_date, CURRENT_DATE);
-  v_amount numeric := NEW.net_salary;
-  v_kind text;
-  v_treasury_code text;
-  v_journal_id uuid;
-BEGIN
-  IF NEW.status IS DISTINCT FROM 'paid' THEN RETURN NEW; END IF;
-  IF TG_OP = 'UPDATE' THEN
-    IF OLD.status = 'paid' THEN RETURN NEW; END IF;
-    IF OLD.status IS DISTINCT FROM 'pending' THEN
-      RAISE EXCEPTION 'يمكن تسجيل الصرف للراتب المعلّق فقط';
+  definition text;
+  old_normalization text := $old$
+  IF NEW.status = 'paid'
+     AND (TG_OP = 'INSERT' OR COALESCE(OLD.status, '') <> 'paid'
+       OR COALESCE(OLD.payment_method, '') <> '') THEN
+    IF COALESCE(NEW.payment_method, '') = '' THEN
+      RAISE EXCEPTION 'Payment method is required before paying salary';
     END IF;
+    IF NEW.payment_method <> 'cash' THEN
+      IF NEW.bank_account_id IS NULL THEN
+        RAISE EXCEPTION 'Treasury account is required for non-cash salary payment';
+      END IF;
+      SELECT COALESCE(currency, 'EGP') INTO v_bank_currency
+      FROM public.bank_accounts
+      WHERE id = NEW.bank_account_id
+        AND organization_id = NEW.organization_id
+        AND is_active;
+      IF NOT FOUND OR v_bank_currency IS DISTINCT FROM NEW.currency THEN
+        RAISE EXCEPTION 'Salary treasury is missing, inactive, or uses another currency';
+      END IF;
+    ELSE
+      NEW.bank_account_id := NULL;
+    END IF;
+    NEW.payment_date := COALESCE(NEW.payment_date, CURRENT_DATE);
+  END IF;
+$old$;
+  new_normalization text := $new$
+  IF NEW.status = 'paid' AND (TG_OP = 'INSERT' OR COALESCE(OLD.status, '') <> 'paid') THEN
+    IF NEW.payment_method IS NULL OR NEW.payment_method NOT IN ('cash', 'bank_transfer') THEN
+      RAISE EXCEPTION 'اختر طريقة الدفع قبل صرف الراتب';
+    END IF;
+    IF NEW.bank_account_id IS NULL THEN
+      RAISE EXCEPTION 'اختر حساب الخزينة قبل صرف الراتب. حدّث الصفحة لو اختيار الحساب مش ظاهر.';
+    END IF;
+    IF NOT COALESCE(NEW.net_salary > 0 AND NEW.net_salary < 'Infinity'::numeric, false) THEN
+      RAISE EXCEPTION 'صافي الراتب يجب أن يكون مبلغًا موجبًا';
+    END IF;
+    SELECT COALESCE(currency, 'EGP') INTO v_bank_currency
+    FROM public.bank_accounts
+    WHERE id = NEW.bank_account_id AND organization_id = NEW.organization_id AND is_active
+      AND treasury_kind = CASE NEW.payment_method WHEN 'cash' THEN 'cash' ELSE 'bank' END
+    FOR NO KEY UPDATE;
+    IF NOT FOUND OR v_bank_currency IS DISTINCT FROM NEW.currency THEN
+      RAISE EXCEPTION 'حساب الخزينة غير موجود أو نوعه أو عملته مختلفة';
+    END IF;
+    NEW.payment_date := COALESCE(NEW.payment_date, CURRENT_DATE);
+  END IF;
+$new$;
+  old_cash_condition text := '_source_type = ''expense_payment'' AND _payment_method = ''cash'' AND _bank_account_id IS NOT NULL';
+  new_cash_condition text := '_source_type IN (''expense_payment'', ''salary_payment'') AND _payment_method = ''cash'' AND _bank_account_id IS NOT NULL';
+  old_payroll_call text := '  PERFORM public.post_salary_accrual(NEW.id);';
+  new_payroll_call text := $payroll$  IF TG_OP = 'UPDATE' THEN
+    IF OLD.status = 'paid' THEN RETURN NEW; END IF;
+  END IF;
+  PERFORM public.post_salary_accrual(NEW.id);$payroll$;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_trigger
+    WHERE tgrelid = 'public.monthly_salaries'::regclass
+      AND tgfoid = 'public._trg_post_salary()'::regprocedure
+      AND tgenabled IN ('O', 'A') AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'The expected payroll posting trigger is unavailable';
   END IF;
 
-  IF NEW.payment_method IS NULL OR NEW.payment_method NOT IN ('cash', 'bank_transfer') THEN
-    RAISE EXCEPTION 'اختر طريقة الدفع قبل صرف الراتب';
-  END IF;
-  IF NEW.bank_account_id IS NULL THEN
-    RAISE EXCEPTION 'اختر حساب الخزينة قبل صرف الراتب';
-  END IF;
-  IF NOT COALESCE(v_amount > 0 AND v_amount < 'Infinity'::numeric, false) THEN
-    RAISE EXCEPTION 'صافي الراتب يجب أن يكون مبلغًا موجبًا';
+  SELECT pg_get_functiondef('public.normalize_salary_financials()'::regprocedure) INTO definition;
+  IF strpos(definition, new_normalization) = 0 THEN
+    IF strpos(definition, old_normalization) = 0 THEN
+      RAISE EXCEPTION 'Unexpected salary normalization definition';
+    END IF;
+    EXECUTE replace(definition, old_normalization, new_normalization);
   END IF;
 
-  v_kind := CASE NEW.payment_method WHEN 'cash' THEN 'cash' ELSE 'bank' END;
-  SELECT * INTO v_account
-  FROM public.bank_accounts
-  WHERE id = NEW.bank_account_id AND organization_id = NEW.organization_id
-    AND is_active AND treasury_kind = v_kind AND COALESCE(currency, 'EGP') = v_currency
-  FOR NO KEY UPDATE;
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'حساب الخزينة غير موجود أو نوعه أو عملته مختلفة';
-  END IF;
-  IF v_kind = 'cash' AND (v_account.current_balance = 'NaN'::numeric
-    OR COALESCE(v_account.current_balance, 0) < v_amount) THEN
-    RAISE EXCEPTION 'رصيد الخزنة النقدية غير كافٍ';
+  SELECT pg_get_functiondef('public.sync_operating_bank_outflow(text,uuid,uuid,text,uuid,numeric,text,date,text,boolean)'::regprocedure)
+  INTO definition;
+  IF strpos(definition, new_cash_condition) = 0 THEN
+    IF strpos(definition, old_cash_condition) = 0 THEN
+      RAISE EXCEPTION 'Unexpected treasury outflow definition';
+    END IF;
+    EXECUTE replace(definition, old_cash_condition, new_cash_condition);
   END IF;
 
-  v_treasury_code := public._require_route_code(NEW.organization_id, v_kind);
-  INSERT INTO public.bank_account_transactions (
-    bank_account_id, transaction_type, amount, description, transaction_date,
-    reference_number, created_by, organization_id, source_type, source_id, currency
-  ) VALUES (
-    v_account.id, 'withdrawal', v_amount, 'صرف راتب شهري', v_payment_date,
-    'SALARY-' || NEW.id, auth.uid(), NEW.organization_id, 'salary_payment', NEW.id, v_currency
-  );
-
-  v_journal_id := public.post_journal_entry(
-    NEW.organization_id, v_payment_date, 'صرف راتب شهري', 'salary', NEW.id,
-    jsonb_build_array(
-      jsonb_build_object('account_code', '6000', 'debit', v_amount, 'credit', 0, 'description', 'مصروف راتب شهري'),
-      jsonb_build_object('account_code', v_treasury_code, 'debit', 0, 'credit', v_amount, 'description', 'صرف راتب')),
-    v_currency
-  );
-  IF v_journal_id IS NULL THEN RAISE EXCEPTION 'تعذّر ترحيل قيد صرف الراتب'; END IF;
-  RETURN NEW;
+  SELECT pg_get_functiondef('public._trg_post_salary()'::regprocedure) INTO definition;
+  IF strpos(definition, new_payroll_call) = 0 THEN
+    IF strpos(definition, old_payroll_call) = 0 OR strpos(definition, 'PERFORM public.post_salary_payment(NEW.id);') = 0 THEN
+      RAISE EXCEPTION 'Unexpected payroll posting definition';
+    END IF;
+    EXECUTE replace(definition, old_payroll_call, new_payroll_call);
+  END IF;
 END;
-$$;
+$salary_treasury$;

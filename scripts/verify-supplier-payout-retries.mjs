@@ -6,13 +6,15 @@ const migration = readFileSync(new URL('../supabase/migrations/20261119231740_ma
 const db = new PGlite();
 const org = '10000000-0000-0000-0000-000000000001';
 const order = '20000000-0000-0000-0000-000000000001';
+const otherOrg = '10000000-0000-0000-0000-000000000002';
+const otherOrder = '20000000-0000-0000-0000-000000000002';
 const firstRequest = '30000000-0000-0000-0000-000000000001';
 const secondRequest = '30000000-0000-0000-0000-000000000002';
 const account = '40000000-0000-0000-0000-000000000001';
 
-const payout = (amount, request) => db.query(`
+const payout = (amount, request, paymentOrder = order) => db.query(`
   SELECT public.record_supplier_payout($1, $2, $3, 'EGP', 1, 'bank_transfer', $4, '2026-11-01', NULL, NULL) AS payment
-`, [order, request, amount, account]);
+`, [paymentOrder, request, amount, account]);
 
 try {
   await db.exec(`
@@ -30,10 +32,14 @@ try {
       INSERT INTO public.supplier_payments (order_id, amount) VALUES ($1, $2) RETURNING id INTO payment;
       RETURN payment;
     END $$;
-    INSERT INTO public.supplier_payment_orders VALUES ('${order}', '${org}', 100);
+    INSERT INTO public.supplier_payment_orders VALUES ('${order}', '${org}', 100), ('${otherOrder}', '${otherOrg}', 100);
   `);
   await db.exec(migration);
+  await db.exec(migration);
+  await db.exec('SET ROLE anon');
+  await assert.rejects(() => payout(60, firstRequest), { code: '42501' });
   await db.exec('SET ROLE authenticated');
+  await assert.rejects(() => payout(60, firstRequest, otherOrder), { code: '42501' });
 
   const first = (await payout(60, firstRequest)).rows[0].payment;
   assert.equal((await payout(60, firstRequest)).rows[0].payment, first);

@@ -73,6 +73,7 @@ try {
   await db.exec(extract(phoneMigration, 'CREATE OR REPLACE FUNCTION public.normalize_phone_digits', 'CREATE OR REPLACE FUNCTION public.prevent_duplicate_customer_phone'));
   await db.exec(extract(emailMigration, 'CREATE OR REPLACE FUNCTION public.normalize_email_address', 'CREATE OR REPLACE FUNCTION public.canonicalize_and_prevent_duplicate_customer_email'));
   await db.exec(sql('20261120000603_record_customer_marketing_permissions.sql'));
+  await db.exec(sql('20261120000603_record_customer_marketing_permissions.sql'));
 
   await asUser(viewer);
   assert.deepEqual(await states(), { email: 'not_recorded', whatsapp: 'not_recorded' });

@@ -1,10 +1,26 @@
--- Existing database triggers and maintenance jobs keep their internal functions.
-REVOKE EXECUTE ON FUNCTION public.run_booking_automation(uuid),
-  public.retry_booking_automation_step(uuid),
-  public.handler_run_booking_automation(public.domain_events)
-  FROM PUBLIC, anon, authenticated;
+CREATE SCHEMA IF NOT EXISTS booking_automation_private;
+REVOKE ALL ON SCHEMA booking_automation_private FROM PUBLIC, anon, authenticated;
+GRANT USAGE ON SCHEMA booking_automation_private TO service_role;
 
-CREATE FUNCTION public.run_authorized_booking_automation(p_booking_id uuid)
+-- Retain the original engines and their object identities outside the Data API.
+DO $migration$
+BEGIN
+  IF to_regprocedure('booking_automation_private.run_booking_automation(uuid)') IS NULL THEN
+    ALTER FUNCTION public.run_booking_automation(uuid) SET SCHEMA booking_automation_private;
+  END IF;
+  IF to_regprocedure('booking_automation_private.retry_booking_automation_step(uuid)') IS NULL THEN
+    ALTER FUNCTION public.retry_booking_automation_step(uuid) SET SCHEMA booking_automation_private;
+  END IF;
+END;
+$migration$;
+
+REVOKE EXECUTE ON FUNCTION booking_automation_private.run_booking_automation(uuid),
+  booking_automation_private.retry_booking_automation_step(uuid),
+  public.handler_run_booking_automation(public.domain_events) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION booking_automation_private.run_booking_automation(uuid),
+  booking_automation_private.retry_booking_automation_step(uuid) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.run_authorized_booking_automation(p_booking_id uuid)
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -32,11 +48,11 @@ BEGIN
     RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'Booking automation is unavailable after cancellation';
   END IF;
 
-  RETURN public.run_booking_automation(p_booking_id);
+  RETURN booking_automation_private.run_booking_automation(p_booking_id);
 END;
 $$;
 
-CREATE FUNCTION public.retry_authorized_booking_automation_step(p_step_id uuid)
+CREATE OR REPLACE FUNCTION public.retry_authorized_booking_automation_step(p_step_id uuid)
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -58,3 +74,30 @@ REVOKE ALL ON FUNCTION public.run_authorized_booking_automation(uuid),
   public.retry_authorized_booking_automation_step(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.run_authorized_booking_automation(uuid),
   public.retry_authorized_booking_automation_step(uuid) TO authenticated;
+
+-- Cached browser clients keep their RPC signatures and go through the same
+-- checks as the new UI. Trusted stored callers retain the original behavior.
+CREATE OR REPLACE FUNCTION public.run_booking_automation(p_booking_id uuid)
+RETURNS uuid LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
+BEGIN
+  IF current_user IN ('postgres', 'service_role') THEN
+    RETURN booking_automation_private.run_booking_automation(p_booking_id);
+  END IF;
+  RETURN public.run_authorized_booking_automation(p_booking_id);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.retry_booking_automation_step(p_step_id uuid)
+RETURNS uuid LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
+BEGIN
+  IF current_user IN ('postgres', 'service_role') THEN
+    RETURN booking_automation_private.retry_booking_automation_step(p_step_id);
+  END IF;
+  RETURN public.retry_authorized_booking_automation_step(p_step_id);
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.run_booking_automation(uuid), public.retry_booking_automation_step(uuid)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.run_booking_automation(uuid), public.retry_booking_automation_step(uuid)
+  TO authenticated, service_role;

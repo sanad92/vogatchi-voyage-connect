@@ -67,6 +67,7 @@ try {
     GRANT ALL ON public.organizations, public.customers, public.customer_follow_ups TO service_role;
     CREATE SCHEMA cron;
     CREATE TABLE cron.jobs(name text PRIMARY KEY, schedule text, command text);
+    CREATE VIEW cron.job AS SELECT name AS jobname, current_user AS username FROM cron.jobs;
     CREATE FUNCTION cron.schedule(text, text, text) RETURNS void LANGUAGE sql AS
       $$ INSERT INTO cron.jobs VALUES ($1, $2, $3) $$;
   `);
@@ -88,6 +89,8 @@ try {
     INSERT INTO public.journey_enrollments (journey_id, organization_id, customer_id)
       VALUES ('${legacy}', '${org}', '${existing}');
   `);
+  await db.exec(migration('20261119234830_activate_internal_marketing_journeys.sql'));
+  await db.exec(migration('20261119231108_save_marketing_journey_draft_atomically.sql'));
   await db.exec(migration('20261119234830_activate_internal_marketing_journeys.sql'));
   assert.deepEqual(await rows('SELECT * FROM cron.jobs'), [{
     name: 'dispatch-marketing-journey-steps', schedule: '* * * * *',

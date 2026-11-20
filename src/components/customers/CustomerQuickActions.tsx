@@ -7,20 +7,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { 
   MoreVertical, 
   Plus, 
+  CalendarDays,
   FileText, 
   MessageSquare, 
   Download,
   Printer,
-  Star,
   Mail
 } from "lucide-react";
 import { Customer } from "@/types/customer";
 import { toast } from "sonner";
 import { formatCurrencyTotals, getCustomerSpend } from "@/lib/customerMetrics";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
+import { useSupabasePermissions } from "@/hooks/useSupabasePermissions";
 
 interface CustomerQuickActionsProps {
   customer: Customer;
@@ -38,6 +40,9 @@ const escapeHtml = (unsafe: string | null | undefined): string => {
 
 const CustomerQuickActions = ({ customer }: CustomerQuickActionsProps) => {
   const navigate = useNavigate();
+  const { isSuperAdmin } = useOptimizedAuth();
+  const { canViewBookings, canViewInvoices } = useSupabasePermissions();
+  const customerFilter = new URLSearchParams({ customer_id: customer.id });
   const [isLoading, setIsLoading] = useState(false);
 
   const handleNewBooking = () => {
@@ -190,6 +195,19 @@ const CustomerQuickActions = ({ customer }: CustomerQuickActionsProps) => {
           <FileText className="h-4 w-4 mr-2" />
           فاتورة جديدة
         </DropdownMenuItem>
+
+        {(isSuperAdmin() || canViewBookings()) && <DropdownMenuItem asChild>
+          <Link to={`/bookings?${customerFilter}`}>
+            <CalendarDays className="h-4 w-4 mr-2" />
+            عرض حجوزات العميل
+          </Link>
+        </DropdownMenuItem>}
+        {(isSuperAdmin() || canViewInvoices()) && <DropdownMenuItem asChild>
+          <Link to={`/invoices?${customerFilter}`}>
+            <FileText className="h-4 w-4 mr-2" />
+            عرض فواتير العميل
+          </Link>
+        </DropdownMenuItem>}
         
         <DropdownMenuSeparator />
         

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,16 @@ import { ArrowLeft, Save, FileText } from 'lucide-react';
 import { calculateFinancialBreakdown } from '@/utils/calculationHelpers';
 import { useCurrencyHelper } from '@/hooks/useCurrencyHelper';
 
+async function readInvoiceBooking(orgId: string, id: string) {
+  const { data, error } = await supabase.from('bookings')
+    .select('id, booking_type, booking_number, customer_id, currency')
+    .eq('organization_id', orgId)
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 const NewInvoice = () => {
   const orgId = useOrgId();
   const [params] = useSearchParams();
@@ -22,15 +32,7 @@ const NewInvoice = () => {
   const booking = useQuery({
     queryKey: ['new-invoice-booking', orgId, id],
     enabled: Boolean(orgId && isRecordId(id)),
-    queryFn: async () => {
-      const { data, error } = await supabase.from('bookings')
-        .select('id, booking_type, booking_number, customer_id, currency')
-        .eq('organization_id', orgId!)
-        .eq('id', id!)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => readInvoiceBooking(orgId!, id!),
   });
   const customerId = id ? booking.data?.customer_id : params.get('customer_id');
   const customer = useCustomerContext(orgId, customerId);
@@ -66,6 +68,12 @@ function InvoiceForm({ orgId, initialCustomer, missingCustomer, booking }: {
   const { toast } = useToast();
   const { ensureSupportedCurrency } = useCurrencyHelper();
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   
   const [formData, setFormData] = useState({
     customer_id: initialCustomer?.id ?? '',
@@ -80,23 +88,34 @@ function InvoiceForm({ orgId, initialCustomer, missingCustomer, booking }: {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading || !orgId) return;
+    if (submitting.current || !orgId) return;
 
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+    const amount = Number(formData.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
       toast({ title: 'خطأ', description: 'المبلغ مطلوب ويجب أن يكون أكبر من صفر', variant: 'destructive' });
       return;
     }
 
+    submitting.current = true;
     setLoading(true);
 
     try {
       if (formData.customer_id && !await readActiveCustomer(orgId, formData.customer_id)) {
         throw new Error('اختر عميلاً متاحًا في الشركة الحالية');
       }
+      if (booking) {
+        const current = await readInvoiceBooking(orgId, booking.id);
+        if (!current || current.customer_id !== formData.customer_id
+          || current.booking_type !== booking.booking_type || current.currency !== booking.currency) {
+          throw new Error('اتغيّرت بيانات الحجز. افتحه من جديد قبل إنشاء الفاتورة.');
+        }
+      }
+      if (!mounted.current) return;
       // Generate invoice number via RPC
       const { data: invoiceNumber } = await supabase.rpc('generate_invoice_number');
+      if (!mounted.current) return;
       const financialBreakdown = calculateFinancialBreakdown({
-        subtotal: parseFloat(formData.amount),
+        subtotal: amount,
         discountAmount: 0,
         vatRate: 0,
       });
@@ -122,6 +141,7 @@ function InvoiceForm({ orgId, initialCustomer, missingCustomer, booking }: {
         .single();
 
       if (error) throw error;
+      if (!mounted.current) return;
 
       toast({
         title: "تم إنشاء الفاتورة بنجاح",
@@ -130,6 +150,7 @@ function InvoiceForm({ orgId, initialCustomer, missingCustomer, booking }: {
 
       navigate('/invoices');
     } catch (error: any) {
+      if (!mounted.current) return;
       console.error('Error creating invoice:', error);
       toast({
         title: "خطأ في إنشاء الفاتورة",
@@ -137,7 +158,8 @@ function InvoiceForm({ orgId, initialCustomer, missingCustomer, booking }: {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      submitting.current = false;
+      if (mounted.current) setLoading(false);
     }
   };
 

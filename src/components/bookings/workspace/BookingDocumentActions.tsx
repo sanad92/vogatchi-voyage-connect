@@ -83,11 +83,14 @@ export const BookingDocumentActions = ({ workspace }: Props) => {
 
     const generatedDocs = supabase.from('generated_documents');
     const { data: existingDoc, error: lookupError } = await generatedDocs
-      .select('id, file_path')
+      .select('id, file_path, booking_id, document_type')
       .eq('organization_id', orgId)
       .eq('document_number', docNumber)
       .maybeSingle();
     if (lookupError) throw lookupError;
+    if (existingDoc && (existingDoc.booking_id !== booking.id || existingDoc.document_type !== docType)) {
+      throw new Error('رقم المستند مسجل لحجز أو نوع مختلف. تعذّر حفظ نسخة جديدة.');
+    }
 
     // Storage needs a visible metadata record before its upload permission check.
     let insertedId: string | undefined;

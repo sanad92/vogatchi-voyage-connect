@@ -189,8 +189,9 @@ export function useDocumentCenter(filter: DocumentFilter = {}) {
         .select('file_path').eq('id', id).eq('organization_id', orgId).single();
       if (lookupError) throw lookupError;
       if (doc.file_path) {
-        const { error } = await supabase.storage.from('documents').remove([doc.file_path]);
+        const { data: removedFiles, error } = await supabase.storage.from('documents').remove([doc.file_path]);
         if (error) throw error;
+        if (!removedFiles?.length) throw new Error('تعذّر تأكيد حذف الملف من التخزين.');
       }
       const { error } = await supabase.from('documents').delete()
         .eq('id', id).eq('organization_id', orgId).select('id').single();

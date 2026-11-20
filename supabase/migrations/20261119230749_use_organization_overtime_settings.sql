@@ -1,8 +1,18 @@
--- Reject new zero divisors while keeping older settings readable until corrected.
-ALTER TABLE public.organization_salary_settings
-  ADD CONSTRAINT organization_salary_settings_positive_working_time_check
-  CHECK (setting_key NOT IN ('working_days_per_month', 'working_hours_per_day') OR setting_value > 0)
-  NOT VALID;
+-- Reject new invalid divisors while keeping older settings readable until corrected.
+DO $migration$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_constraint
+    WHERE conrelid = 'public.organization_salary_settings'::regclass
+      AND conname = 'organization_salary_settings_positive_working_time_check'
+  ) THEN
+    ALTER TABLE public.organization_salary_settings
+      ADD CONSTRAINT organization_salary_settings_positive_working_time_check
+      CHECK (setting_key NOT IN ('working_days_per_month', 'working_hours_per_day') OR setting_value > 0)
+      NOT VALID;
+  END IF;
+END;
+$migration$;
 
 CREATE OR REPLACE FUNCTION public.calculate_monthly_salary(p_employee_id uuid, p_salary_month date, p_overtime_hours numeric DEFAULT 0, p_bonus numeric DEFAULT 0, p_deductions numeric DEFAULT 0, p_notes text DEFAULT NULL::text)
  RETURNS jsonb
@@ -46,8 +56,8 @@ BEGIN
   END IF;
 
   SELECT
-    coalesce(nullif(max(setting_value) FILTER (WHERE setting_key = 'working_days_per_month'), 0), 30),
-    coalesce(nullif(max(setting_value) FILTER (WHERE setting_key = 'working_hours_per_day'), 0), 8),
+    coalesce(max(setting_value) FILTER (WHERE setting_key = 'working_days_per_month' AND setting_value > 0), 30),
+    coalesce(max(setting_value) FILTER (WHERE setting_key = 'working_hours_per_day' AND setting_value > 0), 8),
     coalesce(max(setting_value) FILTER (WHERE setting_key = 'overtime_multiplier'), 1.5)
   INTO v_working_days, v_working_hours, v_overtime_multiplier
   FROM public.organization_salary_settings

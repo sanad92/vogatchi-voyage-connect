@@ -54,35 +54,49 @@ try {
     GRANT INSERT ON public.bookings TO authenticated;
   `);
   await db.exec(migration);
+  await db.exec(migration);
   const run = (suffix) => db.query('SELECT public.run_authorized_booking_automation($1) AS booking_id', [id(suffix)]);
   const retry = (suffix) => db.query('SELECT public.retry_authorized_booking_automation_step($1) AS booking_id', [id(suffix)]);
+  const cachedRun = (suffix) => db.query('SELECT public.run_booking_automation($1) AS booking_id', [id(suffix)]);
+  const cachedRetry = (suffix) => db.query('SELECT public.retry_booking_automation_step($1) AS booking_id', [id(suffix)]);
 
   await db.exec(`SET ROLE authenticated; SET test.actor = '${id(201)}'; SET test.scope = 'organization';`);
-  await assert.rejects(db.query('SELECT public.run_booking_automation($1)', [id(101)]), { code: '42501' });
-  await assert.rejects(db.query('SELECT public.retry_booking_automation_step($1)', [id(301)]), { code: '42501' });
+  await assert.rejects(db.query('SELECT booking_automation_private.run_booking_automation($1)', [id(101)]), { code: '42501' });
   await assert.rejects(db.query('SELECT public.handler_run_booking_automation(row($1::uuid)::public.domain_events)', [id(102)]), { code: '42501' });
-  await assert.rejects(run(102), { code: '42501' });
-  await assert.rejects(run(103), { code: '22023' });
-  await assert.rejects(retry(302), { code: '42501' });
-  await assert.rejects(retry(303), { code: '42501' });
-  await assert.rejects(retry(304), { code: '42501' });
+  for (const call of [run, cachedRun]) {
+    await assert.rejects(call(102), { code: '42501' });
+    await assert.rejects(call(103), { code: '22023' });
+  }
+  for (const call of [retry, cachedRetry]) {
+    await assert.rejects(call(302), { code: '42501' });
+    await assert.rejects(call(303), { code: '42501' });
+    await assert.rejects(call(304), { code: '42501' });
+  }
   await db.exec("SET test.scope = 'own';");
   await assert.rejects(run(101), { code: '42501' });
+  await assert.rejects(cachedRun(101), { code: '42501' });
   await db.exec("SET test.scope = 'organization';");
   await db.exec("SET test.subscription = 'paused';");
   await assert.rejects(run(101), { code: '42501' });
   await assert.rejects(retry(301), { code: '42501' });
+  await assert.rejects(cachedRun(101), { code: '42501' });
+  await assert.rejects(cachedRetry(301), { code: '42501' });
   await db.exec("SET test.subscription = 'active';");
   assert.equal((await run(101)).rows[0].booking_id, id(101));
   assert.equal((await retry(301)).rows[0].booking_id, id(101));
+  assert.equal((await cachedRun(101)).rows[0].booking_id, id(101));
+  assert.equal((await cachedRetry(301)).rows[0].booking_id, id(101));
 
   await db.exec(`INSERT INTO public.bookings VALUES ('${id(104)}', '${id(201)}', 'confirmed', 'confirmed');`);
   await db.exec('RESET ROLE; SET ROLE service_role;');
   await db.query('SELECT public.run_booking_automation($1)', [id(102)]);
+  assert.equal((await cachedRetry(302)).rows[0].booking_id, id(302));
+  await db.exec('RESET ROLE; SET ROLE anon;');
+  for (const call of [run, retry, cachedRun, cachedRetry]) await assert.rejects(call(101), { code: '42501' });
   await db.exec('RESET ROLE;');
   const calls = (await db.query('SELECT booking_id FROM public.automation_calls ORDER BY booking_id')).rows.map((row) => row.booking_id);
-  assert.deepEqual(calls, [id(101), id(101), id(102), id(104)]);
-  console.log('Booking automation access, tenant isolation, cancelled booking guard, and internal trigger checks passed.');
+  assert.deepEqual(calls, [id(101), id(101), id(101), id(101), id(102), id(104)]);
+  console.log('Booking automation access, cached RPC compatibility, tenant isolation, cancelled booking guard, and internal trigger checks passed.');
 } finally {
   await db.close();
 }

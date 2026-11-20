@@ -87,11 +87,12 @@ export const useUnifiedBookings = (filters: BookingFilters = {}) => {
   const bookingsQuery = useQuery({
     queryKey: ['unified-bookings', orgId, type, status, searchTerm, startDate, endDate, page, pageSize, customerId],
     queryFn: async () => {
+      if (!orgId || customerId === null) return { data: [], count: 0 };
       let q = supabase
         .from('bookings')
-        .select('*, customers(name), employees(full_name), booking_statuses(name, name_ar, color)', { count: 'exact' });
+        .select('*, customers(name), employees(full_name), booking_statuses(name, name_ar, color)', { count: 'exact' })
+        .eq('organization_id', orgId);
 
-      if (orgId) q = q.eq('organization_id', orgId);
       if (type) q = q.eq('booking_type', type);
       if (status) q = q.eq('status', status);
       if (customerId) q = q.eq('customer_id', customerId);

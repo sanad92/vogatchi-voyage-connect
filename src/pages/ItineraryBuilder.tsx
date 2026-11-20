@@ -42,6 +42,13 @@ export default function ItineraryBuilder() {
 function ItineraryForm({ orgId, sourceQuoteId }: { orgId: string; sourceQuoteId: string | null }) {
   const navigate = useNavigate();
   const loadedRevision = useRef<string | null>(null);
+  const submitting = useRef(false);
+  const mounted = useRef(false);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const { createQuote } = useQuotes();
   const { hasPermission } = useSupabasePermissions();
   const { data: orgCurrency, isLoading: currencyLoading } = useQuery({
@@ -146,6 +153,17 @@ function ItineraryForm({ orgId, sourceQuoteId }: { orgId: string; sourceQuoteId:
     setLines(old => [...old, { ...newLine('flight'), description: 'تذاكر طيران للمسافرين', currency: flightFareCurrency, cost, quantity: 1, details: 'تذاكر طيران للمسافرين' }]);
   };
   const save = async () => {
+    if (submitting.current || createQuote.isPending) return;
+    submitting.current = true;
+    setSaving(true);
+    try {
+      await submitItinerary();
+    } finally {
+      submitting.current = false;
+      if (mounted.current) setSaving(false);
+    }
+  };
+  const submitItinerary = async () => {
     if (sourceQuoteId && !hasPermission('quotes_edit')) return toast.error('ليس لديك صلاحية مراجعة عروض الأسعار');
     if (sourceQuoteId && (revisionLoading || revisionError || !revision)) return toast.error('تعذر تحميل العرض الأصلي للمراجعة');
     const errors = validateItinerary({ customer, destination, travelers: { adults, children, infants }, start, end, lines, rates, quoteCurrency: currency });
@@ -170,6 +188,7 @@ function ItineraryForm({ orgId, sourceQuoteId }: { orgId: string; sourceQuoteId:
       return toast.error('تعذر التحقق من العميل المرتبط بالعرض');
     }
     if (linkedCustomer && !verifiedCustomer) return toast.error('العميل المرتبط غير متاح. اختر عميلاً آخر أو احفظ بالاسم.');
+    if (!mounted.current) return;
     try {
       const quote = await createQuote.mutateAsync({
         customer_id: verifiedCustomer?.id ?? null, customer_name: verifiedCustomer?.name ?? customer.trim(), destination: destination.trim(),
@@ -177,7 +196,7 @@ function ItineraryForm({ orgId, sourceQuoteId }: { orgId: string; sourceQuoteId:
         notes: (sourceQuoteId ? 'Revised from quote: ' + sourceQuoteId + ' | ' : '') + 'Itinerary Builder | Package: ' + packageType + ' | Currency: ' + currency + ' | Adults: ' + adults + ' | Children: ' + children + ' | Infants: ' + infants,
         currency, discount_amount: 0, vat_rate: 0, valid_until: null, assigned_employee_id: null, status: 'draft', items
       });
-      navigate(`/quotes/${quote.id}`);
+      if (mounted.current) navigate(`/quotes/${quote.id}`);
     } catch { /* Existing mutation displays the error toast. */ }
   };
   return <div dir="rtl" className="p-4 md:p-6 space-y-5 max-w-6xl mx-auto">
@@ -232,7 +251,7 @@ function ItineraryForm({ orgId, sourceQuoteId }: { orgId: string; sourceQuoteId:
     </CardContent></Card>
     <Card><CardHeader><CardTitle>الملخص الداخلي</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-3 gap-3"><div>التكلفة: <b>{totalCost.toLocaleString()} {currency}</b></div><div>البيع: <b>{totalSale.toLocaleString()} {currency}</b></div><div>الربح: <b>{round(totalSale-totalCost).toLocaleString()} {currency}</b></div></CardContent></Card>
     {hasLoss && <p role="alert" className="text-destructive font-medium">تنبيه: يوجد بند سعر بيعه أقل من تكلفته. راجع هامش الربح قبل الحفظ.</p>}
-    <div className="flex gap-3 flex-wrap"><Button disabled={!valid || createQuote.isPending} onClick={save}>حفظ عرض السعر كمسودة</Button><Select value={language} onValueChange={v => setLanguage(v as 'ar' | 'en')}><SelectTrigger className="w-36"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="ar">العربية</SelectItem><SelectItem value="en">English</SelectItem></SelectContent></Select><Button variant="outline" onClick={() => { window.print(); }}>طباعة / PDF</Button></div>
+    <div className="flex gap-3 flex-wrap"><Button disabled={!valid || saving || createQuote.isPending} onClick={save}>حفظ عرض السعر كمسودة</Button><Select value={language} onValueChange={v => setLanguage(v as 'ar' | 'en')}><SelectTrigger className="w-36"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="ar">العربية</SelectItem><SelectItem value="en">English</SelectItem></SelectContent></Select><Button variant="outline" onClick={() => { window.print(); }}>طباعة / PDF</Button></div>
     <section dir={language === 'ar' ? 'rtl' : 'ltr'} className="bg-white text-slate-900 rounded-xl p-8 border print:border-0 print:p-0" id="customer-itinerary" aria-label="Customer-only itinerary preview">
       <h2 className="text-3xl font-bold tracking-wide">SAFAR</h2><p className="text-sm italic">Travel smarter. Manage better.</p><hr className="my-4"/>
       <h3 className="text-xl font-semibold">{language === 'ar' ? 'برنامج الرحلة وعرض السعر' : 'Travel Itinerary & Quotation'}</h3>

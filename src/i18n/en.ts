@@ -343,6 +343,8 @@ export const EN_DICTIONARY: Record<string, string> = {
   'حفظ رقم الفندق': 'Save hotel room number',
   'حفظ التسكين': 'Save rooming assignment',
   'تم تحديث التسكين': 'Rooming updated',
+  'مكتمل ماليًا': 'Financially complete',
+  'تسوية مفتوحة': 'Open settlement',
   'تعذر تحديث التسكين': 'Rooming could not be updated',
   'مكتمل ماليًا': 'Financially complete',
   'تسوية مفتوحة': 'Open settlement',

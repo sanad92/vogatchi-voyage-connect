@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
+import { matchRoutes } from 'react-router-dom';
 
 const readSql = (name) => readFile(new URL(`../supabase/migrations/${name}`, import.meta.url), 'utf8');
 const [orgA, orgB, ownerA, ownerB, agentA, pageA, pageB] = Array.from({ length: 7 }, () => randomUUID());
@@ -97,8 +98,12 @@ try {
     crmCore.indexOf('CREATE OR REPLACE FUNCTION public.prevent_duplicate_customer_phone')));
   const crmHistory = await readSql('20260812122240_911dab31-ed74-4a14-ad9d-7c478a6af254.sql');
   await db.exec(crmHistory.slice(0, crmHistory.indexOf('-- 2) event-bus trigger')));
-  await db.exec(await readSql('20261119234751_add_company_public_booking_intake.sql'));
-  await db.exec(await readSql('20261119235342_publish_company_cms_snapshots.sql'));
+  const intakeMigration = await readSql('20261119234751_add_company_public_booking_intake.sql');
+  const snapshotsMigration = await readSql('20261119235342_publish_company_cms_snapshots.sql');
+  await db.exec(intakeMigration);
+  await db.exec(snapshotsMigration);
+  await db.exec(intakeMigration);
+  await db.exec(snapshotsMigration);
 
   await as('anon');
   assert.equal(await site('agency-a'), null);
@@ -239,6 +244,18 @@ try {
   await as('anon');
   assert.equal(await resolvePage('agency-a'), null);
   assert.notEqual(await resolvePage('agency-b'), null);
+  const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8');
+  const routes = [...app.matchAll(/<Route path="([^"]+)" element=/g)].map(match => ({ path: match[1] }));
+  assert.equal(matchRoutes(routes, '/p/booking-request')?.at(-1)?.route.path, '/p/booking-request');
+  assert.equal(matchRoutes(routes, '/p/agency-a/booking-request')?.at(-1)?.route.path, '/p/:companySlug/booking-request');
+  assert.equal(matchRoutes(routes, '/p/agency-a/pages/about')?.at(-1)?.route.path, '/p/:companySlug/pages/:pageSlug');
+  assert.equal(routes.some(route => route.path === '/p/:slug'), false);
+  const cms = await readFile(new URL('../src/pages/admin/CMSPages.tsx', import.meta.url), 'utf8');
+  assert.match(cms, /organization_id: orgId/);
+  assert.match(cms, /\.eq\("organization_id", orgId\)/);
+  assert.doesNotMatch(cms, /\.update\(\{ is_published/);
+  const blocks = await readFile(new URL('../src/pages/admin/PageBlocks.tsx', import.meta.url), 'utf8');
+  assert.match(blocks, /\.eq\("organization_id", orgId\)\s+\.eq\("page_id", id\)/);
   console.log('Company CMS publication passed for draft isolation, exact company scope, text projection, refresh and withdrawal.');
 } finally {
   await db.close();

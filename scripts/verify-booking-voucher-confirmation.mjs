@@ -11,7 +11,7 @@ try {
     CREATE SCHEMA private;
     CREATE SCHEMA storage;
     CREATE TABLE public.bookings (id uuid PRIMARY KEY, organization_id uuid, status text, workflow_stage text NOT NULL);
-    CREATE TABLE public.booking_vouchers (id int GENERATED ALWAYS AS IDENTITY, booking_id uuid UNIQUE, organization_id uuid);
+    CREATE TABLE public.booking_vouchers (id int GENERATED ALWAYS AS IDENTITY, booking_id uuid UNIQUE, organization_id uuid, voucher_number text);
     CREATE TABLE public.generated_documents (booking_id uuid, organization_id uuid, document_type text NOT NULL, file_path text);
     CREATE TABLE storage.objects (bucket_id text NOT NULL, name text NOT NULL);
     CREATE FUNCTION public.can_org_write(uuid) RETURNS boolean LANGUAGE sql AS $$
@@ -38,6 +38,7 @@ try {
       ('00000000-0000-0000-0000-000000000104', '00000000-0000-0000-0000-000000000002', 'confirmed', 'confirmed'),
       ('00000000-0000-0000-0000-000000000105', '00000000-0000-0000-0000-000000000001', 'confirmed', 'cancelled');
   `);
+  await db.exec(migration);
   await db.exec(migration);
   const organization = '00000000-0000-0000-0000-000000000001';
   const booking = (id) => `00000000-0000-0000-0000-000000000${id}`;

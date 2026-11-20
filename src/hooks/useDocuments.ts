@@ -123,17 +123,24 @@ export function useDocuments() {
 
   const deleteDocument = useMutation({
     mutationFn: async (id: string) => {
-      const doc = documentsQuery.data?.find(d => d.id === id);
-      if (doc?.file_path) {
-        await supabase.storage.from('documents').remove([doc.file_path]);
+      if (!orgId) throw new Error('اختر المؤسسة أولًا.');
+      const { data: doc, error: lookupError } = await supabase.from('generated_documents')
+        .select('file_path').eq('organization_id', orgId).eq('id', id).single();
+      if (lookupError) throw lookupError;
+      if (doc.file_path) {
+        const { data: removed, error } = await supabase.storage.from('documents').remove([doc.file_path]);
+        if (error) throw error;
+        if (!removed?.length) throw new Error('تعذّر تأكيد حذف الملف من التخزين.');
       }
-      const { error } = await supabase.from('generated_documents').delete().eq('id', id);
+      const { error } = await supabase.from('generated_documents').delete()
+        .eq('organization_id', orgId).eq('id', id).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['generated-documents', orgId] });
       toast.success('تم حذف المستند');
     },
+    onError: (error) => toast.error(error.message || 'تعذّر حذف المستند.'),
   });
 
   const saveTemplate = useMutation({

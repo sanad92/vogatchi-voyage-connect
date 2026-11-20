@@ -1,6 +1,6 @@
 import { useOrganizationSettings } from '@/hooks/useOrganizationSettings';
 import { emptyTerms, readTerms, termsError } from '@/lib/bookingCancellationTerms';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { readActiveCustomer, useActiveCustomerOptions, useCustomerContext, type CustomerContext } from '@/hooks/useCustomerContext';
 import { useQuotes, type QuoteFormData } from '@/hooks/useQuotes';
@@ -87,6 +87,13 @@ function QuoteForm({ orgId, whatsapp, initialCustomer, missingCustomer }: {
   const { settings } = useOrganizationSettings();
   const navigate = useNavigate();
   const { createQuote } = useQuotes();
+  const submitting = useRef(false);
+  const mounted = useRef(false);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   const wizard = useWizardForm({
     steps: quoteSteps,
@@ -136,6 +143,18 @@ function QuoteForm({ orgId, whatsapp, initialCustomer, missingCustomer }: {
   const totalProfit = financialBreakdown.totalProfit;
 
   const handleSubmit = async (status: string) => {
+    if (submitting.current || createQuote.isPending) return;
+    submitting.current = true;
+    setSaving(true);
+    try {
+      await submitQuote(status);
+    } finally {
+      submitting.current = false;
+      if (mounted.current) setSaving(false);
+    }
+  };
+
+  const submitQuote = async (status: string) => {
     let verifiedCustomer: CustomerContext | null = null;
     if (wizard.formData.customer_id) {
       try {
@@ -145,6 +164,7 @@ function QuoteForm({ orgId, whatsapp, initialCustomer, missingCustomer }: {
       }
       if (!verifiedCustomer) return toast.error('اختر عميلاً متاحًا في الشركة الحالية');
     }
+    if (!mounted.current) return;
     const sameContact = whatsapp && (whatsapp.customerId
       ? wizard.formData.customer_id === whatsapp.customerId
       : !wizard.formData.customer_id);
@@ -171,9 +191,13 @@ function QuoteForm({ orgId, whatsapp, initialCustomer, missingCustomer }: {
         },
       })),
     };
-    const quote = await createQuote.mutateAsync(formData);
-    wizard.clearDraft();
-    navigate(whatsapp ? `/quotes/${quote.id}` : '/quotes');
+    try {
+      const quote = await createQuote.mutateAsync(formData);
+      if (mounted.current) {
+        wizard.clearDraft();
+        navigate(whatsapp ? `/quotes/${quote.id}` : '/quotes');
+      }
+    } catch { /* The quote mutation displays the error and preserves the draft. */ }
   };
 
   const handleCustomerChange = (customerId: string) => {
@@ -353,7 +377,7 @@ function QuoteForm({ orgId, whatsapp, initialCustomer, missingCustomer }: {
               </Button>
               <div className="flex gap-3">
                 <span className="text-xs text-muted-foreground self-center">الإرسال بعد اعتماد المراجعة من صفحة العرض</span>
-                <Button onClick={() => handleSubmit('draft')} disabled={createQuote.isPending}>
+                <Button onClick={() => handleSubmit('draft')} disabled={saving || createQuote.isPending}>
                   <Save className="h-4 w-4 ml-1" />
                   حفظ كمسودة
                 </Button>

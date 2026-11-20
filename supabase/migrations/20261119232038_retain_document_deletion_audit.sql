@@ -3,6 +3,7 @@ ALTER TABLE public.document_audit_log
   DROP CONSTRAINT IF EXISTS document_audit_log_document_id_fkey;
 
 DROP POLICY IF EXISTS "doc audit org read" ON public.document_audit_log;
+DROP POLICY IF EXISTS "Read document activity with document or organization access" ON public.document_audit_log;
 CREATE POLICY "Read document activity with document or organization access"
   ON public.document_audit_log FOR SELECT TO authenticated
   USING (
@@ -16,6 +17,7 @@ CREATE POLICY "Read document activity with document or organization access"
   );
 
 DROP POLICY IF EXISTS "doc audit org insert" ON public.document_audit_log;
+DROP POLICY IF EXISTS "Record own client activity on visible documents" ON public.document_audit_log;
 CREATE POLICY "Record own client activity on visible documents"
   ON public.document_audit_log FOR INSERT TO authenticated
   WITH CHECK (
@@ -44,7 +46,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION private.record_document_deletion() FROM PUBLIC, anon, authenticated;
-CREATE TRIGGER record_document_deletion
+CREATE OR REPLACE TRIGGER record_document_deletion
   AFTER DELETE ON public.documents
   FOR EACH ROW EXECUTE FUNCTION private.record_document_deletion();
 

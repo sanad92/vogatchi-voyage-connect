@@ -30,6 +30,7 @@ jobs:
           node scripts/verify-company-core.mjs
           node scripts/verify-organization-roles-and-hr.mjs
           node scripts/verify-platform-paymob-actions.mjs
+          node scripts/verify-subscription-management.mjs
           node scripts/verify-subscription-checkout.mjs
           node scripts/verify-private-storage-visibility.mjs
           node scripts/verify-email-read-state.mjs
@@ -72,6 +73,7 @@ jobs:
           bun run test:itinerary
           node scripts/verify-invitation-email-origin.mjs
           node --experimental-strip-types scripts/verify-transactional-email-dispatch.mjs
+          node scripts/verify-meta-deletion-status.mjs
           node scripts/verify-meta-deletion-confirmation.mjs
           node scripts/verify-operations-remediation.mjs
           node scripts/verify-marketing-journey-runtime.mjs

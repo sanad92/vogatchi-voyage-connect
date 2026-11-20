@@ -1,4 +1,4 @@
-CREATE FUNCTION pilgrimage_inventory_private.amend_private_group(
+CREATE OR REPLACE FUNCTION pilgrimage_inventory_private.amend_private_group(
   _organization_id uuid, _booking_id uuid, _id uuid, _target_program_id uuid,
   _room_type text, _expected_total numeric, _reason text
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
@@ -172,7 +172,7 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION public.amend_pilgrimage_private_group(
+CREATE OR REPLACE FUNCTION public.amend_pilgrimage_private_group(
   _organization_id uuid, _booking_id uuid, _id uuid, _target_program_id uuid,
   _room_type text, _expected_total numeric, _reason text
 ) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path = ''

@@ -1,4 +1,4 @@
-CREATE FUNCTION public.review_whatsapp_identity_attachment(_organization uuid, _conversation uuid, _message uuid)
+CREATE OR REPLACE FUNCTION public.review_whatsapp_identity_attachment(_organization uuid, _conversation uuid, _message uuid)
 RETURNS jsonb
 LANGUAGE sql STABLE SECURITY INVOKER
 SET search_path = ''
@@ -40,7 +40,7 @@ AS $$
       ));
 $$;
 
-CREATE FUNCTION public.apply_whatsapp_identity_review(
+CREATE OR REPLACE FUNCTION public.apply_whatsapp_identity_review(
   _organization uuid, _conversation uuid, _message uuid, _customer uuid,
   _source_path text, _expected_updated_at timestamptz, _name text, _nationality text
 )

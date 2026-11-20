@@ -1,7 +1,7 @@
 CREATE SCHEMA IF NOT EXISTS public_intake_private;
 REVOKE ALL ON SCHEMA public_intake_private FROM PUBLIC, anon, authenticated;
 
-CREATE TABLE public_intake_private.sites (
+CREATE TABLE IF NOT EXISTS public_intake_private.sites (
   organization_id uuid PRIMARY KEY REFERENCES public.organizations(id) ON DELETE CASCADE,
   slug text NOT NULL UNIQUE CHECK (slug ~ '^[a-z0-9]([a-z0-9-]{1,38}[a-z0-9])$'),
   enabled boolean NOT NULL DEFAULT false,
@@ -9,7 +9,7 @@ CREATE TABLE public_intake_private.sites (
   request_salt uuid NOT NULL DEFAULT gen_random_uuid()
 );
 
-CREATE TABLE public_intake_private.booking_receipts (
+CREATE TABLE IF NOT EXISTS public_intake_private.booking_receipts (
   organization_id uuid NOT NULL REFERENCES public_intake_private.sites(organization_id) ON DELETE CASCADE,
   request_key uuid NOT NULL,
   lead_id uuid NOT NULL UNIQUE REFERENCES public.sop_leads(id) ON DELETE CASCADE,
@@ -19,14 +19,14 @@ CREATE TABLE public_intake_private.booking_receipts (
   received_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (organization_id, request_key)
 );
-CREATE INDEX public_booking_receipts_time_idx
+CREATE INDEX IF NOT EXISTS public_booking_receipts_time_idx
   ON public_intake_private.booking_receipts (organization_id, received_at DESC);
 
 ALTER TABLE public_intake_private.sites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public_intake_private.booking_receipts ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON ALL TABLES IN SCHEMA public_intake_private FROM PUBLIC, anon, authenticated;
 
-CREATE FUNCTION public_intake_private.can_manage_site(_org uuid)
+CREATE OR REPLACE FUNCTION public_intake_private.can_manage_site(_org uuid)
 RETURNS boolean
 LANGUAGE sql STABLE SET search_path = ''
 AS $$
@@ -36,7 +36,7 @@ AS $$
 $$;
 REVOKE ALL ON FUNCTION public_intake_private.can_manage_site(uuid) FROM PUBLIC, anon, authenticated;
 
-CREATE FUNCTION public.get_company_public_site_settings(_org uuid)
+CREATE OR REPLACE FUNCTION public.get_company_public_site_settings(_org uuid)
 RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
 AS $$
@@ -54,7 +54,7 @@ $$;
 REVOKE ALL ON FUNCTION public.get_company_public_site_settings(uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_company_public_site_settings(uuid) TO authenticated;
 
-CREATE FUNCTION public.set_company_public_site_settings(_org uuid, _slug text, _enabled boolean, _accepts_booking boolean)
+CREATE OR REPLACE FUNCTION public.set_company_public_site_settings(_org uuid, _slug text, _enabled boolean, _accepts_booking boolean)
 RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
@@ -81,7 +81,7 @@ $$;
 REVOKE ALL ON FUNCTION public.set_company_public_site_settings(uuid, text, boolean, boolean) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.set_company_public_site_settings(uuid, text, boolean, boolean) TO authenticated;
 
-CREATE FUNCTION public.get_public_booking_site(_slug text)
+CREATE OR REPLACE FUNCTION public.get_public_booking_site(_slug text)
 RETURNS jsonb
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
 AS $$
@@ -94,7 +94,7 @@ $$;
 REVOKE ALL ON FUNCTION public.get_public_booking_site(text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_public_booking_site(text) TO anon, authenticated;
 
-CREATE FUNCTION public.submit_public_booking_request(_slug text, _request_key uuid, _request jsonb)
+CREATE OR REPLACE FUNCTION public.submit_public_booking_request(_slug text, _request_key uuid, _request jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$

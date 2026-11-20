@@ -13,10 +13,12 @@ export interface InvoiceFilters {
 }
 
 export const useInvoicesData = (filters?: InvoiceFilters) => {
+  const canRead = filters?.organizationId !== null && filters?.customerId !== null;
   return useQuery({
     queryKey: ['invoices', filters],
-    enabled: filters?.organizationId !== null && filters?.customerId !== null,
+    enabled: canRead,
     queryFn: async () => {
+      if (!canRead) return [];
       let query = supabase
         .from('invoices')
         .select(`

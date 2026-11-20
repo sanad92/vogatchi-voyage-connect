@@ -116,9 +116,11 @@ $$;
 REVOKE ALL ON FUNCTION public.clone_marketing_journey_template(uuid, uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.clone_marketing_journey_template(uuid, uuid) TO authenticated;
 
-DROP POLICY "journey_steps_org" ON public.journey_steps;
+DROP POLICY IF EXISTS "journey_steps_org" ON public.journey_steps;
+DROP POLICY IF EXISTS "journey_steps_read" ON public.journey_steps;
 CREATE POLICY "journey_steps_read" ON public.journey_steps FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.marketing_journeys j WHERE j.id = journey_id));
+DROP POLICY IF EXISTS "journey_steps_write" ON public.journey_steps;
 CREATE POLICY "journey_steps_write" ON public.journey_steps FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.marketing_journeys j WHERE j.id = journey_id AND NOT j.is_template
                 AND public.user_belongs_to_org(auth.uid(), j.organization_id)))

@@ -70,6 +70,7 @@ export default function ExportCenter() {
   const orgId = useOrgId();
   const { currentOrganization } = useOrganization();
   const { hasPermission, getPermissionScope, loading } = useSupabasePermissions();
+  const canExport = hasPermission('reports_export') && getPermissionScope('reports_export') === 'organization';
   const [selectedReport, setSelectedReport] = useState<keyof typeof reports>('bookings');
   const permitted = (Object.keys(reports) as (keyof typeof reports)[]).filter((type) =>
     reports[type].permissions.every((permission) => hasPermission(permission) && getPermissionScope(permission) === 'organization'),
@@ -81,7 +82,7 @@ export default function ExportCenter() {
       <CardHeader><CardTitle>مركز التصدير</CardTitle></CardHeader>
       <CardContent className="space-y-4">
         {loading ? <p role="status">جارٍ التحقق من صلاحيات التقارير…</p>
-          : !orgId || !hasPermission('reports_export') ? <p>يلزم اختيار مؤسسة وامتلاك صلاحية تصدير التقارير.</p>
+          : !orgId || !canExport ? <p>يلزم اختيار مؤسسة وامتلاك صلاحية تصدير التقارير على مستوى المؤسسة.</p>
           : <>
               {hasPermission('financial_view') && <Link className="block text-primary underline" to="/income-statement">قائمة الدخل والتصدير المالي حسب الفترة والعملة</Link>}
               {report ? <>

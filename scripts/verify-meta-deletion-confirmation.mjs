@@ -16,7 +16,6 @@ const absent = '69fa8823-670a-463f-8e37-32ef87892cb7';
 const confirmation = async code => (await db.query(
   'SELECT public.verify_meta_deletion_confirmation($1) AS verified', [code],
 )).rows[0].verified;
-const fileRequest = (metaUser, code) => db.query('SELECT public.record_meta_deletion_request($1, $2)', [metaUser, code]);
 const receive = async (metaUser, code, fingerprint) => (await db.query(
   'SELECT public.receive_meta_deletion_request($1, $2, $3) AS receipt', [metaUser, code, fingerprint],
 )).rows[0].receipt;
@@ -64,15 +63,18 @@ try {
   await db.exec(readFileSync(migration, 'utf8'));
   await db.exec('SET ROLE anon');
   assert.equal(await confirmation(absent), false);
-  await assert.rejects(fileRequest('first-user', recorded), { code: '42501' });
-  await db.exec('RESET ROLE; SET ROLE service_role');
-  await assert.rejects(fileRequest('aborting-user', absent), { code: '23514' });
-  await fileRequest('first-user', recorded);
+  await db.exec('RESET ROLE');
+  const legacyWriter = await db.query(`SELECT to_regprocedure('public.record_meta_deletion_request(text,uuid)') AS writer`);
+  assert.equal(legacyWriter.rows[0].writer, null);
+  // The currently deployed provider callback directly records a legacy receipt.
+  await db.exec('SET ROLE service_role');
+  await db.query(`INSERT INTO public.whatsapp_connection_events (organization_id, event_type, payload)
+    VALUES (NULL, 'meta_data_deletion_request', jsonb_build_object('meta_user_id', 'first-user', 'confirmation_code', $1::text))`, [recorded]);
   await db.exec('RESET ROLE');
   const settings = (await db.query('SELECT meta_user_id, is_active, access_token IS NOT NULL AS has_token FROM public.whatsapp_settings ORDER BY meta_user_id')).rows;
   assert.deepEqual(settings, [
     { meta_user_id: 'aborting-user', is_active: true, has_token: true },
-    { meta_user_id: 'first-user', is_active: false, has_token: false },
+    { meta_user_id: 'first-user', is_active: true, has_token: true },
     { meta_user_id: 'other-user', is_active: true, has_token: true },
   ]);
   await db.exec('SET ROLE anon');

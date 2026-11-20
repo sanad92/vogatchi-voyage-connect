@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrgId } from '@/hooks/useOrgId';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,12 +22,18 @@ interface Finding { severity: 'ok' | 'warn' | 'error'; category: string; message
 export default function FinancialValidation() {
   usePageTitle('تقرير التحقق المالي');
   const orgId = useOrgId();
+  const { hasPermission, getPermissionScope, loading: permissionsLoading } = useSupabasePermissions();
+  // B2B rows are visible only when both scopes cover the whole organization.
+  // Comparing scoped result sets would report existing invoices or allocations as missing.
+  const canValidate = Boolean(orgId && !permissionsLoading
+    && hasPermission('financial_view') && getPermissionScope('financial_view') === 'organization'
+    && hasPermission('invoices_view') && getPermissionScope('invoices_view') === 'organization');
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['financial-validation', orgId],
-    enabled: !!orgId,
+    enabled: canValidate,
     queryFn: async () => {
-      if (!orgId) throw new Error('لا توجد شركة نشطة للفحص');
+      if (!orgId || !canValidate) throw new Error('تقرير التحقق يحتاج صلاحية المالية والفواتير على مستوى الشركة.');
       const [bookings, invoices, supplierPayments, journals, banks, expenses, customerReceipts] = await Promise.all([
         allRows((from, to) => supabase.from('bookings').select('id, selling_price, cost_price, profit, currency, customer_id, supplier_id, status').eq('organization_id', orgId).order('id').range(from, to)),
         allRows((from, to) => supabase.from('invoices').select('id, booking_id, currency, subtotal, vat_amount, discount_amount, final_amount, total_paid_amount, remaining_amount').eq('organization_id', orgId).order('id').range(from, to)),
@@ -194,8 +201,12 @@ export default function FinancialValidation() {
         </AlertDescription>
       </Alert>
 
-      {isLoading ? (
+      {permissionsLoading || isLoading ? (
         <div className="text-center py-12 text-muted-foreground">جارٍ الفحص…</div>
+      ) : !canValidate ? (
+        <Alert>
+          <AlertDescription>تقرير التحقق يحتاج صلاحية المالية والفواتير على مستوى الشركة.</AlertDescription>
+        </Alert>
       ) : isError || !data ? (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />

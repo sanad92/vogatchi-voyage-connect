@@ -27,6 +27,7 @@ REVOKE ALL ON FUNCTION private.has_hidden_confidential_document(text) FROM PUBLI
 GRANT EXECUTE ON FUNCTION private.has_hidden_confidential_document(text) TO authenticated;
 
 DROP POLICY IF EXISTS "Org members can view their org documents" ON storage.objects;
+DROP POLICY IF EXISTS "Read documents with visible metadata" ON storage.objects;
 CREATE POLICY "Read documents with visible metadata" ON storage.objects
 FOR SELECT TO authenticated
 USING (
@@ -44,10 +45,19 @@ USING (
       WHERE doc.file_path = storage.objects.name
         AND doc.organization_id::text = pg_catalog.split_part(storage.objects.name, '/', 1)
     )
+    OR (
+      -- Older open sessions register the object before its metadata. Storage
+      -- sets owner_id from the session JWT. Only that uploader can receive
+      -- the new object during this window, including an INSERT RETURNING.
+      owner_id = (SELECT auth.uid())::text
+      AND created_at > pg_catalog.now() - interval '10 minutes'
+      AND pg_catalog.split_part(name, '/', 2) IN ('uploads', 'invoice', 'receipt', 'voucher')
+    )
   )
 );
 
 DROP POLICY IF EXISTS "org members read email attachments" ON storage.objects;
+DROP POLICY IF EXISTS "Read email attachments with visible metadata" ON storage.objects;
 CREATE POLICY "Read email attachments with visible metadata" ON storage.objects
 FOR SELECT TO authenticated
 USING (

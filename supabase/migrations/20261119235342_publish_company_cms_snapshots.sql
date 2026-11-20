@@ -4,12 +4,14 @@ DROP POLICY IF EXISTS "Public can view active blocks of active pages" ON public.
 REVOKE ALL ON public.pages, public.blocks FROM PUBLIC, anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.pages, public.blocks TO authenticated;
 
+DROP POLICY IF EXISTS cms_pages_company_access ON public.pages;
 CREATE POLICY cms_pages_company_access ON public.pages AS RESTRICTIVE TO authenticated
   USING (public.is_platform_admin(auth.uid()) OR
     (organization_id IS NOT NULL AND public.has_org_permission(organization_id, 'admin_settings')))
   WITH CHECK (public.is_platform_admin(auth.uid()) OR
     (organization_id IS NOT NULL AND public.has_org_permission(organization_id, 'admin_settings')));
 
+DROP POLICY IF EXISTS cms_blocks_company_access ON public.blocks;
 CREATE POLICY cms_blocks_company_access ON public.blocks AS RESTRICTIVE TO authenticated
   USING (public.is_platform_admin(auth.uid()) OR
     (organization_id IS NOT NULL AND public.has_org_permission(organization_id, 'admin_settings')
@@ -20,10 +22,10 @@ CREATE POLICY cms_blocks_company_access ON public.blocks AS RESTRICTIVE TO authe
 
 ALTER TABLE public.pages DROP CONSTRAINT IF EXISTS pages_slug_key;
 DROP INDEX IF EXISTS public.idx_pages_slug;
-CREATE UNIQUE INDEX cms_draft_company_slug_idx ON public.pages (organization_id, slug) WHERE organization_id IS NOT NULL;
-CREATE UNIQUE INDEX cms_draft_legacy_slug_idx ON public.pages (slug) WHERE organization_id IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS cms_draft_company_slug_idx ON public.pages (organization_id, slug) WHERE organization_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS cms_draft_legacy_slug_idx ON public.pages (slug) WHERE organization_id IS NULL;
 
-CREATE TABLE public_intake_private.page_publications (
+CREATE TABLE IF NOT EXISTS public_intake_private.page_publications (
   page_id uuid PRIMARY KEY REFERENCES public.pages(id) ON DELETE CASCADE,
   organization_id uuid NOT NULL REFERENCES public_intake_private.sites(organization_id) ON DELETE CASCADE,
   slug text NOT NULL,
@@ -37,7 +39,7 @@ CREATE TABLE public_intake_private.page_publications (
 ALTER TABLE public_intake_private.page_publications ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public_intake_private.page_publications FROM PUBLIC, anon, authenticated;
 
-CREATE FUNCTION public.get_company_publications(_org uuid)
+CREATE OR REPLACE FUNCTION public.get_company_publications(_org uuid)
 RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
 AS $$
@@ -62,7 +64,7 @@ $$;
 REVOKE ALL ON FUNCTION public.get_company_publications(uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_company_publications(uuid) TO authenticated;
 
-CREATE FUNCTION public.set_company_page_publication(_org uuid, _page uuid, _publish boolean)
+CREATE OR REPLACE FUNCTION public.set_company_page_publication(_org uuid, _page uuid, _publish boolean)
 RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
@@ -136,7 +138,7 @@ $$;
 REVOKE ALL ON FUNCTION public.set_company_page_publication(uuid, uuid, boolean) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.set_company_page_publication(uuid, uuid, boolean) TO authenticated;
 
-CREATE FUNCTION public.get_public_cms_page(_company_slug text, _page_slug text)
+CREATE OR REPLACE FUNCTION public.get_public_cms_page(_company_slug text, _page_slug text)
 RETURNS jsonb
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
 AS $$

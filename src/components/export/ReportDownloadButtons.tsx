@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FileSpreadsheet, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -58,7 +58,12 @@ function printReport(preview: Window, title: string, scope: string[], columns: s
 
 export default function ReportDownloadButtons({ title, scope, columns, loadRows, disabled }: Props) {
   const running = useRef(false);
+  const mounted = useRef(false);
   const [exporting, setExporting] = useState(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   const exportReport = async (format: 'xlsx' | 'print') => {
     if (running.current || disabled) return;
@@ -72,6 +77,10 @@ export default function ReportDownloadButtons({ title, scope, columns, loadRows,
     setExporting(true);
     try {
       const rows = await loadRows();
+      if (!mounted.current) {
+        preview?.close();
+        return;
+      }
       if (rows.length === 0) {
         preview?.close();
         toast.info('لا توجد بيانات مطابقة للتصدير.');
@@ -82,6 +91,7 @@ export default function ReportDownloadButtons({ title, scope, columns, loadRows,
         if (!preview.closed) printReport(preview, title, scope, columns, rows);
       } else {
         const { utils, writeFile } = await import('xlsx');
+        if (!mounted.current) return;
         const workbook = utils.book_new();
         utils.book_append_sheet(workbook, utils.aoa_to_sheet([columns, ...rows.map((row) => row.map(safeCell))]), 'البيانات');
         utils.book_append_sheet(workbook, utils.aoa_to_sheet([[title], ...scope.map((line) => [safeCell(line)]), ['عدد السجلات', rows.length]]), 'نطاق التقرير');
@@ -89,10 +99,10 @@ export default function ReportDownloadButtons({ title, scope, columns, loadRows,
       }
     } catch {
       preview?.close();
-      toast.error('تعذر تجهيز التقرير. حاول مرة أخرى.');
+      if (mounted.current) toast.error('تعذر تجهيز التقرير. حاول مرة أخرى.');
     } finally {
       running.current = false;
-      setExporting(false);
+      if (mounted.current) setExporting(false);
     }
   };
 

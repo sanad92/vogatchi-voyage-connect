@@ -27,7 +27,8 @@ try {
     CREATE TABLE public.monthly_salaries (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(), employee_id uuid, organization_id uuid,
       salary_month text, base_salary numeric, allowances numeric, overtime_hours numeric,
-      overtime_rate numeric, overtime_amount numeric, bonus numeric, deductions numeric, gross_salary numeric,
+      overtime_rate numeric, overtime_amount numeric, bonus numeric, deductions numeric, tax_amount numeric,
+      insurance_deduction numeric, gross_salary numeric,
       net_salary numeric, net_salary_egp numeric, exchange_rate numeric, currency text, status text,
       notes text, created_by uuid, payment_date date, payment_method text, bank_account_id uuid,
       updated_at timestamptz
@@ -40,26 +41,24 @@ try {
       current_balance numeric NOT NULL DEFAULT 10000, updated_at timestamptz
     );
     CREATE TABLE public.bank_account_transactions (
-      bank_account_id uuid, transaction_type text, amount numeric, description text, transaction_date date,
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), bank_account_id uuid, transaction_type text, amount numeric, description text, transaction_date date,
       reference_number text, created_by uuid, organization_id uuid, source_type text, source_id uuid,
       currency text, UNIQUE(organization_id, source_type, source_id)
     );
     CREATE TABLE public.journal_entries (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid, entry_number text, entry_date date,
       reference_type text, reference_id uuid, description text, total_debit numeric, total_credit numeric,
-      status text, created_by uuid, currency text, UNIQUE(organization_id, reference_type, reference_id)
+      status text, created_by uuid, currency text, source_type text, source_id uuid, functional_currency text,
+      fx_rate numeric, posted_at timestamptz, auto_generated boolean, is_locked boolean DEFAULT false,
+      UNIQUE(organization_id, source_type, source_id)
     );
     CREATE TABLE public.journal_entry_lines (
-      journal_entry_id uuid, account_id uuid, debit numeric, credit numeric, description text, line_order integer
+      journal_entry_id uuid REFERENCES public.journal_entries(id) ON DELETE CASCADE, account_id uuid, debit numeric, credit numeric, description text, line_order integer
     );
-    CREATE FUNCTION public.seed_default_chart_of_accounts(uuid) RETURNS void LANGUAGE plpgsql AS 'BEGIN END';
-    CREATE FUNCTION public.generate_journal_entry_number(uuid) RETURNS text LANGUAGE sql AS 'SELECT gen_random_uuid()::text';
-    CREATE FUNCTION public.get_account_id_by_code(uuid, text) RETURNS uuid LANGUAGE sql AS $$
-      SELECT CASE WHEN current_setting('test.reject_journal', true) = 'on' THEN NULL
+    CREATE FUNCTION public._next_entry_number(uuid) RETURNS text LANGUAGE sql AS 'SELECT gen_random_uuid()::text';
+    CREATE FUNCTION public._resolve_account(uuid, text) RETURNS uuid LANGUAGE sql AS $$
+      SELECT CASE WHEN current_setting('test.reject_journal', true) = 'on' AND $2 IN ('1000', '1010') THEN NULL
                   ELSE ('10000000-0000-4000-8000-' || lpad($2, 12, '0'))::uuid END;
-    $$;
-    CREATE FUNCTION public._require_route_code(uuid, text) RETURNS text LANGUAGE sql AS $$
-      SELECT CASE $2 WHEN 'cash' THEN '1000' WHEN 'bank' THEN '1010' END;
     $$;
     GRANT SELECT, INSERT, UPDATE, DELETE ON public.employees, public.monthly_salaries, public.organization_salary_settings TO authenticated;
     GRANT SELECT, INSERT, UPDATE, DELETE ON public.bank_account_transactions TO authenticated;
@@ -80,16 +79,25 @@ try {
   await exec(sql('supabase/migrations/20261119112811_organization_role_defaults_and_hr.sql'));
   await exec(sql('supabase/migrations/20261119121105_guard_salary_payment_retries.sql'));
   await exec(sql('supabase/migrations/20261119230749_use_organization_overtime_settings.sql'));
-  const journal = sql('supabase/migrations/20260503214613_4fff1966-9a61-473e-9a5a-1c9c217c7a9e.sql');
-  await exec(journal.slice(journal.indexOf('CREATE OR REPLACE FUNCTION public.post_journal_entry'), journal.indexOf('-- 3. Update triggers')));
+  await exec(sql('scripts/fixtures/payroll-production-posting.sql'));
+  await exec(`
+    CREATE TRIGGER trg_normalize_salary_financials BEFORE INSERT OR UPDATE OF base_salary, allowances, overtime_hours,
+      overtime_rate, overtime_amount, bonus, deductions, tax_amount, insurance_deduction, exchange_rate, currency,
+      salary_month, status, payment_method, bank_account_id
+      ON public.monthly_salaries FOR EACH ROW EXECUTE FUNCTION public.normalize_salary_financials();
+    CREATE TRIGGER trg_post_salary AFTER INSERT OR UPDATE OF base_salary, allowances, overtime_hours, overtime_rate,
+      overtime_amount, bonus, deductions, tax_amount, insurance_deduction, gross_salary, net_salary, salary_month,
+      status, payment_date, payment_method, bank_account_id, currency
+      ON public.monthly_salaries FOR EACH ROW EXECUTE FUNCTION public._trg_post_salary();
+  `);
   const balances = sql('supabase/migrations/20261119155637_enforce_finance_organization_isolation.sql');
   await exec(balances.slice(balances.indexOf('CREATE OR REPLACE FUNCTION public.update_bank_balance_on_transaction'), balances.indexOf('CREATE OR REPLACE FUNCTION public.trg_commission_payment_bank_balance')));
-  await exec(sql('supabase/migrations/20261119231221_post_salary_payments_atomically.sql'));
+  const payroll = sql('supabase/migrations/20261119231221_post_salary_payments_atomically.sql');
+  await exec(payroll);
+  await exec(payroll);
   await exec(`
     CREATE TRIGGER trg_bank_balance_update AFTER INSERT OR UPDATE OR DELETE ON public.bank_account_transactions
     FOR EACH ROW EXECUTE FUNCTION public.update_bank_balance_on_transaction();
-    CREATE TRIGGER trg_salary_journal AFTER INSERT OR UPDATE OF status ON public.monthly_salaries
-    FOR EACH ROW EXECUTE FUNCTION public.trg_salary_to_journal();
   `);
 
   await exec(`
@@ -213,7 +221,7 @@ try {
   await db.query("update public.monthly_salaries set currency='USD', net_salary_egp=net_salary*50, exchange_rate=50 where id=$1", [transferSalary]);
   await actor(manager);
   await exec("SET test.reject_journal = 'on'");
-  await assert.rejects(pay(transferSalary, 'bank_transfer', id(32)), /الحساب غير موجود/);
+  await assert.rejects(pay(transferSalary, 'bank_transfer', id(32)), /Missing salary payable or treasury account/);
   await exec('RESET ROLE');
   assert.equal((await one('select status from public.monthly_salaries where id=$1', [transferSalary])).status, 'pending');
   assert.equal(await one('select amount from public.bank_account_transactions where source_id=$1', [transferSalary]), undefined);
@@ -231,14 +239,32 @@ try {
     a.current_balance, l.account_id from public.journal_entries j
     join public.journal_entry_lines l on l.journal_entry_id=j.id and l.credit>0
     join public.bank_account_transactions m on m.source_id=j.reference_id
-    join public.bank_accounts a on a.id=m.bank_account_id where j.reference_id=$1`, [transferSalary]);
+    join public.bank_accounts a on a.id=m.bank_account_id where j.reference_id=$1 AND j.source_type='salary_payment'`, [transferSalary]);
   assert.deepEqual(money, {currency: 'USD', total_credit: '6500.00', entry_date: '2026-11-19', amount: '6500.00',
     transaction_date: '2026-11-19', current_balance: '3500.00', account_id: id(1010)});
   assert.equal(Number((await one('select current_balance from public.bank_accounts where id=$1', [id(34)])).current_balance), 3500);
+  const salaryEntries = await db.query(`
+    SELECT j.source_type, l.account_id, l.debit, l.credit
+    FROM public.journal_entries j JOIN public.journal_entry_lines l ON l.journal_entry_id=j.id
+    WHERE j.source_id=$1 ORDER BY j.source_type, l.line_order
+  `, [cashSalary]);
+  assert.deepEqual(salaryEntries.rows, [
+    { source_type: 'salary_accrual', account_id: id(6000), debit: '6500.00', credit: '0' },
+    { source_type: 'salary_accrual', account_id: id(2200), debit: '0', credit: '6500.00' },
+    { source_type: 'salary_payment', account_id: id(2200), debit: '6500.00', credit: '0' },
+    { source_type: 'salary_payment', account_id: id(1000), debit: '0', credit: '6500.00' },
+  ]);
+  const movements = await one("SELECT count(*)::integer AS total FROM public.bank_account_transactions WHERE source_type='salary_payment' AND source_id=$1", [cashSalary]);
+  assert.equal(movements.total, 1);
+
   await actor(manager);
   const firstOvertime = (await calc(employeeA, '2027-02-01', 2)).result.calculated_data;
   assert.equal(firstOvertime.overtime_rate, 100);
   assert.equal(firstOvertime.net_salary, 6700);
+  const underfunded = (await calc(employeeA, '2027-04-01')).result.salary_id;
+  await assert.rejects(pay(underfunded, 'cash', id(34)), /Cash treasury has insufficient balance/);
+  assert.equal((await one('select status from public.monthly_salaries where id=$1', [underfunded])).status, 'pending');
+  assert.equal(await one('select amount from public.bank_account_transactions where source_id=$1', [underfunded]), undefined);
   await actor(otherOwner);
   assert.equal((await calc(employeeA, '2027-03-01', 2)).result.success, false);
   const otherOvertime = (await calc(employeeB, '2027-02-01', 2)).result.calculated_data;

@@ -46,6 +46,7 @@ try {
       VALUES ('${doc}', '${ownOrg}', 'uploaded');
   `);
   await db.exec(migration);
+  await db.exec(migration);
   const audit = () => db.query('SELECT document_id, organization_id, actor_id, action, metadata FROM public.document_audit_log ORDER BY action');
   const report = (action, loggedActor = actor, org = ownOrg) => db.query(
     'INSERT INTO public.document_audit_log (document_id, organization_id, action, actor_id) VALUES ($1, $2, $3, $4)',

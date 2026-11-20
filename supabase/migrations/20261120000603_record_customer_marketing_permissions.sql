@@ -1,5 +1,5 @@
 -- A contact preference is a veto. It is not proof of marketing consent.
-CREATE TABLE operations_private.customer_marketing_consent_events (
+CREATE TABLE IF NOT EXISTS operations_private.customer_marketing_consent_events (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   organization_id uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   customer_id uuid NOT NULL REFERENCES public.customers(id) ON DELETE CASCADE,
@@ -16,15 +16,15 @@ CREATE TABLE operations_private.customer_marketing_consent_events (
 
 ALTER TABLE operations_private.customer_marketing_consent_events ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON operations_private.customer_marketing_consent_events FROM PUBLIC, anon, authenticated, service_role;
-CREATE INDEX customer_marketing_consent_latest_idx ON operations_private.customer_marketing_consent_events
+CREATE INDEX IF NOT EXISTS customer_marketing_consent_latest_idx ON operations_private.customer_marketing_consent_events
   (customer_id, organization_id, channel, id DESC);
-CREATE INDEX suppressed_emails_normalized_for_marketing_idx
+CREATE INDEX IF NOT EXISTS suppressed_emails_normalized_for_marketing_idx
   ON public.suppressed_emails (public.normalize_email_address(email));
-CREATE INDEX used_email_unsubscribes_normalized_for_marketing_idx
+CREATE INDEX IF NOT EXISTS used_email_unsubscribes_normalized_for_marketing_idx
   ON public.email_unsubscribe_tokens (public.normalize_email_address(email))
   WHERE used_at IS NOT NULL;
 
-CREATE FUNCTION operations_private.marketing_contact_value(_channel text, _email text, _phone text)
+CREATE OR REPLACE FUNCTION operations_private.marketing_contact_value(_channel text, _email text, _phone text)
 RETURNS text LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path = ''
 AS $$
   SELECT CASE
@@ -36,7 +36,7 @@ AS $$
 $$;
 REVOKE ALL ON FUNCTION operations_private.marketing_contact_value(text, text, text) FROM PUBLIC, anon, authenticated, service_role;
 
-CREATE FUNCTION operations_private.set_customer_marketing_permission(
+CREATE OR REPLACE FUNCTION operations_private.set_customer_marketing_permission(
   _organization uuid, _customer uuid, _channel text, _allowed boolean, _evidence_at timestamptz, _evidence_reference text
 )
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
@@ -107,7 +107,7 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION operations_private.withdraw_stale_marketing_permissions()
+CREATE OR REPLACE FUNCTION operations_private.withdraw_stale_marketing_permissions()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE
@@ -133,10 +133,10 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION operations_private.withdraw_stale_marketing_permissions() FROM PUBLIC, anon, authenticated, service_role;
-CREATE TRIGGER withdraw_stale_marketing_permissions AFTER UPDATE OF email, phone, organization_id, communication_preferences, whatsapp_opt_out
+CREATE OR REPLACE TRIGGER withdraw_stale_marketing_permissions AFTER UPDATE OF email, phone, organization_id, communication_preferences, whatsapp_opt_out
 ON public.customers FOR EACH ROW EXECUTE FUNCTION operations_private.withdraw_stale_marketing_permissions();
 
-CREATE FUNCTION operations_private.get_customer_marketing_permissions(_organization uuid, _customer uuid)
+CREATE OR REPLACE FUNCTION operations_private.get_customer_marketing_permissions(_organization uuid, _customer uuid)
 RETURNS TABLE (channel text, state text, evidence_at timestamptz, recorded_at timestamptz)
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
 AS $$
@@ -180,7 +180,7 @@ END;
 $$;
 
 -- Evaluates platform suppressions only for a trusted worker and its exact current destination.
-CREATE FUNCTION operations_private.customer_marketing_contact_allowed(
+CREATE OR REPLACE FUNCTION operations_private.customer_marketing_contact_allowed(
   _organization uuid, _customer uuid, _channel text, _destination text
 )
 RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
@@ -218,19 +218,19 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION public.set_customer_marketing_permission(
+CREATE OR REPLACE FUNCTION public.set_customer_marketing_permission(
   _organization uuid, _customer uuid, _channel text, _allowed boolean, _evidence_at timestamptz, _evidence_reference text
 )
 RETURNS void LANGUAGE sql SECURITY INVOKER SET search_path = ''
 AS $$ SELECT operations_private.set_customer_marketing_permission(
   _organization, _customer, _channel, _allowed, _evidence_at, _evidence_reference); $$;
 
-CREATE FUNCTION public.get_customer_marketing_permissions(_organization uuid, _customer uuid)
+CREATE OR REPLACE FUNCTION public.get_customer_marketing_permissions(_organization uuid, _customer uuid)
 RETURNS TABLE (channel text, state text, evidence_at timestamptz, recorded_at timestamptz)
 LANGUAGE sql STABLE SECURITY INVOKER SET search_path = ''
 AS $$ SELECT * FROM operations_private.get_customer_marketing_permissions(_organization, _customer); $$;
 
-CREATE FUNCTION public.customer_marketing_contact_allowed(_organization uuid, _customer uuid, _channel text, _destination text)
+CREATE OR REPLACE FUNCTION public.customer_marketing_contact_allowed(_organization uuid, _customer uuid, _channel text, _destination text)
 RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path = ''
 AS $$ SELECT operations_private.customer_marketing_contact_allowed(_organization, _customer, _channel, _destination); $$;
 

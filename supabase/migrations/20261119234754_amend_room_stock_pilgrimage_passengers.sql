@@ -138,24 +138,27 @@ BEGIN
   signature := 'public.apply_pilgrimage_operations(uuid,uuid,jsonb)'::regprocedure;
   SELECT pg_get_functiondef(signature) INTO definition;
   anchor := 'IF action_name <> ''cancel'' AND pilgrimage_inventory_private.is_manual_allotment(passenger.organization_id, passenger.inventory_booking_id) THEN';
-  IF strpos(definition, anchor) = 0 THEN
-    RAISE EXCEPTION 'Missing unified passenger exchange route';
-  END IF;
-  EXECUTE replace(definition, anchor,
-    'IF action_name <> ''cancel'' AND (pilgrimage_inventory_private.is_manual_allotment(passenger.organization_id, passenger.inventory_booking_id)
+  IF strpos(definition, 'OR (program.uses_room_inventory AND passenger.inventory_booking_id IS NOT NULL)) THEN') = 0 THEN
+    IF strpos(definition, anchor) = 0 THEN
+      RAISE EXCEPTION 'Missing unified passenger exchange route';
+    END IF;
+    EXECUTE replace(definition, anchor,
+      'IF action_name <> ''cancel'' AND (pilgrimage_inventory_private.is_manual_allotment(passenger.organization_id, passenger.inventory_booking_id)
         OR (program.uses_room_inventory AND passenger.inventory_booking_id IS NOT NULL)) THEN
       IF (program.uses_room_inventory OR destination.uses_room_inventory)
          AND NOT coalesce(public.has_org_permission(_organization_id, ''bookings_cancel''), false) THEN
         RAISE EXCEPTION ''pilgrimage_operation_denied'' USING ERRCODE = ''42501'';
       END IF;');
+  END IF;
 
   signature := 'pilgrimage_inventory_private.guard_booked_passenger_edit()'::regprocedure;
   SELECT pg_get_functiondef(signature) INTO definition;
   anchor := 'PERFORM 1 FROM pilgrimage_inventory_private.booking_edit_requests r';
-  IF strpos(definition, anchor) = 0 THEN
-    RAISE EXCEPTION 'Missing approved passenger edit route';
-  END IF;
-  EXECUTE replace(definition, anchor, '
+  IF strpos(definition, 'WHERE o.replacement_id = NEW.id AND o.replacement_booking_id = booking_uuid') = 0 THEN
+    IF strpos(definition, anchor) = 0 THEN
+      RAISE EXCEPTION 'Missing approved passenger edit route';
+    END IF;
+    EXECUTE replace(definition, anchor, '
   -- Copy the original registration details to the distinct replacement in the
   -- exchange transaction. The allocator alone sets its gender and room groups.
   IF NEW.status = ''registered'' AND EXISTS (
@@ -173,5 +176,6 @@ BEGIN
       ''room_group'', ''notes'', ''visa_status'', ''visa_number'', ''portal_barcode'', ''documents_complete'', ''vaccination_done'']
   ) THEN RETURN NEW; END IF;
   ' || anchor);
+  END IF;
 END
 $patch$;

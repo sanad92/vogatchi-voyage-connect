@@ -73,7 +73,7 @@ GRANT EXECUTE ON FUNCTION public.sop_search_leads(
   uuid, public.sop_lead_stage[], uuid, text, text, text, boolean, text, integer
 ) TO authenticated, service_role;
 
-CREATE FUNCTION operations_private.protect_meta_lead_attribution()
+CREATE OR REPLACE FUNCTION operations_private.protect_meta_lead_attribution()
 RETURNS trigger LANGUAGE plpgsql SET search_path = ''
 AS $$
 BEGIN
@@ -97,6 +97,6 @@ $$;
 
 REVOKE ALL ON FUNCTION operations_private.protect_meta_lead_attribution() FROM PUBLIC, anon, authenticated, service_role;
 
-CREATE TRIGGER protect_meta_lead_attribution
+CREATE OR REPLACE TRIGGER protect_meta_lead_attribution
 BEFORE INSERT OR UPDATE OF lead_source, campaign ON public.sop_leads
 FOR EACH ROW EXECUTE FUNCTION operations_private.protect_meta_lead_attribution();

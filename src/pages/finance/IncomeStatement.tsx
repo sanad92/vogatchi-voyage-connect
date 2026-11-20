@@ -5,7 +5,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useIncomeStatementV2, type IncomeStatementV2Row } from '@/hooks/useFinancialReports';
 import { useCostCenters } from '@/hooks/useCostCenters';
-import { usePermissionCheck } from '@/hooks/usePermissionCheck';
+import { useSupabasePermissions } from '@/hooks/useSupabasePermissions';
 import ReportDownloadButtons from '@/components/export/ReportDownloadButtons';
 import PageHeader from '@/components/layout/PageHeader';
 import ReportCurrencySelect from '@/components/finance/ReportCurrencySelect';
@@ -32,7 +32,7 @@ const bookingTypeLabels: Record<string, string> = {
 export default function IncomeStatement() {
   usePageTitle('قائمة الدخل');
   const navigate = useNavigate();
-  const { hasPermission } = usePermissionCheck();
+  const { hasPermission, getPermissionScope } = useSupabasePermissions();
   const { currentOrganization } = useOrganization();
   const today = new Date().toISOString().slice(0, 10);
   const firstDay = `${today.slice(0, 4)}-01-01`;
@@ -71,14 +71,18 @@ export default function IncomeStatement() {
   };
 
   const reportColumns = ['القسم', 'كود الحساب', 'اسم الحساب', 'المبلغ', 'العملة'];
+  const selectedCostCenter = costCenters.find((center) => center.id === costCenterId);
   const reportScope = [
     currentOrganization?.name ?? '',
     `الفترة المحاسبية: ${start} – ${end}`,
     `العملة: ${currency}`,
-    `مركز التكلفة: ${costCenters.find((center) => center.id === costCenterId)?.code ?? 'كل المراكز'}`,
+    `مركز التكلفة: ${costCenterId === 'all' ? 'كل المراكز' : selectedCostCenter?.code ?? 'غير متاح'}`,
     `نوع الحجز: ${bookingTypeLabels[bookingType] ?? 'كل الأنواع'}`,
   ];
-  const canExport = hasPermission('reports_export') && !invalidPeriod && !isFetching && !error && rows.length > 0;
+  const canExportScope = hasPermission('reports_export') && getPermissionScope('reports_export') === 'organization'
+    && hasPermission('financial_view') && getPermissionScope('financial_view') === 'organization';
+  const canExport = canExportScope && !invalidPeriod && !isFetching && !error && rows.length > 0
+    && (costCenterId === 'all' || Boolean(selectedCostCenter && !costCentersLoading));
   const buildExportRows = () => {
     const data: (string | number)[][] = [];
     appendCsvSection(data, 'الإيرادات', report.revenue);
@@ -121,10 +125,12 @@ export default function IncomeStatement() {
               </SelectContent>
             </Select>
           </div>
-          <Button variant="outline" onClick={() => downloadCsv(`income-statement-${start}_${end}-${currency}.csv`, reportColumns, buildExportRows())} disabled={!canExport}>
+          <Button variant="outline" onClick={() => {
+            if (canExport) downloadCsv(`income-statement-${start}_${end}-${currency}.csv`, reportColumns, buildExportRows());
+          }} disabled={!canExport}>
             <Download className="h-4 w-4 ml-2" />تصدير CSV
           </Button>
-          {hasPermission('reports_export') && <ReportDownloadButtons
+          {canExportScope && <ReportDownloadButtons
             key={JSON.stringify([currentOrganization?.id, start, end, currency, costCenterId, bookingType])}
             title="قائمة الدخل" scope={reportScope} columns={reportColumns}
             loadRows={async () => buildExportRows()} disabled={!canExport}

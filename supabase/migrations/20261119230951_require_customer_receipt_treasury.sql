@@ -8,6 +8,7 @@ AS $function$
 DECLARE
   v_org uuid;
   v_payment_id uuid;
+  v_previous public.customer_payments%ROWTYPE;
   v_booking uuid := _booking_id;
   v_customer uuid := _customer_id;
   v_final numeric := 0;
@@ -47,9 +48,18 @@ BEGIN
 
   IF _client_ref IS NOT NULL THEN
     PERFORM pg_advisory_xact_lock(hashtextextended('customer-payment:' || v_org::text || ':' || _client_ref, 0));
-    SELECT id INTO v_payment_id FROM public.customer_payments
+    SELECT * INTO v_previous FROM public.customer_payments
     WHERE organization_id=v_org AND client_ref=_client_ref;
-    IF v_payment_id IS NOT NULL THEN RETURN v_payment_id; END IF;
+    IF FOUND THEN
+      IF (v_previous.booking_id, v_previous.invoice_id, v_previous.amount, v_previous.currency,
+          v_previous.exchange_rate, v_previous.payment_method, v_previous.treasury_account_id,
+          v_previous.payment_date, v_previous.reference_number, v_previous.notes, v_previous.status)
+        IS NOT DISTINCT FROM (v_booking, _invoice_id, _amount, _currency, _exchange_rate,
+          v_method, _treasury_account_id, _payment_date, _reference, _notes, 'completed'::text) THEN
+        RETURN v_previous.id;
+      END IF;
+      RAISE EXCEPTION 'Receipt request reference is already in use' USING ERRCODE = '22023';
+    END IF;
   END IF;
 
   IF _amount <> ROUND(_amount, 2) OR _exchange_rate <> ROUND(_exchange_rate, 6) THEN

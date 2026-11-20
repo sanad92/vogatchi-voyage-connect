@@ -1,6 +1,6 @@
 -- The settlement feature is installed separately. Keep existing agency agreements
 -- available in environments where settlement records are not yet installed.
-CREATE FUNCTION pilgrimage_portal_private.agency_cancellation_summary(_org uuid, _agreement uuid)
+CREATE OR REPLACE FUNCTION pilgrimage_portal_private.agency_cancellation_summary(_org uuid, _agreement uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path = ''
 AS $$
 BEGIN

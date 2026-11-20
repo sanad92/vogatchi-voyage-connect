@@ -42,7 +42,9 @@ try {
     INSERT INTO public.sop_leads (organization_id, lead_source, campaign)
     SELECT '${a}', 'meta_lead_ads', 'Another campaign' FROM generate_series(1, 501);
   `);
-  await db.exec(readFileSync(new URL('../supabase/migrations/20261120002247_show_sales_lead_campaign_attribution.sql', import.meta.url), 'utf8'));
+  const migration = readFileSync(new URL('../supabase/migrations/20261120002247_show_sales_lead_campaign_attribution.sql', import.meta.url), 'utf8');
+  await db.exec(migration);
+  await db.exec(migration);
   const search = (org, source, term, limit = 500) => db.query(
     'SELECT lead_number FROM public.sop_search_leads(_org => $1, _source => $2, _search => $3, _limit => $4)',
     [org, source, term, limit],

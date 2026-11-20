@@ -1,7 +1,5 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import vm from 'node:vm';
-import ts from 'typescript';
 import { PGlite } from '@electric-sql/pglite';
 import { extractWhatsAppLeadDraft } from '../supabase/functions/_shared/whatsapp-lead-draft.ts';
 
@@ -112,7 +110,9 @@ try {
   const saveEnd = saveSql.indexOf('TO authenticated, service_role;', saveSql.indexOf('GRANT EXECUTE ON FUNCTION public.sop_save_lead', saveStart));
   await db.exec(saveSql.slice(saveStart, saveEnd + 'TO authenticated, service_role;'.length));
   await db.exec(await migration('20261113151445_whatsapp_sop_intake.sql'));
-  await db.exec(await migration('20261120002252_whatsapp_lead_draft_messages.sql'));
+  const draftMigration = await migration('20261120002252_whatsapp_lead_draft_messages.sql');
+  await db.exec(draftMigration);
+  await db.exec(draftMigration);
 
   const query = (org, conversation) => db.query('SELECT * FROM public.sop_review_whatsapp_lead_messages($1,$2)', [org, conversation]);
   await as(null, 'anon');
@@ -153,52 +153,6 @@ try {
   await db.exec('RESET ROLE');
   assert.equal((await db.query('SELECT count(*) AS count FROM public.sop_leads')).rows[0].count, 1);
 
-  const compile = async (path) => ts.transpileModule(await read(path), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  }).outputText;
-  const env = { SUPABASE_URL: 'https://fixture.invalid', SUPABASE_ANON_KEY: 'fixture-key' };
-  const client = {
-    auth: { getUser: async (token) => token === 'active-agent' ? { data: { user: { id: agent } } } : { error: true } },
-    rpc: async (name, args) => {
-      assert.equal(name, 'sop_review_whatsapp_lead_messages');
-      await as(agent);
-      try { return { data: (await query(args._org, args._conversation)).rows }; }
-      catch (error) { return { error: { code: error.code } }; }
-    },
-  };
-  const supabaseModule = { createClient: (url, key) => {
-    assert.equal(url, env.SUPABASE_URL);
-    assert.equal(key, env.SUPABASE_ANON_KEY);
-    return client;
-  } };
-  const auth = {};
-  vm.runInNewContext(await compile('../supabase/functions/_shared/auth.ts'), {
-    exports: auth, Response, Deno: { env: { get: (key) => env[key] } },
-    require: (name) => { assert.equal(name, 'npm:@supabase/supabase-js@2'); return supabaseModule; },
-  });
-  const modules = {
-    'npm:@supabase/supabase-js@2': supabaseModule,
-    '../_shared/auth.ts': auth,
-    '../_shared/ai-gateway.ts': { corsHeaders: {} },
-    '../_shared/whatsapp-lead-draft.ts': { extractWhatsAppLeadDraft },
-  };
-  let handler;
-  vm.runInNewContext(await compile('../supabase/functions/ai-extract-lead/index.ts'), {
-    exports: {}, Response,
-    fetch: () => { throw new Error('Unexpected network access'); },
-    Deno: { env: { get: (key) => env[key] }, serve: (fn) => { handler = fn; } },
-    require: (name) => { assert.ok(Object.hasOwn(modules, name), 'Unexpected module ' + name); return modules[name]; },
-  });
-  const invoke = (token, organization_id, conversation_id) => handler(new Request('https://fixture.invalid/extract', {
-    method: 'POST', headers: token ? { Authorization: 'Bearer ' + token } : {},
-    body: JSON.stringify({ organization_id, conversation_id }),
-  }));
-  assert.equal((await invoke(null, orgA, chat)).status, 401);
-  assert.equal((await invoke('active-agent', 'malformed', chat)).status, 400);
-  assert.equal((await invoke('active-agent', orgB, foreignChat)).status, 403);
-  const response = await invoke('active-agent', orgA, chat);
-  assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { success: true, data: expectedDraft });
 } finally {
   await db.close();
 }

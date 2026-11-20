@@ -1,0 +1,37 @@
+name: WhatsApp browser verification
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/whatsapp-browser.yml'
+      - 'scripts/verify-whatsapp-*.mjs'
+      - 'scripts/fixtures/whatsapp-*/**'
+      - 'src/components/whatsapp/**'
+      - 'src/lib/*Identity*.ts'
+      - 'src/lib/whatsappLeadDraft.ts'
+      - 'supabase/functions/_shared/whatsapp-lead-draft.ts'
+      - 'supabase/migrations/*whatsapp*.sql'
+      - 'vite.config.ts'
+      - 'bun.lock'
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked dependencies
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun install --frozen-lockfile
+      - name: Verify authorized review, manual save and on-device OCR
+        run: |
+          node --experimental-strip-types scripts/verify-whatsapp-lead-draft.mjs
+          node --experimental-strip-types scripts/verify-whatsapp-identity-review.mjs
+          node --experimental-strip-types scripts/verify-whatsapp-browser.mjs

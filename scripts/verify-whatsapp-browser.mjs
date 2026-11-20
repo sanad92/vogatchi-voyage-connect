@@ -8,7 +8,6 @@ import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { build, loadConfigFromFile } from 'vite';
-import { extractWhatsAppLeadDraft } from '../supabase/functions/_shared/whatsapp-lead-draft.ts';
 import { conversation, customer, message, organization, photoPath, revision } from './fixtures/whatsapp-browser/session.ts';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
@@ -127,10 +126,10 @@ async function serve(request, response) {
     let text = '';
     for await (const chunk of request) text += chunk;
     const body = JSON.parse(text);
-    if (pathname === '/functions/v1/ai-extract-lead') {
+    if (pathname === '/rest/v1/rpc/sop_review_whatsapp_lead_messages') {
       calls.draft++;
-      assert.deepEqual(body, { organization_id: organization, conversation_id: conversation });
-      return reply(response, 200, { success: true, data: extractWhatsAppLeadDraft([leadText]) });
+      assert.deepEqual(body, { _org: organization, _conversation: conversation });
+      return reply(response, 200, [{ content: leadText }]);
     }
     if (pathname === '/rest/v1/rpc/sop_save_whatsapp_lead') {
       calls.leadSave++;

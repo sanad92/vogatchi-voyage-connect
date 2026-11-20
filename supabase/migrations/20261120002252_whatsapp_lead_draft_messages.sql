@@ -1,9 +1,9 @@
 -- Provide only the newest incoming plain text to the reviewed lead draft.
-CREATE INDEX whatsapp_messages_lead_draft_recent
+CREATE INDEX IF NOT EXISTS whatsapp_messages_lead_draft_recent
   ON public.whatsapp_messages (organization_id, conversation_id, sent_at DESC NULLS LAST, id DESC)
   WHERE direction = 'inbound' AND message_type = 'text';
 
-CREATE FUNCTION public.sop_review_whatsapp_lead_messages(_org uuid, _conversation uuid)
+CREATE OR REPLACE FUNCTION public.sop_review_whatsapp_lead_messages(_org uuid, _conversation uuid)
 RETURNS TABLE(content text)
 LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path = '' AS $$
 BEGIN

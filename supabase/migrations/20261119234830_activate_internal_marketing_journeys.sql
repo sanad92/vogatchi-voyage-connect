@@ -1,16 +1,16 @@
 -- Only newly activated journeys and newly enrolled customers enter this worker.
-ALTER TABLE public.marketing_journeys ADD COLUMN runtime_enabled_at timestamptz;
+ALTER TABLE public.marketing_journeys ADD COLUMN IF NOT EXISTS runtime_enabled_at timestamptz;
 ALTER TABLE public.journey_enrollments
-  ADD COLUMN runtime_managed boolean NOT NULL DEFAULT false,
-  ADD COLUMN step_attempts integer NOT NULL DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS runtime_managed boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS step_attempts integer NOT NULL DEFAULT 0;
 
-ALTER TABLE public.journey_steps DROP CONSTRAINT journey_steps_step_type_check;
+ALTER TABLE public.journey_steps DROP CONSTRAINT IF EXISTS journey_steps_step_type_check;
 ALTER TABLE public.journey_steps ADD CONSTRAINT journey_steps_step_type_check
   CHECK (step_type IN ('send_whatsapp', 'send_email', 'wait', 'condition', 'tag', 'emit_event', 'exit', 'create_follow_up'));
 
-CREATE INDEX marketing_journeys_runtime_org_idx ON public.marketing_journeys (organization_id, id)
+CREATE INDEX IF NOT EXISTS marketing_journeys_runtime_org_idx ON public.marketing_journeys (organization_id, id)
   WHERE is_active AND runtime_enabled_at IS NOT NULL;
-CREATE INDEX journey_runtime_due_idx ON public.journey_enrollments (next_run_at, id)
+CREATE INDEX IF NOT EXISTS journey_runtime_due_idx ON public.journey_enrollments (next_run_at, id)
   WHERE status = 'active' AND runtime_managed;
 
 REVOKE INSERT, UPDATE ON public.marketing_journeys FROM PUBLIC, anon, authenticated;
@@ -19,12 +19,14 @@ GRANT INSERT (organization_id, name, description, category, trigger_event, enrol
 GRANT UPDATE (name, description, category, trigger_event, enrollment_condition, goal_event, updated_at)
   ON public.marketing_journeys TO authenticated;
 
-DROP POLICY journeys_org_read ON public.marketing_journeys;
-DROP POLICY journeys_org_write ON public.marketing_journeys;
+DROP POLICY IF EXISTS journeys_org_read ON public.marketing_journeys;
+DROP POLICY IF EXISTS journeys_org_write ON public.marketing_journeys;
+DROP POLICY IF EXISTS journeys_org_read ON public.marketing_journeys;
 CREATE POLICY journeys_org_read ON public.marketing_journeys FOR SELECT TO authenticated
   USING ((is_template AND organization_id IS NULL) OR
     (public.user_belongs_to_org((SELECT auth.uid()), organization_id)
       AND public.has_org_permission(organization_id, 'marketing_view')));
+DROP POLICY IF EXISTS journeys_org_manage ON public.marketing_journeys;
 CREATE POLICY journeys_org_manage ON public.marketing_journeys FOR ALL TO authenticated
   USING (NOT is_template AND public.user_belongs_to_org((SELECT auth.uid()), organization_id)
     AND public.has_org_permission(organization_id, 'marketing_edit') AND public.can_org_write(organization_id)
@@ -33,7 +35,7 @@ CREATE POLICY journeys_org_manage ON public.marketing_journeys FOR ALL TO authen
     AND public.has_org_permission(organization_id, 'marketing_edit') AND public.can_org_write(organization_id)
     AND (runtime_enabled_at IS NULL OR NOT is_active));
 
-DROP POLICY journey_steps_write ON public.journey_steps;
+DROP POLICY IF EXISTS journey_steps_write ON public.journey_steps;
 CREATE POLICY journey_steps_write ON public.journey_steps FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.marketing_journeys j WHERE j.id = journey_id
     AND NOT j.is_template AND public.user_belongs_to_org((SELECT auth.uid()), j.organization_id)
@@ -43,7 +45,8 @@ CREATE POLICY journey_steps_write ON public.journey_steps FOR ALL TO authenticat
     AND public.has_org_permission(j.organization_id, 'marketing_edit') AND public.can_org_write(j.organization_id)));
 
 REVOKE INSERT, UPDATE, DELETE ON public.journey_enrollments FROM PUBLIC, anon, authenticated;
-DROP POLICY journey_enr_org ON public.journey_enrollments;
+DROP POLICY IF EXISTS journey_enr_org ON public.journey_enrollments;
+DROP POLICY IF EXISTS journey_enr_read ON public.journey_enrollments;
 CREATE POLICY journey_enr_read ON public.journey_enrollments FOR SELECT TO authenticated
   USING (public.user_belongs_to_org((SELECT auth.uid()), organization_id)
     AND public.has_org_permission(organization_id, 'marketing_view'));
@@ -52,7 +55,7 @@ REVOKE INSERT, UPDATE, DELETE ON public.journey_step_runs FROM PUBLIC, anon, aut
 DROP POLICY IF EXISTS journey_runs_write ON public.journey_step_runs;
 REVOKE ALL ON FUNCTION public.enroll_in_journey(uuid, uuid, jsonb) FROM PUBLIC, anon, authenticated, service_role;
 
-CREATE FUNCTION operations_private.guard_journey_runtime_steps()
+CREATE OR REPLACE FUNCTION operations_private.guard_journey_runtime_steps()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = ''
 AS $$
@@ -75,10 +78,10 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION operations_private.guard_journey_runtime_steps() FROM PUBLIC, anon, authenticated;
-CREATE TRIGGER guard_journey_runtime_steps BEFORE INSERT OR UPDATE OR DELETE ON public.journey_steps
+CREATE OR REPLACE TRIGGER guard_journey_runtime_steps BEFORE INSERT OR UPDATE OR DELETE ON public.journey_steps
 FOR EACH ROW EXECUTE FUNCTION operations_private.guard_journey_runtime_steps();
 
-CREATE FUNCTION operations_private.set_marketing_journey_active(_journey uuid, _organization uuid, _enabled boolean)
+CREATE OR REPLACE FUNCTION operations_private.set_marketing_journey_active(_journey uuid, _organization uuid, _enabled boolean)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = ''
 AS $$
@@ -148,7 +151,7 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION public.set_marketing_journey_active(_journey uuid, _organization uuid, _enabled boolean)
+CREATE OR REPLACE FUNCTION public.set_marketing_journey_active(_journey uuid, _organization uuid, _enabled boolean)
 RETURNS void LANGUAGE sql SECURITY INVOKER SET search_path = ''
 AS $$ SELECT operations_private.set_marketing_journey_active(_journey, _organization, _enabled); $$;
 
@@ -157,7 +160,7 @@ REVOKE ALL ON FUNCTION public.set_marketing_journey_active(uuid, uuid, boolean) 
 GRANT EXECUTE ON FUNCTION operations_private.set_marketing_journey_active(uuid, uuid, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.set_marketing_journey_active(uuid, uuid, boolean) TO authenticated;
 
-CREATE FUNCTION operations_private.enroll_new_customer_in_marketing_journeys()
+CREATE OR REPLACE FUNCTION operations_private.enroll_new_customer_in_marketing_journeys()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = ''
 AS $$
@@ -191,7 +194,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION operations_private.enroll_new_customer_in_marketing_journeys() FROM PUBLIC, anon, authenticated;
-CREATE TRIGGER enroll_new_customer_in_marketing_journeys AFTER INSERT ON public.customers
+CREATE OR REPLACE TRIGGER enroll_new_customer_in_marketing_journeys AFTER INSERT ON public.customers
 FOR EACH ROW EXECUTE FUNCTION operations_private.enroll_new_customer_in_marketing_journeys();
 
 CREATE OR REPLACE FUNCTION public.process_journey_enrollments(p_limit int DEFAULT 100)
@@ -286,7 +289,7 @@ $$;
 REVOKE ALL ON FUNCTION public.process_journey_enrollments(int) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.process_journey_enrollments(int) TO service_role;
 
-CREATE FUNCTION public.get_marketing_journey_runtime_counts(_journey uuid, _organization uuid)
+CREATE OR REPLACE FUNCTION public.get_marketing_journey_runtime_counts(_journey uuid, _organization uuid)
 RETURNS TABLE (total bigint, active bigint, completed bigint, exited bigint, failed bigint, retrying bigint)
 LANGUAGE sql STABLE SECURITY INVOKER
 SET search_path = ''
@@ -308,4 +311,5 @@ GRANT EXECUTE ON FUNCTION public.get_marketing_journey_runtime_counts(uuid, uuid
 
 -- Local fixtures invoke the same processor without enabling a scheduler.
 SELECT cron.schedule('dispatch-marketing-journey-steps', '* * * * *',
-  $job$SELECT public.process_journey_enrollments(50);$job$);
+  $job$SELECT public.process_journey_enrollments(50);$job$)
+WHERE NOT EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'dispatch-marketing-journey-steps' AND username = current_user);

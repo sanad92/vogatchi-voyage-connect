@@ -89,6 +89,7 @@ try {
       ('${forged}', '${org}', '${conversation}', 'fake-foreign', 'inbound', 'image', 'success', 'image/jpeg', '${foreign}/${conversation}/fake-foreign.jpg');
   `);
   await db.exec(migration);
+  await db.exec(migration);
   await as(actor);
   const snapshot = await review();
   assert.equal(snapshot.customer.id, customer);

@@ -1,16 +1,18 @@
-CREATE SCHEMA supplier_payment_private;
+CREATE SCHEMA IF NOT EXISTS supplier_payment_private;
 REVOKE ALL ON SCHEMA supplier_payment_private FROM PUBLIC, anon, authenticated;
 
-CREATE TABLE supplier_payment_private.payout_requests (
+CREATE TABLE IF NOT EXISTS supplier_payment_private.payout_requests (
   order_id uuid NOT NULL REFERENCES public.supplier_payment_orders(id) ON DELETE CASCADE,
   request_id uuid NOT NULL,
   payment_id uuid NOT NULL REFERENCES public.supplier_payments(id) ON DELETE CASCADE,
   payload jsonb NOT NULL,
   PRIMARY KEY (order_id, request_id)
 );
+ALTER TABLE supplier_payment_private.payout_requests ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON supplier_payment_private.payout_requests FROM PUBLIC, anon, authenticated;
 
 -- Keep the existing approved-order posting path, including specialized B2B rules.
-CREATE FUNCTION public.record_supplier_payout(
+CREATE OR REPLACE FUNCTION public.record_supplier_payout(
   _po_id uuid, _request_id uuid, _amount numeric, _currency text, _exchange_rate numeric,
   _method text, _treasury_account_id uuid, _payment_date date, _reference text, _notes text
 ) RETURNS uuid

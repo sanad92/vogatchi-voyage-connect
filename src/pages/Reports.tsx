@@ -25,6 +25,7 @@ export default function Reports() {
   const orgId = useOrgId();
   const { currentOrganization } = useOrganization();
   const { hasPermission, getPermissionScope } = useSupabasePermissions();
+  const canExport = hasPermission('reports_export') && getPermissionScope('reports_export') === 'organization';
   const today = new Date().toISOString().slice(0, 10);
   const [start, setStart] = useState(`${today.slice(0, 7)}-01`);
   const [end, setEnd] = useState(today);
@@ -64,7 +65,7 @@ export default function Reports() {
         <Button asChild variant="outline"><Link to="/reports/business-health">صحة الأعمال</Link></Button>
         <Button asChild variant="outline"><Link to="/reports/lead-cycle-time">زمن دورة العملاء المحتملين</Link></Button>
         <Button asChild variant="outline"><Link to="/sop/compliance">التزام إجراءات التشغيل</Link></Button>
-        {hasPermission('reports_export') && <Button asChild variant="outline"><Link to="/export-center">مركز التصدير</Link></Button>}
+        {canExport && <Button asChild variant="outline"><Link to="/export-center">مركز التصدير</Link></Button>}
       </nav>
 
       {orgId && permitted && <Card>
@@ -102,7 +103,7 @@ export default function Reports() {
             : <>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="font-medium">الحجوزات المطابقة {count}</p>
-                {hasPermission('reports_export') && <ReportDownloadButtons
+                {canExport && <ReportDownloadButtons
                   key={JSON.stringify([orgId, scope])}
                   title="تقرير الحجوزات" scope={scopeLines} columns={bookingReportColumns}
                   loadRows={async () => rows.map(bookingReportCells)}

@@ -39,6 +39,7 @@ try {
       raw_payload jsonb, created_at timestamptz NOT NULL DEFAULT now()
     );
   `);
+  await database.exec(await migration('20261120020358_manage_subscription_terms'));
   await database.exec(await migration('20261119230811_subscription_terms_and_checkout_status'));
   await database.exec(await migration('20261119231213_preserve_paymob_intention_retries'));
   await database.exec(`

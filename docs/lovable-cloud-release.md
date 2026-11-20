@@ -1,6 +1,19 @@
 # Safar ERP release on Lovable Cloud
 
-The release candidate is the GitHub pull request head. As of this rehearsal, [#125](https://github.com/sanad92/vogatchi-voyage-connect/pull/125) targets `main`, and [#126](https://github.com/sanad92/vogatchi-voyage-connect/pull/126) targets the branch for #125. Verify the target again before release. Merging into `main` changes the code synced into the production editor when that branch is active. Lovable's publish controls govern the website snapshot. An accepted draft can change production backend objects before a new website snapshot is published.
+The remaining candidate is [PR #130](https://github.com/sanad92/vogatchi-voyage-connect/pull/130). Production work already merged into `main` includes [#131](https://github.com/sanad92/vogatchi-voyage-connect/pull/131), [#132](https://github.com/sanad92/vogatchi-voyage-connect/pull/132), [#133](https://github.com/sanad92/vogatchi-voyage-connect/pull/133), [#134](https://github.com/sanad92/vogatchi-voyage-connect/pull/134), and [#135](https://github.com/sanad92/vogatchi-voyage-connect/pull/135). Verify the candidate head and the active production branch before release. Git sync updates the production editor. Lovable's publish controls serve the website snapshot. Apply and verify the matching backend changes through the Cloud backend controls before publishing a website that depends on them.
+
+The outstanding comparison against `main` identifies eight migration files. Coordinate each group with its matching Edge functions and any required provider settings. The production checkout and its approved Paymob configuration serve platform subscriptions. The Paymob staging backend is for sandbox subscription testing.
+
+| Change | Migration versions | Runtime dependency |
+| --- | --- | --- |
+| Subscription checkout status and retry behavior | `20261119230811`, `20261119231213` | Matching `create-payment` and `paymob-webhook` builds |
+| WhatsApp scheduled follow-ups | `20261119231256` | `whatsapp-scheduler` on the ERP backend |
+| Registration deduplication and transactional email processing | `20261119231632`, `20261119234806` | Matching queue worker, sender and confirmation functions with the approved mail configuration |
+| Meta deletion request processing | `20261119234820` | Matching `whatsapp-data-deletion` callback with verified Meta configuration |
+| ETA preproduction sample receipts | `20261119234911` | Matching `company-api-integrations` build and ETA preproduction configuration |
+| Meta Instant Form CRM intake | `20261120002308` | Matching `meta-lead-ads-config` and `meta-lead-ads-webhook` builds and company provider configuration |
+
+The WhatsApp ad-first intake webhook in [#128](https://github.com/sanad92/vogatchi-voyage-connect/pull/128) also needs its own Cloud deployment. The browser's manual WhatsApp intake and the public read-only Meta receipt check were already released and use the production database.
 
 ## Prepare the ERP test target on Lovable Cloud
 

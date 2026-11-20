@@ -48,7 +48,9 @@ INSERT INTO invoices(organization_id, pilgrimage_b2b_agreement_id, invoice_numbe
 const original = readFileSync('scripts/deploy-pilgrimage-b2b-roster.sql', 'utf8');
 await db.exec(original.slice(original.indexOf('CREATE OR REPLACE FUNCTION public.add_pilgrimage_b2b_roster_name'), original.indexOf('CREATE OR REPLACE FUNCTION public.remove_pilgrimage_b2b_roster_name')));
 await db.exec(readFileSync('supabase/migrations/20261113233607_pilgrimage_agency_portal.sql', 'utf8'));
-await db.exec(readFileSync('supabase/migrations/20261119231332_show_agency_cancellation_refunds.sql', 'utf8'));
+const cancellationMigration = readFileSync('supabase/migrations/20261119231332_show_agency_cancellation_refunds.sql', 'utf8');
+await db.exec(cancellationMigration);
+await db.exec(cancellationMigration);
 await db.exec(`INSERT INTO pilgrimage_portal_private.agreement_access(agreement_id,email,granted_by)
  VALUES ('${otherAgreement}', 'agent@two.example', '${admin}')`);
 
@@ -68,6 +70,27 @@ assert.equal(data.length, 1);
 assert.equal(data[0].invoice.remaining, 13000);
 assert.equal(data[0].capacity, 2);
 assert.equal(data[0].cancellation, null);
+await db.exec(`RESET ROLE;
+  CREATE TABLE pilgrimage_b2b_cancellations(id uuid, organization_id uuid, agreement_id uuid, invoice_id uuid,
+    credit_note_id uuid, refund_id uuid, status text, requested_at timestamptz);
+  CREATE TABLE credit_notes(id uuid, organization_id uuid, invoice_id uuid, note_number text, status text);
+  CREATE TABLE refund_requests(id uuid, organization_id uuid, invoice_id uuid,
+    pilgrimage_b2b_cancellation_id uuid, amount numeric, currency text, status text);
+  INSERT INTO pilgrimage_b2b_cancellations VALUES
+    ('${uid(30)}','${org}','${agreement}','${uid(31)}','${uid(32)}','${uid(33)}','requested',now()),
+    ('${uid(34)}','${otherOrg}','${agreement}','${uid(31)}',null,null,'rejected',now() + interval '1 day');
+  INSERT INTO credit_notes VALUES ('${uid(32)}','${org}','${uid(31)}','CN-1','applied');
+  INSERT INTO refund_requests VALUES ('${uid(33)}','${org}','${uid(31)}','${uid(30)}',700,'EGP','approved');`);
+await actor(agent);
+assert.deepEqual((await list())[0].cancellation, { status: 'requested', credit_note: null, refund: null });
+await db.exec(`RESET ROLE; UPDATE pilgrimage_b2b_cancellations SET status = 'approved' WHERE id = '${uid(30)}'`);
+await actor(agent);
+assert.deepEqual((await list())[0].cancellation, {
+  status: 'approved', credit_note: 'CN-1', refund: { status: 'due', amount: 700, currency: 'EGP' },
+});
+await db.exec(`RESET ROLE; UPDATE refund_requests SET status = 'paid' WHERE id = '${uid(33)}'`);
+await actor(agent);
+assert.equal((await list())[0].cancellation.refund.status, 'paid');
 await assert.rejects(manage(agreement, 'agent@two.example'), { code: '42501' });
 await assert.rejects(add(otherAgreement, uid(20), 'Wrong tenant passenger'), { code: '42501' });
 const first = await add(agreement, uid(21), 'First passenger');
@@ -77,6 +100,7 @@ await assert.rejects(add(agreement, uid(23), 'Third passenger'), /exceeds_contra
 assert.equal((await list())[0].roster.length, 2);
 await actor(otherAgent);
 assert.equal((await list())[0].id, otherAgreement);
+assert.equal((await list())[0].cancellation, null);
 await assert.rejects(add(agreement, uid(24), 'Cross agreement'), { code: '42501' });
 await actor(admin);
 await manage(agreement, 'pending@one.example');
@@ -99,4 +123,4 @@ await assert.rejects(add(agreement, uid(26), 'Disabled user'), { code: '42501' }
 await actor(agent, 'anon');
 await assert.rejects(list(), { code: '42501' });
 await db.close();
-console.log('Agency portal passed confirmed-email access, tenant separation, admin revocation, invoice view, seat capacity and retry checks.');
+console.log('Agency portal passed confirmed-email access, tenant separation, cancellation and refunds, admin revocation, invoice view, seat capacity and retry checks.');

@@ -160,6 +160,8 @@ try {
       "'replacement_id', operation.replacement_id, 'replacement_booking_id', operation.replacement_booking_id);"));
   await db.exec(migration('amend_room_stock_pilgrimage_passengers.sql'));
   await db.exec(migration('amend_unpaid_private_pilgrimage_room_groups.sql'));
+  await db.exec(migration('amend_room_stock_pilgrimage_passengers.sql'));
+  await db.exec(migration('amend_unpaid_private_pilgrimage_room_groups.sql'));
 
   const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
   const [org, foreign, manager, agent, customer, source, destination, blocked, nonStock,
