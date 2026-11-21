@@ -1,0 +1,35 @@
+name: Finance wallet settlement aging regression
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/finance-aging-wallet.yml'
+      - 'scripts/verify-aging-wallet-settlement.mjs'
+      - 'scripts/prepare-refund-balances-fixture.mjs'
+      - 'scripts/test-refund-balances.sql'
+      - 'supabase/migrations/*aging*.sql'
+      - 'supabase/migrations/*wallet*.sql'
+      - 'supabase/migrations/*refund*.sql'
+      - 'bun.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aging-wallet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked dependencies
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun install --frozen-lockfile
+      - name: Confirm pre-fix baseline and candidate regression
+        run: |
+          node scripts/verify-aging-wallet-settlement.mjs --baseline
+          node scripts/verify-aging-wallet-settlement.mjs supabase/migrations/20261120171656_account_for_wallet_settlements_in_aging.sql
