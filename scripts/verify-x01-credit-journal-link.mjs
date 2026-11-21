@@ -3,11 +3,14 @@ import assert from 'node:assert/strict';
 // A cancellation credit is recognized only when its own journal entry is posted.
 // An unrelated posted journal for the same booking cannot authorize the credit.
 function datedCredits({credits, journals, invoiceId, bookingId, orgId, currency, asOf}) {
-  const seen = new Set();
+  const seen = new Map();
   return credits.filter(c => c.invoiceId === invoiceId && c.bookingId === bookingId && c.orgId === orgId && c.currency === currency)
     .reduce((sum, c) => {
-      if (seen.has(c.id)) return sum;
-      seen.add(c.id);
+      if (seen.has(c.id)) {
+        assert.deepEqual(c, seen.get(c.id), 'conflicting duplicate cancellation credit identity');
+        return sum;
+      }
+      seen.set(c.id, c);
       const matched = journals.filter(j => j.sourceType === 'booking_cancellation_invoice_credit' &&
         j.sourceId === c.id && j.bookingId === bookingId && j.orgId === orgId && j.currency === currency &&
         j.status === 'posted' && j.locked && j.date <= asOf &&
@@ -28,4 +31,5 @@ assert.equal(datedCredits({...input,invoiceId:'invoice-B',asOf:'2026-11-21'}),0)
 assert.equal(datedCredits({...input,bookingId:'booking-B',asOf:'2026-11-21'}),0);
 assert.equal(datedCredits({...input,credits:[{...credit,bookingId:'booking-B'}],asOf:'2026-11-21'}),0);
 assert.throws(()=>datedCredits({...input,journals:[journal,{...journal}],asOf:'2026-11-21'}),/duplicate posted journal/);
+assert.throws(()=>datedCredits({...input,credits:[credit,{...credit,amount:200}],asOf:'2026-11-21'}),/conflicting duplicate cancellation credit identity/);
 console.log('PASS X01 credit/journal identity, posted date, lock, amount, tenant, currency, booking, invoice, duplicate guards');
