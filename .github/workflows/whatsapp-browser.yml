@@ -35,3 +35,4 @@ jobs:
           node --experimental-strip-types scripts/verify-whatsapp-lead-draft.mjs
           node --experimental-strip-types scripts/verify-whatsapp-identity-review.mjs
           node --experimental-strip-types scripts/verify-whatsapp-browser.mjs
+          node --experimental-strip-types scripts/verify-whatsapp-ad-intake.mjs

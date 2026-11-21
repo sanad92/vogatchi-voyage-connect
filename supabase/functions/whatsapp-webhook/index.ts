@@ -234,6 +234,8 @@ async function recomputeBroadcastCounters(supabase: any, broadcastId: string) {
   }).eq('id', broadcastId);
 }
 
+class InboundMessagePersistenceError extends Error {}
+
 async function processMessage(messageData: any, supabase: any, organizationId: string, whatsappSettingsId: string) {
   try {
     if (messageData.messages) {
@@ -263,7 +265,8 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
 
         if (convErr || !convo?.id) {
           console.error('conversation upsert error:', convErr);
-          continue;
+          // Never acknowledge an inbound message that could not be persisted.
+          throw new InboundMessagePersistenceError('Conversation could not be persisted');
         }
         const conversationId = convo.id;
 
@@ -321,11 +324,26 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
           contentText = message.reaction.emoji ?? null;
         }
 
+        // Only a Meta-signature-verified ad referral is eligible. The database
+        // trigger persists a retry job atomically with this inbound message.
+        const adReferralId: string | null =
+          message.referral?.source_type === 'ad' &&
+          typeof message.referral?.source_id === 'string' &&
+          /^\d{1,32}$/.test(message.referral.source_id)
+            ? message.referral.source_id : null;
+        const adContact = adReferralId && Array.isArray(messageData.contacts)
+          ? messageData.contacts.find((entry: { wa_id?: string }) => normalizePhone(entry.wa_id) === phoneNumber)
+          : undefined;
+        const adReferralName: string | null = typeof adContact?.profile?.name === 'string'
+          ? adContact.profile.name.slice(0, 120) : null;
+
         const messageRow = {
           organization_id: organizationId,
           whatsapp_settings_id: whatsappSettingsId,
           conversation_id: conversationId,
           message_id: message.id,
+          ad_referral_id: adReferralId,
+          ad_referral_name: adReferralName,
           direction: 'inbound',
           message_type: message.type,
           content: contentText,
@@ -356,9 +374,16 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
         let concurrentDuplicate = false;
         const isDuplicate = Boolean(existingMsg?.id);
         if (existingMsg?.id) {
+          // Provider retries lacking referral fields must not erase the
+          // durable metadata captured on the original signed delivery.
+          const updateRow: Record<string, unknown> = { ...messageRow };
+          if (!adReferralId) {
+            delete updateRow.ad_referral_id;
+            delete updateRow.ad_referral_name;
+          }
           const res = await supabase
             .from('whatsapp_messages')
-            .update(messageRow)
+            .update(updateRow)
             .eq('id', existingMsg.id)
             .select('id')
             .maybeSingle();
@@ -385,17 +410,17 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
             msgErr = insertedMsg ? null : res.error;
           }
         }
-        if (msgErr) { console.error('[wa-webhook] message write error:', { messageId: message.id, conversationId, error: msgErr }); continue; }
-        if (insertedMsg && message.referral?.source_type === 'ad' && /^\d{1,32}$/.test(message.referral.source_id ?? '')) {
-          // Run on provider retries too. The RPC locks the conversation and preserves existing leads.
-          const contact = Array.isArray(messageData.contacts)
-            ? messageData.contacts.find((entry: { wa_id?: string }) => normalizePhone(entry.wa_id) === phoneNumber)
-            : undefined;
+        if (msgErr) {
+          console.error('[wa-webhook] message write error:', { messageId: message.id, conversationId, error: msgErr });
+          throw new InboundMessagePersistenceError('Inbound message/referral could not be persisted');
+        }
+        if (insertedMsg && adReferralId) {
+          // Fast path is retained; the durable DB job catches a transient RPC failure.
           const { error: leadError } = await supabase.rpc('wa_open_ad_lead', {
             _org: organizationId,
             _message: insertedMsg.id,
-            _ad: message.referral.source_id,
-            _name: typeof contact?.profile?.name === 'string' ? contact.profile.name.slice(0, 120) : null,
+            _ad: adReferralId,
+            _name: adReferralName,
           });
           if (leadError) console.error('[wa-webhook] ad lead intake failed', leadError.code);
         }
@@ -541,6 +566,7 @@ async function processMessage(messageData: any, supabase: any, organizationId: s
     }
   } catch (error) {
     console.error('Error processing message:', error);
+    if (error instanceof InboundMessagePersistenceError) throw error;
   }
 }
 
