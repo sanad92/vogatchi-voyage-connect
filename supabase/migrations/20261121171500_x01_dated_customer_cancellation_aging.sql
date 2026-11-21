@@ -90,14 +90,21 @@ BEGIN
     FROM eligible_invoices i
     JOIN cancellation_sources c
       ON c.invoice_id = i.id AND c.booking_id = i.booking_id
-    JOIN public.journal_entries j
-      ON j.source_id = c.id
-      AND j.source_type = 'booking_cancellation_invoice_credit'
-      AND j.organization_id = i.organization_id
-      AND j.booking_id = i.booking_id
-      AND j.currency = v_currency
-      AND j.status = 'posted' AND j.is_locked
-      AND j.total_debit = c.amount AND j.total_credit = c.amount
+    -- One source credit may have at most one matching posted journal.
+    -- Fail closed on duplicate journal rows instead of multiplying credits.
+    JOIN LATERAL (
+      SELECT MIN(j.entry_date) AS entry_date
+      FROM public.journal_entries j
+      WHERE j.source_id = c.id
+        AND j.source_type = 'booking_cancellation_invoice_credit'
+        AND j.organization_id = i.organization_id
+        AND j.booking_id = i.booking_id
+        AND j.currency = v_currency
+        AND j.status = 'posted' AND j.is_locked
+        AND j.total_debit = c.amount AND j.total_credit = c.amount
+        AND j.entry_date IS NOT NULL
+      HAVING COUNT(*) = 1
+    ) j ON true
     WHERE c.amount > 0
     GROUP BY c.invoice_id
   ), settlement_events AS MATERIALIZED (
