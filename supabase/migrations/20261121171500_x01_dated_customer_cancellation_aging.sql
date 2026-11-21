@@ -73,11 +73,22 @@ BEGIN
           )
           AND EXISTS (
             SELECT 1 FROM cancellation_sources c
-            JOIN public.journal_entries j
-              ON j.source_id = c.id AND j.source_type = 'booking_cancellation_invoice_credit'
-              AND j.organization_id = i.organization_id AND j.booking_id = i.booking_id
-              AND j.currency = v_currency AND j.status = 'posted' AND j.is_locked
-              AND j.total_debit = c.amount AND j.total_credit = c.amount
+            -- Match the unique-posted-journal guard in cancellation_credits.
+            -- Otherwise a duplicate journal can make a cancelled invoice
+            -- eligible while its credit is deliberately rejected below.
+            JOIN LATERAL (
+              SELECT 1
+              FROM public.journal_entries j
+              WHERE j.source_id = c.id
+                AND j.source_type = 'booking_cancellation_invoice_credit'
+                AND j.organization_id = i.organization_id
+                AND j.booking_id = i.booking_id
+                AND j.currency = v_currency
+                AND j.status = 'posted' AND j.is_locked
+                AND j.total_debit = c.amount AND j.total_credit = c.amount
+                AND j.entry_date IS NOT NULL
+              HAVING COUNT(*) = 1
+            ) unique_credit_journal ON true
             WHERE c.invoice_id = i.id AND c.booking_id = i.booking_id
               AND c.amount > 0
           )
