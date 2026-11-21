@@ -162,7 +162,7 @@ BEGIN
   ), legacy_receipts AS (
     SELECT i.id AS invoice_id,
       SUM(j.total_debit) FILTER (WHERE j.status = 'posted' AND j.entry_date <= v_as_of) AS paid_as_of,
-      SUM(j.total_debit) AS recorded_amount
+      SUM(j.total_debit) FILTER (WHERE j.status = 'posted') AS recorded_amount
     FROM eligible_invoices i
     JOIN public.journal_entries j
       ON j.organization_id = i.organization_id
