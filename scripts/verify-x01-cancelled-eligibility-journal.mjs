@@ -5,6 +5,11 @@ import { readFileSync } from 'node:fs';
 const sql = readFileSync(process.argv[2] ?? 'supabase/migrations/20261121171500_x01_dated_customer_cancellation_aging.sql', 'utf8');
 const eligibility = sql.split('), eligible_invoices AS (')[1]?.split('), cancellation_credits AS (')[0];
 const credits = sql.split('), cancellation_credits AS (')[1]?.split('), settlement_events AS MATERIALIZED (')[0];
+// A cancelled invoice must have a trustworthy original posting, not just a matching source ID.
+assert.match(eligibility ?? '', /original\.status = 'posted' AND original\.is_locked/);
+assert.match(eligibility ?? '', /original\.currency = v_currency/);
+assert.match(eligibility ?? '', /original\.booking_id IS NOT DISTINCT FROM i\.booking_id/);
+assert.match(eligibility ?? '', /original\.entry_date <= v_as_of/);
 assert.ok(eligibility && credits, 'X01 aging CTEs must exist');
 for (const [name, body] of [['eligibility', eligibility], ['credits', credits]]) {
   assert.match(body, /JOIN LATERAL\s*\(/, name);
