@@ -103,17 +103,21 @@ try {
 
   // Replace the RPC only in this disposable fixture to inject a failure.
   // Re-install the migration's actual function before retry.
+  await db.exec('RESET ROLE');
   await db.exec(`CREATE OR REPLACE FUNCTION public.wa_open_ad_lead(uuid,uuid,text,text)
-    RETURNS uuid LANGUAGE plpgsql AS $ BEGIN RAISE EXCEPTION 'synthetic transient failure'; END $;`);
+    RETURNS uuid LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic transient failure'; END $$;`);
+  await db.exec('SET ROLE service_role');
   await db.query('SELECT wa_process_ad_lead_jobs(10)');
   assert.deepEqual((await db.query(`SELECT state, attempts FROM wa_ad_lead_jobs
     WHERE message_id=$1`, [recoveryMsg])).rows[0], { state: 'retry', attempts: 1 },
     'a failed first attempt is persisted for replay');
   const recoverySql = readSql('20261121100000_whatsapp_ad_lead_durable_recovery.sql');
+  await db.exec('RESET ROLE');
   await db.exec(recoverySql.slice(
     recoverySql.indexOf('CREATE OR REPLACE FUNCTION public.wa_open_ad_lead'),
     recoverySql.indexOf('REVOKE ALL ON FUNCTION public.wa_open_ad_lead'),
   ));
+  await db.exec('SET ROLE service_role');
   await db.query(`UPDATE wa_ad_lead_jobs SET next_attempt_at = now() - interval '1 second'
     WHERE message_id=$1`, [recoveryMsg]);
   await db.query('SELECT wa_process_ad_lead_jobs(10)');
