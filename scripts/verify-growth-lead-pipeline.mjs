@@ -15,10 +15,12 @@ const leads = [
   lead('lost'),
   lead('cancelled'),
 ];
+const beforeAggregation = structuredClone(leads);
 assert.deepEqual(buildLeadPipelineStats(leads, now), {
   total: 8, newLeads: 1, active: 4, quoted: 3, overdue: 1,
   won: 1, lost: 2, conversionRate: 33.3,
 });
+assert.deepEqual(leads, beforeAggregation, 'funnel aggregation must not mutate source, campaign, or any lead fields');
 assert.equal(isFollowUpOverdue(leads[5], now), false, 'closed won lead must not be overdue');
 assert.equal(isFollowUpOverdue(leads[3], now), false, 'invalid timestamp must not be overdue');
 assert.equal(isLeadOpen('payment_pending'), true);
@@ -27,7 +29,4 @@ assert.equal(buildLeadPipelineStats([lead('new')], now).conversionRate, 0);
 assert.equal(getLeadCampaignLabel('  November campaign  '), 'November campaign');
 assert.equal(getLeadCampaignLabel('pilgrimage:synthetic'), 'طلبات اهتمام العمرة');
 assert.equal(getLeadCampaignLabel('  '), null);
-// Stage changes in this pure aggregation must not mutate provider attribution.
-assert.equal(leads[5].lead_source, 'meta_lead_ads');
-assert.equal(leads[5].campaign, 'November campaign');
 console.log('Growth lead pipeline synthetic stage, conversion, overdue and label checks PASS');
