@@ -41,7 +41,20 @@ BEGIN
   END IF;
 
   RETURN QUERY
-  WITH eligible_invoices AS (
+  WITH cancellation_sources AS (
+    -- Both standard booking cancellation and unified Umrah passenger cancellation
+    -- post the same journal source_type with source IDs from different tables.
+    SELECT c.id, c.invoice_id, c.booking_id, i.organization_id, c.amount
+    FROM public.booking_cancellation_invoice_credits c
+    JOIN public.invoices i ON i.id = c.invoice_id AND i.booking_id = c.booking_id
+    WHERE i.organization_id = _org_id AND upper(i.currency) = v_currency
+    UNION ALL
+    SELECT u.operation_id AS id, u.invoice_id, i.booking_id, u.organization_id, u.amount
+    FROM public.umrah_booking_invoice_credits u
+    JOIN public.invoices i ON i.id = u.invoice_id
+      AND i.organization_id = u.organization_id AND i.booking_type = 'umrah'
+    WHERE u.organization_id = _org_id AND upper(i.currency) = v_currency
+  ), eligible_invoices AS (
     SELECT i.*
     FROM public.invoices i
     WHERE i.organization_id = _org_id
@@ -59,7 +72,7 @@ BEGIN
               AND original.status = 'posted' AND original.entry_date <= v_as_of
           )
           AND EXISTS (
-            SELECT 1 FROM public.booking_cancellation_invoice_credits c
+            SELECT 1 FROM cancellation_sources c
             JOIN public.journal_entries j
               ON j.source_id = c.id AND j.source_type = 'booking_cancellation_invoice_credit'
               AND j.organization_id = i.organization_id AND j.booking_id = i.booking_id
@@ -75,7 +88,7 @@ BEGIN
       COALESCE(SUM(c.amount) FILTER (WHERE j.entry_date <= v_as_of), 0) AS credited_as_of,
       COALESCE(SUM(c.amount), 0) AS credited_all_dates
     FROM eligible_invoices i
-    JOIN public.booking_cancellation_invoice_credits c
+    JOIN cancellation_sources c
       ON c.invoice_id = i.id AND c.booking_id = i.booking_id
     JOIN public.journal_entries j
       ON j.source_id = c.id
