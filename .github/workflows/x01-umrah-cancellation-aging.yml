@@ -1,0 +1,24 @@
+name: X01 standard and Umrah cancellation source regression
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/x01-umrah-cancellation-aging.yml'
+      - 'scripts/verify-x01-umrah-cancellation-aging.mjs'
+      - 'supabase/migrations/20261121171500_x01_dated_customer_cancellation_aging.sql'
+      - 'supabase/migrations/20261117135404_unify_umrah_booking_accounting.sql'
+
+permissions:
+  contents: read
+
+jobs:
+  cancellation-identity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Regression of dated credits from both production writers
+        run: node scripts/verify-x01-umrah-cancellation-aging.mjs
