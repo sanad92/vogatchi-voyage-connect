@@ -69,7 +69,10 @@ BEGIN
             SELECT 1 FROM public.journal_entries original
             WHERE original.organization_id = i.organization_id
               AND original.source_type = 'invoice' AND original.source_id = i.id
-              AND original.status = 'posted' AND original.entry_date <= v_as_of
+              AND original.status = 'posted' AND original.is_locked
+              AND original.currency = v_currency
+              AND original.booking_id IS NOT DISTINCT FROM i.booking_id
+              AND original.entry_date <= v_as_of
           )
           AND EXISTS (
             SELECT 1 FROM cancellation_sources c
