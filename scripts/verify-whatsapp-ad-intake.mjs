@@ -61,11 +61,14 @@ try {
       ('${otherMessage}', '${other}', '${otherChat}', '${otherInbox}', 'inbound', 'fixture/b.png', 'image/png', 'طلب آخر'),
       ('${id(50)}', '${org}', '${chat}', '${inbox}', 'inbound', 'fixture/c.pdf', 'application/pdf', 'جواز ثان');
   `);
+  // The reduced fixture predates the provider's text identifier column.
+  await db.exec('ALTER TABLE public.whatsapp_messages ADD COLUMN message_id text');
   const guided = readSql('20260910224026_whatsapp_queue_routing.sql');
   await db.exec(guided.slice(guided.indexOf('CREATE TABLE public.wa_bot_intake')));
   await db.exec(readSql('20261120002115_whatsapp_ad_intake_and_passport_review.sql'));
 
   await db.exec(readSql('20261120104437_whatsapp_passport_pdf_and_booking_links.sql'));
+  await db.exec(readSql('20261121100000_whatsapp_ad_lead_durable_recovery.sql'));
 
   const createAdLead = async (targetOrg = org, ad = '987654321') =>
     (await db.query('SELECT wa_open_ad_lead($1,$2,$3,$4) AS lead', [targetOrg, message, ad, 'Test Sender'])).rows[0].lead;
@@ -78,6 +81,69 @@ try {
   assert.equal(await createAdLead(), null, 'duplicate webhook preserves draft');
   assert.deepEqual((await db.query('SELECT campaign, contact_name FROM sop_leads')).rows[0],
     { campaign: 'إعلان واتساب #987654321', contact_name: 'Test Sender' });
+
+  // #148 regression: the verified referral and recovery job commit together
+  // with the inbound message. A transient lead RPC error must not lose the job.
+  const recoveryChat = id(60), recoveryMsg = id(61), optOutChat = id(62), optOutMsg = id(63);
+  await db.query(`INSERT INTO whatsapp_conversations
+    (id, organization_id, whatsapp_settings_id, phone_number, status)
+    VALUES ($1,$2,$3,'201000000061','open'),($4,$2,$3,'201000000062','open')`,
+    [recoveryChat, org, inbox, optOutChat]);
+  await db.query(`INSERT INTO whatsapp_messages
+    (id, organization_id, conversation_id, whatsapp_settings_id, direction, content,
+     message_id, ad_referral_id, ad_referral_name)
+    VALUES ($1,$2,$3,$4,'inbound','synthetic ad enquiry','wamid.synthetic.61','7654321','Lead Sender')`,
+    [recoveryMsg, org, recoveryChat, inbox]);
+  assert.equal((await db.query('SELECT count(*)::integer AS n FROM wa_ad_lead_jobs')).rows[0].n, 1,
+    'an inbound ad message and its durable retry job are atomic');
+  await db.query(`UPDATE whatsapp_messages SET ad_referral_name='Lead Sender'
+    WHERE id=$1`, [recoveryMsg]);
+  assert.equal((await db.query('SELECT count(*)::integer AS n FROM wa_ad_lead_jobs')).rows[0].n, 1,
+    'duplicate provider delivery must not enqueue a second job');
+
+  // Replace the RPC only in this disposable fixture to inject a failure.
+  // Re-install the migration's actual function before retry.
+  await db.exec(`CREATE OR REPLACE FUNCTION public.wa_open_ad_lead(uuid,uuid,text,text)
+    RETURNS uuid LANGUAGE plpgsql AS $ BEGIN RAISE EXCEPTION 'synthetic transient failure'; END $;`);
+  await db.query('SELECT wa_process_ad_lead_jobs(10)');
+  assert.deepEqual((await db.query(`SELECT state, attempts FROM wa_ad_lead_jobs
+    WHERE message_id=$1`, [recoveryMsg])).rows[0], { state: 'retry', attempts: 1 },
+    'a failed first attempt is persisted for replay');
+  const recoverySql = readSql('20261121100000_whatsapp_ad_lead_durable_recovery.sql');
+  await db.exec(recoverySql.slice(
+    recoverySql.indexOf('CREATE OR REPLACE FUNCTION public.wa_open_ad_lead'),
+    recoverySql.indexOf('REVOKE ALL ON FUNCTION public.wa_open_ad_lead'),
+  ));
+  await db.query(`UPDATE wa_ad_lead_jobs SET next_attempt_at = now() - interval '1 second'
+    WHERE message_id=$1`, [recoveryMsg]);
+  await db.query('SELECT wa_process_ad_lead_jobs(10)');
+  assert.equal((await db.query('SELECT state FROM wa_ad_lead_jobs WHERE message_id=$1', [recoveryMsg])).rows[0].state,
+    'completed', 'the retry succeeds without any second Meta webhook');
+  assert.equal((await db.query(`SELECT count(*)::integer AS n FROM sop_leads
+    WHERE organization_id=$1 AND conversation_id=$2`, [org, recoveryChat])).rows[0].n, 1);
+  await db.query('SELECT wa_process_ad_lead_jobs(10)');
+  assert.equal((await db.query('SELECT count(*)::integer AS n FROM wa_ad_lead_jobs')).rows[0].n, 1,
+    'repeated processing neither duplicates message nor lead');
+
+  // Opted-out inboxes must never queue a lead; queued work rechecks opt-in.
+  await db.exec(`UPDATE whatsapp_settings SET auto_ad_leads=false WHERE id='${inbox}'`);
+  await db.query(`INSERT INTO whatsapp_messages
+    (id, organization_id, conversation_id, whatsapp_settings_id, direction, content,
+     message_id, ad_referral_id, ad_referral_name)
+    VALUES ($1,$2,$3,$4,'inbound','opt out','wamid.synthetic.63','1234567','No Opt In')`,
+    [optOutMsg, org, optOutChat, inbox]);
+  assert.equal((await db.query('SELECT count(*)::integer AS n FROM wa_ad_lead_jobs')).rows[0].n, 1,
+    'opted-out inbox creates no job');
+  await db.exec(`UPDATE whatsapp_settings SET auto_ad_leads=true WHERE id='${inbox}'`);
+  await db.query(`UPDATE whatsapp_messages SET ad_referral_name='No Opt In' WHERE id=$1`, [optOutMsg]);
+  await db.exec(`UPDATE whatsapp_settings SET auto_ad_leads=false WHERE id='${inbox}'`);
+  await db.query('SELECT wa_process_ad_lead_jobs(10)');
+  assert.equal((await db.query('SELECT state FROM wa_ad_lead_jobs WHERE message_id=$1', [optOutMsg])).rows[0].state,
+    'skipped', 'eligibility is rechecked during replay');
+  await db.exec(`UPDATE whatsapp_settings SET auto_ad_leads=true WHERE id='${inbox}'`);
+  await db.exec('SET ROLE authenticated');
+  await assert.rejects(db.query('SELECT wa_process_ad_lead_jobs(10)'), /permission denied/);
+  await db.exec('SET ROLE service_role');
 
   const answers = ['طلب عمرة', 'مكة', 'من ٢٠ إلى ٢٥ ديسمبر', '٤ مسافرين', '١٠٠٠٠ جنيه', 'فندق قريب'];
   for (let i = 0; i < answers.length; i++) {
