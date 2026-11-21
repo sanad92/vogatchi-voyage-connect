@@ -1,0 +1,34 @@
+name: Custom plan retry and signup regression
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/custom-plan-inquiry.yml'
+      - 'scripts/verify-custom-plan-inquiry-retry.mjs'
+      - 'src/lib/customPlanInquiryRetry.ts'
+      - 'src/pages/CustomPlanInquiry.tsx'
+      - 'supabase/migrations/*platform_custom_plan*.sql'
+      - 'bun.lock'
+
+permissions:
+  contents: read
+
+jobs:
+  custom-plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked dependencies
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun install --frozen-lockfile
+      - name: Custom plan SQL and reload idempotency
+        run: node --experimental-strip-types scripts/verify-custom-plan-inquiry-retry.mjs
+      - name: TypeScript and production build
+        run: |
+          bunx tsc --noEmit
+          bunx vite build
