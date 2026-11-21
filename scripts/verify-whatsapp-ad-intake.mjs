@@ -104,7 +104,7 @@ try {
   // Replace the RPC only in this disposable fixture to inject a failure.
   // Re-install the migration's actual function before retry.
   await db.exec('RESET ROLE');
-  await db.exec(`CREATE OR REPLACE FUNCTION public.wa_open_ad_lead(uuid,uuid,text,text)
+  await db.exec(`CREATE OR REPLACE FUNCTION public.wa_open_ad_lead(_org uuid,_message uuid,_ad text,_name text DEFAULT NULL)
     RETURNS uuid LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic transient failure'; END $$;`);
   await db.exec('SET ROLE service_role');
   await db.query('SELECT wa_process_ad_lead_jobs(10)');
