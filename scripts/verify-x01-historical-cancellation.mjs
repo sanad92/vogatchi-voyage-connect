@@ -23,6 +23,26 @@ assert.equal(outstanding({ ...invoice, asOf: '2026-11-21', credits: [...invoice.
   { amount: 800, date: '2026-11-21', org: 'tenant-A', currency: 'EGP', posted: true, reversed: true }] }), 500);
 console.log('PASS synthetic partial cancellation, tenant, currency, posted/reversed and as-of arithmetic');
 
+// Full cancellation must be invisible as a receivable only after its posted date,
+// not because its mutable invoice status has already changed.
+const full = { total: 1000, org: 'tenant-A', currency: 'EGP',
+  payments: [], credits: [{ amount: 1000, date: '2026-11-20', org: 'tenant-A',
+    currency: 'EGP', posted: true }] };
+assert.equal(outstanding({ ...full, asOf: '2026-11-19' }), 1000);
+assert.equal(outstanding({ ...full, asOf: '2026-11-20' }), 0);
+// Supplier credit is scoped by tenant and SAR; pending and reversed offsets
+// cannot reduce a historical payable.
+const supplier = { total: 1000, org: 'tenant-A', currency: 'SAR',
+  payments: [{ amount: 300, date: '2026-11-05', org: 'tenant-A', currency: 'SAR', posted: true }],
+  credits: [{ amount: 700, date: '2026-11-20', org: 'tenant-A', currency: 'SAR', posted: true },
+    { amount: 700, date: '2026-11-10', org: 'tenant-B', currency: 'SAR', posted: true },
+    { amount: 700, date: '2026-11-10', org: 'tenant-A', currency: 'EGP', posted: true },
+    { amount: 700, date: '2026-11-10', org: 'tenant-A', currency: 'SAR', posted: false }] };
+assert.equal(outstanding({ ...supplier, asOf: '2026-11-19' }), 700);
+assert.equal(outstanding({ ...supplier, asOf: '2026-11-20' }), 0);
+console.log('PASS synthetic full customer cancellation and supplier SAR dated cancellation');
+
+
 // Contract gate intentionally fails on current SQL: it is a regression guard, not a functional fix.
 // Pass the final effective definition, not an older migration shadowed by a newer override.
 const sql = readFileSync(sqlPath, 'utf8');
