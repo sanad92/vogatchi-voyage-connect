@@ -157,7 +157,7 @@ try {
     const reply = await db.query('SELECT wa_intake_step($1,$2,$3) AS step', [org, chat, inbound]);
     assert.equal(reply.rows[0].step.completed, i === answers.length - 1);
   }
-  const lead = (await db.query('SELECT destination, approx_dates, special_requests, intake_completed_at FROM sop_leads')).rows[0];
+  const lead = (await db.query('SELECT destination, approx_dates, special_requests, intake_completed_at FROM sop_leads WHERE organization_id=$1 AND conversation_id=$2', [org, chat])).rows[0];
   assert.equal(lead.destination, 'مكة');
   assert.equal(lead.approx_dates, answers[2]);
   assert.match(lead.special_requests, /٤ مسافرين/);
